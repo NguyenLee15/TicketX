@@ -58,12 +58,16 @@ export const useSeatSignalR = (
             }
 
             const reservationOwnerId = payload.reservationOwnerId ?? (payload as Record<string, unknown>).ReservationOwnerId as string | undefined;
+            const version = (payload.version ?? (payload as Record<string, unknown>).Version) as string | undefined;
+            const expiresAt = (payload.expiresAt ?? (payload as Record<string, unknown>).ExpiresAt) as string | undefined;
 
             if (seatId) {
               onSeatStatusChangedRef.current({
                 ...payload,
                 seatId,
                 status,
+                version,
+                expiresAt,
                 reservationOwnerId,
                 isLockedByCurrentUser: payload.isLockedByCurrentUser ?? payload.isLockedByMe,
               });
@@ -72,11 +76,16 @@ export const useSeatSignalR = (
 
           const handleOwnSeatLockChanged = (payload: SeatStatusChangedPayload) => {
             const seatId = payload.seatId || payload.SeatId || payload.id;
+            const version = (payload.version ?? (payload as Record<string, unknown>).Version) as string | undefined;
+            const expiresAt = (payload.expiresAt ?? (payload as Record<string, unknown>).ExpiresAt) as string | undefined;
+
             if (seatId) {
               onSeatStatusChangedRef.current({
                 ...payload,
                 seatId,
                 status: 1,
+                version,
+                expiresAt,
                 isLockedByCurrentUser: true,
               });
             }

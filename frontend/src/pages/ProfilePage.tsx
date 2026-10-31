@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Shield, Loader2 } from 'lucide-react';
@@ -19,6 +20,7 @@ import { RefundBankAccountForm } from './Profile/RefundBankAccountForm';
 import { RefundBankAccountFormValues } from './Profile/profileSchemas';
 
 export default function ProfilePage() {
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(true);
@@ -167,7 +169,11 @@ export default function ProfilePage() {
     try {
       await api.put('/api/users/me/refund-bank-account', values);
       toast.success('Đã lưu tài khoản nhận hoàn tiền.');
-      await refreshProfile();
+      await Promise.all([
+        refreshProfile(),
+        queryClient.invalidateQueries({ queryKey: ['tickets'] }),
+        queryClient.invalidateQueries({ queryKey: ['user-profile'] }),
+      ]);
     } catch (err: unknown) {
       const apiErr = err as { response?: { data?: { message?: string } } };
       toast.error(apiErr.response?.data?.message || 'Không thể lưu tài khoản nhận tiền.');
@@ -179,7 +185,11 @@ export default function ProfilePage() {
     try {
       await api.delete('/api/users/me/refund-bank-account');
       toast.success('Đã xóa tài khoản nhận hoàn tiền.');
-      await refreshProfile();
+      await Promise.all([
+        refreshProfile(),
+        queryClient.invalidateQueries({ queryKey: ['tickets'] }),
+        queryClient.invalidateQueries({ queryKey: ['user-profile'] }),
+      ]);
     } catch (err: unknown) {
       const apiErr = err as { response?: { data?: { message?: string } } };
       toast.error(apiErr.response?.data?.message || 'Không thể xóa tài khoản nhận tiền.');

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -28,6 +28,47 @@ export default function RegisterPage() {
   const [serverError, setServerError] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
+
+  const user = useAuthStore(state => state.user);
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+
+  const resolveRedirectTarget = (role?: string) => {
+    const stateFrom = (location.state as { from?: unknown })?.from;
+    let targetPath = '';
+
+    if (typeof stateFrom === 'string') {
+      targetPath = stateFrom;
+    } else if (stateFrom && typeof stateFrom === 'object' && 'pathname' in stateFrom) {
+      const locObj = stateFrom as { pathname: string; search?: string; hash?: string };
+      targetPath = `${locObj.pathname}${locObj.search || ''}${locObj.hash || ''}`;
+    } else {
+      const searchParams = new URLSearchParams(location.search);
+      const fromQuery = searchParams.get('from');
+      if (fromQuery && fromQuery.startsWith('/') && !fromQuery.startsWith('//')) {
+        targetPath = fromQuery;
+      }
+    }
+
+    // Guard against open redirect and auth loop
+    if (!targetPath || targetPath.startsWith('/login') || targetPath.startsWith('/register') || !targetPath.startsWith('/') || targetPath.startsWith('//')) {
+      if (role === 'Staff') return '/admin/scan-ticket';
+      if (role === 'Admin') return '/admin';
+      return '/';
+    }
+
+    if (role === 'Staff' && targetPath === '/admin') {
+      return '/admin/scan-ticket';
+    }
+
+    return targetPath;
+  };
+
+  // Auto-redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated()) {
+      navigate(resolveRedirectTarget(user?.role), { replace: true });
+    }
+  }, [isAuthenticated, user?.role, navigate]);
 
   const {
     register,
@@ -66,9 +107,7 @@ export default function RegisterPage() {
           useAuthStore.getState().setAuth(userData, data.token ?? null);
         }
         toast.success('Đăng ký tài khoản thành công!');
-        const rawFrom = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/';
-        const from = (rawFrom.startsWith('/') && !rawFrom.startsWith('//')) ? rawFrom : '/';
-        navigate(from, { replace: true });
+        navigate(resolveRedirectTarget(data?.role), { replace: true });
       } else {
         const msg = res.data.message || 'Đăng ký thất bại';
         setServerError(msg);

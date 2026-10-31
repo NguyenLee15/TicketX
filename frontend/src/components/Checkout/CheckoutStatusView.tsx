@@ -42,7 +42,7 @@ export const CheckoutStatusView: React.FC<CheckoutStatusViewProps> = ({ status, 
           type="button"
           onClick={onClose}
           aria-label="Đóng thanh toán và quay lại sơ đồ ghế"
-          className="px-6 py-3 bg-surface-2 hover:bg-surface-3 text-white text-xs font-bold rounded-xl transition-colors border border-border-subtle cursor-pointer"
+          className="min-h-11 px-6 py-3 bg-surface-2 hover:bg-surface-3 text-white text-xs font-bold rounded-xl transition-colors border border-border-subtle cursor-pointer inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
         >
           Đóng & Quay Lại Sơ Đồ Ghế
         </button>

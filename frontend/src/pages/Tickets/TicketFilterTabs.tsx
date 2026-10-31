@@ -29,7 +29,7 @@ export const TicketFilterTabs: React.FC<TicketFilterTabsProps> = React.memo(({
           type="button"
           aria-pressed={currentTab === tab}
           onClick={() => onTabChange(tab)}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap cursor-pointer ${
+          className={`min-h-11 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap cursor-pointer inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${
             currentTab === tab 
               ? 'bg-brand-primary text-white shadow-md shadow-brand-glow' 
               : 'text-text-secondary hover:text-white hover:bg-surface-2'

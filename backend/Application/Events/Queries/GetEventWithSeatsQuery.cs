@@ -12,7 +12,8 @@ public record SeatDto(
     SeatStatus Status, 
     decimal Price, 
     string Version,
-    bool IsLockedByCurrentUser = false
+    bool IsLockedByCurrentUser = false,
+    DateTime? LockExpiresAt = null
 );
 
 public record EventDetailDto(
@@ -34,7 +35,8 @@ public record EventDetailDto(
     decimal MaxPrice,
     EventStatus Status,
     int RefundCutoffHours,
-    List<SeatDto> Seats
+    List<SeatDto> Seats,
+    DateTime? ServerTime = null
 );
 
 public record GetEventWithSeatsQuery(Guid EventId, Guid? CurrentUserId = null) : IRequest<EventDetailDto?>;

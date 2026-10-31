@@ -46,10 +46,11 @@ public class GetEventWithSeatsQueryHandler : IRequestHandler<GetEventWithSeatsQu
             })
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (e == null || e.IsDeleted || e.Status != EventStatus.Published || e.Date <= _time.UtcNow) return null;
+        var now = _time.UtcNow;
+        if (e == null || e.IsDeleted || e.Status != EventStatus.Published || e.Date <= now) return null;
 
         // Treat stale locks as available immediately; the background job is only cleanup.
-        var lockExpiry = _time.UtcNow.Subtract(_holdDuration);
+        var lockExpiry = now.Subtract(_holdDuration);
 
         var seatRows = await _context.Seats
             .AsNoTracking()
@@ -79,6 +80,9 @@ public class GetEventWithSeatsQueryHandler : IRequestHandler<GetEventWithSeatsQu
                 var isExpiredLock = s.Status == SeatStatus.Locked && s.LockedAt <= lockExpiry;
                 var effectiveStatus = isExpiredLock ? SeatStatus.Available : s.Status;
                 var isLockedByCurrent = !isExpiredLock && request.CurrentUserId.HasValue && s.LockedByUserId == request.CurrentUserId;
+                DateTime? seatLockExpiresAt = isLockedByCurrent && s.LockedAt.HasValue
+                    ? s.LockedAt.Value.Add(_holdDuration)
+                    : null;
 
                 return new SeatDto(
                     s.Id, 
@@ -89,7 +93,8 @@ public class GetEventWithSeatsQueryHandler : IRequestHandler<GetEventWithSeatsQu
                     effectiveStatus, 
                     s.Price, 
                     Convert.ToBase64String(s.Version),
-                    isLockedByCurrent);
+                    isLockedByCurrent,
+                    seatLockExpiresAt);
             })
             .ToList();
 
@@ -116,7 +121,8 @@ public class GetEventWithSeatsQueryHandler : IRequestHandler<GetEventWithSeatsQu
             maxPrice,
             e.Status,
             e.RefundCutoffHours,
-            seats
+            seats,
+            now
         );
     }
 }

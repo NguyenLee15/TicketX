@@ -81,19 +81,23 @@ export default function EventDetailPage() {
     queryClient.setQueryData<EventDetail>(['events', 'detail', id], (prev) => {
       if (!prev) return prev;
       const seats = prev.seats ?? [];
-      const currentSeat = seats.find(seat => seat.id === payload.seatId);
-      if (payload.version && currentSeat?.version && payload.version !== currentSeat.version) {
-        void refetchEvent();
-        return prev;
-      }
-      const isLockedByMe = Boolean(
+      const isLockedByMe = payload.status === 1 && Boolean(
         payload.isLockedByCurrentUser ||
         payload.isLockedByMe ||
         lockingSeatRef.current?.id === payload.seatId ||
         (user?.id && (payload.reservationOwnerId === user.id || (payload as unknown as Record<string, unknown>).ReservationOwnerId === user.id))
       );
       const newSeats = seats.map(seat => 
-        seat.id === payload.seatId ? { ...seat, status: payload.status, version: payload.version ?? seat.version, isLockedByMe } : seat
+        seat.id === payload.seatId
+          ? {
+              ...seat,
+              status: payload.status,
+              version: payload.version ?? seat.version,
+              isLockedByMe,
+              isLockedByCurrentUser: isLockedByMe,
+              lockExpiresAt: isLockedByMe ? (payload.expiresAt ?? seat.lockExpiresAt) : null,
+            }
+          : seat
       );
       return { ...prev, seats: newSeats };
     });
@@ -102,6 +106,13 @@ export default function EventDetailPage() {
     setSelectedSeat(prev => {
       const activeSeat = prev ?? (lockingSeatRef.current?.id === payload.seatId ? lockingSeatRef.current : null);
       if (activeSeat?.id === payload.seatId) {
+        if (payload.status === 0) {
+          setLockExpiresAt(null);
+          setLockServerTime(null);
+          setLockTimeLeft(null);
+          return null;
+        }
+
         const isMySeat = Boolean(
           lockingSeatRef.current?.id === payload.seatId ||
           activeSeat.isLockedByMe ||
@@ -110,6 +121,9 @@ export default function EventDetailPage() {
         );
 
         if (!isMySeat) {
+          setLockExpiresAt(null);
+          setLockServerTime(null);
+          setLockTimeLeft(null);
           return null;
         }
 
@@ -119,11 +133,12 @@ export default function EventDetailPage() {
           version: payload.version ?? activeSeat.version,
           isLockedByMe: true,
           isLockedByCurrentUser: true,
+          lockExpiresAt: payload.expiresAt ?? activeSeat.lockExpiresAt,
         };
       }
       return prev;
     });
-  }, [id, queryClient, refetchEvent, user?.id]);
+  }, [id, queryClient, user?.id]);
 
   const handleSeatReconnect = useCallback(() => {
     void refetchEvent();
@@ -149,10 +164,19 @@ export default function EventDetailPage() {
     bookingIdempotencyKeyRef.current = null;
     if (selectedSeat?.id === seat.id) {
       setSelectedSeat(null);
+      setLockExpiresAt(null);
+      setLockServerTime(null);
       setLockTimeLeft(null);
     } else {
       setSelectedSeat(seat);
-      setLockTimeLeft(null);
+      if (isLockedByMe && seat.lockExpiresAt) {
+        setLockExpiresAt(seat.lockExpiresAt);
+        setLockServerTime(event?.serverTime ?? null);
+      } else {
+        setLockExpiresAt(null);
+        setLockServerTime(null);
+        setLockTimeLeft(null);
+      }
     }
   };
 

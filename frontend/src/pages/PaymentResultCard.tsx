@@ -99,8 +99,8 @@ export default function PaymentResultCard({
         <div className="mt-7 space-y-3">
           {'refundStatus' in phase && phase.refundStatus === 'AwaitingDestination' && (
             <Link
-              to="/profile"
-              className="w-full py-3 bg-warning hover:bg-warning/90 text-black font-bold rounded-xl transition-colors focus-visible:ring-2 focus-visible:ring-white flex justify-center items-center gap-2"
+              to="/profile?refundBankAccount=1"
+              className="w-full min-h-11 py-3 bg-warning hover:bg-warning/90 text-black font-bold rounded-xl transition-colors focus-visible:ring-2 focus-visible:ring-white flex justify-center items-center gap-2"
             >
               Cập Nhật Tài Khoản Hoàn Tiền
             </Link>
@@ -111,7 +111,7 @@ export default function PaymentResultCard({
               onClick={onRetry}
               disabled={isChecking}
               aria-busy={isChecking}
-              className="w-full py-3 bg-brand-primary hover:opacity-90 disabled:opacity-50 text-white font-bold rounded-xl transition-opacity focus-visible:ring-2 focus-visible:ring-white flex justify-center items-center gap-2 cursor-pointer"
+              className="w-full min-h-11 py-3 bg-brand-primary hover:opacity-90 disabled:opacity-50 text-white font-bold rounded-xl transition-opacity focus-visible:ring-2 focus-visible:ring-white flex justify-center items-center gap-2 cursor-pointer"
             >
               <RefreshCw className={`w-4 h-4 ${isChecking ? 'animate-spin' : ''}`} aria-hidden="true" />
               {isChecking ? 'Đang kiểm tra…' : 'Kiểm Tra Lại'}
@@ -119,14 +119,14 @@ export default function PaymentResultCard({
           )}
           <Link
             to="/my-tickets"
-            className="w-full py-3 bg-surface-2 hover:bg-surface-3 text-white font-bold rounded-xl transition-colors focus-visible:ring-2 focus-visible:ring-brand-primary flex justify-center items-center gap-2"
+            className="w-full min-h-11 py-3 bg-surface-2 hover:bg-surface-3 text-white font-bold rounded-xl transition-colors focus-visible:ring-2 focus-visible:ring-brand-primary flex justify-center items-center gap-2"
           >
             <Ticket className="w-4 h-4" aria-hidden="true" />
             Vé Của Tôi
           </Link>
           <Link
             to="/"
-            className="w-full py-3 text-text-secondary hover:text-white rounded-xl transition-colors focus-visible:ring-2 focus-visible:ring-brand-primary flex justify-center items-center gap-2"
+            className="w-full min-h-11 py-3 text-text-secondary hover:text-white rounded-xl transition-colors focus-visible:ring-2 focus-visible:ring-brand-primary flex justify-center items-center gap-2"
           >
             {isSuccess ? <Home className="w-4 h-4" aria-hidden="true" /> : <ArrowRight className="w-4 h-4" aria-hidden="true" />}
             {isSuccess ? 'Về Trang Chủ' : 'Chọn Sự Kiện Khác'}

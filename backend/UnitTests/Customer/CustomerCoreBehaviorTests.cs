@@ -868,6 +868,53 @@ public sealed class CustomerCoreBehaviorTests : IDisposable
         audit.UserEmail.Should().Be("john.doe@example.com");
     }
 
+    [Fact]
+    public async Task GetEventWithSeatsQuery_PopulatesLockExpiresAtForCurrentUserOnly_AndReturnsServerTime()
+    {
+        var fixedNow = new DateTime(2026, 11, 1, 10, 0, 0, DateTimeKind.Utc);
+        var mockTime = new Mock<ITimePolicy>();
+        mockTime.Setup(t => t.UtcNow).Returns(fixedNow);
+
+        var currentUserId = Guid.NewGuid();
+        var otherUserId = Guid.NewGuid();
+
+        var @event = CreateEvent("Rock Fest", fixedNow.AddDays(2));
+        _context.Events.Add(@event);
+        await _context.SaveChangesAsync();
+
+        var seatMine = new Seat(@event.Id, "A", 1, 100000m, SeatTier.Standard);
+        seatMine.Lock(currentUserId, fixedNow.AddMinutes(-2));
+        var seatOther = new Seat(@event.Id, "A", 2, 100000m, SeatTier.Standard);
+        seatOther.Lock(otherUserId, fixedNow.AddMinutes(-2));
+        var seatFree = new Seat(@event.Id, "A", 3, 100000m, SeatTier.Standard);
+
+        _context.Seats.AddRange(seatMine, seatOther, seatFree);
+        await _context.SaveChangesAsync();
+
+        var handler = new GetEventWithSeatsQueryHandler(
+            _context,
+            Options.Create(new ReservationOptions { HoldMinutes = 10 }),
+            mockTime.Object);
+
+        var result = await handler.Handle(new GetEventWithSeatsQuery(@event.Id, currentUserId), CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result!.ServerTime.Should().Be(fixedNow);
+
+        var myDto = result.Seats.Single(s => s.Id == seatMine.Id);
+        myDto.IsLockedByCurrentUser.Should().BeTrue();
+        myDto.LockExpiresAt.Should().NotBeNull();
+        myDto.LockExpiresAt.Should().Be(seatMine.LockedAt!.Value.AddMinutes(10));
+
+        var otherDto = result.Seats.Single(s => s.Id == seatOther.Id);
+        otherDto.IsLockedByCurrentUser.Should().BeFalse();
+        otherDto.LockExpiresAt.Should().BeNull();
+
+        var freeDto = result.Seats.Single(s => s.Id == seatFree.Id);
+        freeDto.IsLockedByCurrentUser.Should().BeFalse();
+        freeDto.LockExpiresAt.Should().BeNull();
+    }
+
     private static Event CreateEvent(string title, DateTime date) =>
         new(title, "Description", date, date.AddHours(2), "HCM", "Venue", 1);
 

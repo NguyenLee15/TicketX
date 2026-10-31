@@ -21,6 +21,7 @@ export interface Seat {
   version: string;
   isLockedByMe?: boolean;
   isLockedByCurrentUser?: boolean;
+  lockExpiresAt?: string | null;
 }
 
 export interface Event {
@@ -50,6 +51,7 @@ export interface Event {
 
 export interface EventDetail extends Event {
   seats: Seat[];
+  serverTime?: string | null;
 }
 
 export interface TicketData {
@@ -83,8 +85,11 @@ export interface SeatStatusChangedPayload {
   isLockedByMe?: boolean;
   isLockedByCurrentUser?: boolean;
   reservationOwnerId?: string;
+  ReservationOwnerId?: string;
   version?: string;
+  Version?: string;
   expiresAt?: string;
+  ExpiresAt?: string;
 }
 
 export interface ApiResponse<T = unknown> {

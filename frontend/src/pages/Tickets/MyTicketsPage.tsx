@@ -179,13 +179,19 @@ export default function MyTicketsPage() {
     } catch (err: unknown) {
       const apiErr = err as { response?: { data?: { message?: string; code?: string } } };
       toast.error(apiErr.response?.data?.message || 'Không thể kết nối đến máy chủ thanh toán.');
-      if (apiErr.response?.data?.code === 'RESERVATION_EXPIRED' || apiErr.response?.data?.code === 'PAYMENT_NOT_PENDING') {
+      const code = apiErr.response?.data?.code;
+      if (
+        code === 'RESERVATION_EXPIRED' ||
+        code === 'PAYMENT_NOT_PENDING' ||
+        code === 'PAYMENT_ALREADY_PAID' ||
+        code === 'EVENT_NOT_ON_SALE'
+      ) {
         void queryClient.invalidateQueries({ queryKey: ['tickets'] });
       }
     } finally {
       setResumingTicketId(null);
     }
-  }, [navigate]);
+  }, [navigate, queryClient]);
 
   const handleReleaseReservation = useCallback(async (ticket: TicketItemData) => {
     setReleasingTicketId(ticket.id);
@@ -229,7 +235,7 @@ export default function MyTicketsPage() {
         <XCircle className="w-10 h-10 text-danger" aria-hidden="true" />
         <h1 className="text-xl font-bold text-white">Không thể tải danh sách vé</h1>
         <p className="text-sm text-text-secondary">Kiểm tra kết nối và thử lại.</p>
-        <button type="button" aria-label="Thử lại tải danh sách vé" onClick={() => void refetchTickets()} className="rounded-xl bg-brand-primary px-5 py-2.5 text-sm font-bold text-white focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer">
+        <button type="button" aria-label="Thử lại tải danh sách vé" onClick={() => void refetchTickets()} className="min-h-11 inline-flex items-center justify-center rounded-xl bg-brand-primary px-5 py-2.5 text-sm font-bold text-white focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer">
           Thử lại
         </button>
       </div>
@@ -273,7 +279,7 @@ export default function MyTicketsPage() {
               type="button"
               onClick={handleResetToFirstPage}
               aria-label="Quay lại trang 1 danh sách vé"
-              className="mt-4 inline-flex items-center px-4 py-2 rounded-xl bg-brand-primary text-xs font-bold text-white hover:bg-brand-primary/90 transition-colors focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer"
+              className="mt-4 min-h-11 inline-flex items-center justify-center px-4 py-2 rounded-xl bg-brand-primary text-xs font-bold text-white hover:bg-brand-primary/90 transition-colors focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer"
             >
               Quay lại trang 1
             </button>

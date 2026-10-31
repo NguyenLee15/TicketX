@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import EventDetailPage from './EventDetailPage';
@@ -13,11 +13,16 @@ vi.mock('../services/api', () => ({
   },
 }));
 
+let signalRCallback: ((payload: any) => void) | null = null;
+
 vi.mock('../hooks/useSeatSignalR', () => ({
-  useSeatSignalR: () => ({
-    status: 'disconnected',
-    retry: vi.fn(),
-  }),
+  useSeatSignalR: (_eventId: string | undefined, onSeatStatusChanged: (data: any) => void) => {
+    signalRCallback = onSeatStatusChanged;
+    return {
+      status: 'disconnected',
+      retry: vi.fn(),
+    };
+  },
 }));
 
 vi.mock('react-hot-toast', () => ({
@@ -35,6 +40,10 @@ describe('EventDetailPage — Clock Skew Compensation & A11y (Round 35)', () => 
       token: null,
       isHydrating: false,
     });
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   it('FP-02 & FP-06: compensates when client clock is skewed +10 minutes ahead of serverTime on seat lock and renders 44px SignalR retry button', async () => {
@@ -138,6 +147,132 @@ describe('EventDetailPage — Clock Skew Compensation & A11y (Round 35)', () => 
       expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
     expect(screen.getAllByText(/5:00|4:59|4:58/).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('CUS-02: restores countdown timer when selecting an already locked seat by current user', async () => {
+    const now = Date.now();
+    const serverTime = new Date(now).toISOString();
+    const expiresAt = new Date(now + 4 * 60 * 1000).toISOString(); // 4 minutes remaining
+
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: {
+          id: '11111111-1111-1111-1111-111111111111',
+          title: 'Live Concert 2027',
+          description: 'Description',
+          date: '2027-12-01T19:00:00Z',
+          totalSeats: 1,
+          availableSeatsCount: 0,
+          basePrice: 250000,
+          status: 1,
+          serverTime,
+          seats: [
+            {
+              id: '22222222-2222-2222-2222-222222222222',
+              eventId: '11111111-1111-1111-1111-111111111111',
+              row: 'A',
+              number: 1,
+              price: 250000,
+              status: 1, // Locked
+              tier: 0,
+              version: 'AAAAAAAAAAAAAAAAAAAAAA==',
+              isLockedByCurrentUser: true,
+              lockExpiresAt: expiresAt,
+            },
+          ],
+        },
+      },
+    });
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/events/11111111-1111-1111-1111-111111111111']}>
+          <Routes>
+            <Route path="/events/:id" element={<EventDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    // Click locked seat A1
+    const seatBtn = await screen.findByRole('button', { name: /Hàng A, ghế 1/i });
+    fireEvent.click(seatBtn);
+
+    // SelectedSeatPanel should display "Ghế Đang Giữ - Tiếp Tục Thanh Toán" and active countdown timer (~04:00 / 03:59)
+    await waitFor(() => {
+      expect(screen.getByText(/Ghế Đang Giữ - Tiếp Tục Thanh Toán/i)).toBeInTheDocument();
+      expect(screen.getByText(/04:00|03:59|03:58/)).toBeInTheDocument();
+    });
+  });
+
+  it('CUS-01: updates seat version and status upon SignalR event without dropping optimistic state', async () => {
+    vi.mocked(api.get).mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: {
+          id: '11111111-1111-1111-1111-111111111111',
+          title: 'Live Concert 2027',
+          description: 'Description',
+          date: '2027-12-01T19:00:00Z',
+          totalSeats: 1,
+          availableSeatsCount: 1,
+          basePrice: 250000,
+          status: 1,
+          seats: [
+            {
+              id: '22222222-2222-2222-2222-222222222222',
+              eventId: '11111111-1111-1111-1111-111111111111',
+              row: 'A',
+              number: 1,
+              price: 250000,
+              status: 0,
+              tier: 0,
+              version: 'AAAAAAAAAAAAAAAAAAAAAA==',
+            },
+          ],
+        },
+      },
+    });
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/events/11111111-1111-1111-1111-111111111111']}>
+          <Routes>
+            <Route path="/events/:id" element={<EventDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    await screen.findByRole('button', { name: /Hàng A, ghế 1/i });
+
+    // Simulate SignalR status changed with new Version
+    expect(signalRCallback).not.toBeNull();
+    signalRCallback!({
+      seatId: '22222222-2222-2222-2222-222222222222',
+      status: 1,
+      version: 'BBBBBBBBBBBBBBBBBBBBBB==',
+      isLockedByCurrentUser: false,
+    });
+
+    // Check query cache directly: seat should now have status: 1 and version: 'BBBBBBBBBBBBBBBBBBBBBB=='
+    await waitFor(() => {
+      const cached = queryClient.getQueryData<any>(['events', 'detail', '11111111-1111-1111-1111-111111111111']);
+      expect(cached?.seats[0].status).toBe(1);
+      expect(cached?.seats[0].version).toBe('BBBBBBBBBBBBBBBBBBBBBB==');
+    });
+
+    // api.get should NOT have been called again (was called only once for initial load)
+    expect(api.get).toHaveBeenCalledTimes(1);
   });
 });
 

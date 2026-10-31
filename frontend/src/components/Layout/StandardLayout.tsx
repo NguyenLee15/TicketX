@@ -104,10 +104,10 @@ export default function StandardLayout() {
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
-                  <Link to="/login" className="text-sm font-medium text-text-secondary hover:text-white transition-colors px-3 py-2">
+                  <Link to="/login" className="min-h-11 inline-flex items-center text-sm font-medium text-text-secondary hover:text-white transition-colors px-3 py-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary">
                     Đăng nhập
                   </Link>
-                  <Link to="/register" className="text-sm font-bold px-5 py-2 bg-brand-primary text-white hover:bg-brand-primary/90 rounded-lg transition-[background-color,transform] active:scale-95 focus-visible:ring-2 focus-visible:ring-brand-primary">
+                  <Link to="/register" className="min-h-11 inline-flex items-center text-sm font-bold px-5 py-2 bg-brand-primary text-white hover:bg-brand-primary/90 rounded-lg transition-[background-color,transform] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary">
                     Đăng ký
                   </Link>
                 </div>
@@ -118,7 +118,7 @@ export default function StandardLayout() {
                 aria-label={mobileOpen ? 'Đóng menu' : 'Mở menu'}
                 aria-expanded={mobileOpen}
                 onClick={() => setMobileOpen(value => !value)}
-                className="md:hidden p-2 rounded-full text-text-secondary hover:text-white focus-visible:ring-2 focus-visible:ring-brand-primary"
+                className="md:hidden min-h-11 min-w-11 p-2.5 inline-flex items-center justify-center rounded-full text-text-secondary hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
               >
                 {mobileOpen ? <X className="w-5 h-5" aria-hidden="true" /> : <Menu className="w-5 h-5" aria-hidden="true" />}
               </button>

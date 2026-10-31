@@ -75,6 +75,7 @@ export const seatSchema = z.object({
   price: z.number().nonnegative(),
   version: z.string(),
   isLockedByCurrentUser: z.boolean().optional().default(false),
+  lockExpiresAt: z.string().nullable().optional().default(null),
 }).passthrough();
 
 export const eventDetailSchema = z.object({
@@ -97,6 +98,7 @@ export const eventDetailSchema = z.object({
   status: z.union([z.number(), z.string()]),
   refundCutoffHours: z.number().int().nonnegative().optional().default(24),
   seats: z.array(seatSchema),
+  serverTime: z.string().nullable().optional().default(null),
 }).passthrough();
 
 export const ticketItemSchema = z.object({
