@@ -15,6 +15,7 @@ import { SkeletonSeatMap } from '../components/Skeletons/SkeletonSeatMap';
 import { clearCheckoutState, shouldPreserveSeatSelection } from '../utils/customerState';
 import { useReservationCountdown } from '../hooks/useReservationCountdown';
 import { useEventDetailQuery } from '../hooks/useCustomerQueries';
+import { createIdempotencyKey } from '../utils/idempotency';
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -186,13 +187,7 @@ export default function EventDetailPage() {
     lockingSeatRef.current = selectedSeat;
 
     if (!bookingIdempotencyKeyRef.current) {
-      bookingIdempotencyKeyRef.current = typeof crypto !== 'undefined' && crypto.randomUUID
-        ? crypto.randomUUID()
-        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-            const r = (Math.random() * 16) | 0;
-            const v = c === 'x' ? r : (r & 0x3) | 0x8;
-            return v.toString(16);
-          });
+      bookingIdempotencyKeyRef.current = createIdempotencyKey();
     }
 
     try {
@@ -273,8 +268,19 @@ export default function EventDetailPage() {
         <h1 className="text-2xl font-display font-bold text-white mb-2">{loadError ? 'Không thể tải sự kiện' : 'Không tìm thấy sự kiện'}</h1>
         <p className="text-text-secondary">Kiểm tra kết nối rồi thử lại.</p>
         <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
-          <button type="button" aria-label="Thử lại tải sự kiện" onClick={() => void refetchEvent()} className="inline-flex px-6 py-3 bg-brand-primary text-white rounded-xl font-medium focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer">Thử lại</button>
-          <Link to="/" className="inline-flex px-6 py-3 bg-surface-3 hover:bg-surface-2 text-white rounded-xl transition-colors font-medium">
+          <button
+            type="button"
+            aria-label="Thử lại tải sự kiện"
+            onClick={() => void refetchEvent()}
+            className="inline-flex min-h-11 items-center justify-center px-6 py-3 bg-brand-primary text-white rounded-xl font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer transition-colors"
+          >
+            Thử lại
+          </button>
+          <Link
+            to="/"
+            aria-label="Quay lại danh sách sự kiện"
+            className="inline-flex min-h-11 items-center justify-center px-6 py-3 bg-surface-3 hover:bg-surface-2 text-white rounded-xl transition-colors font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+          >
             Quay lại danh sách sự kiện
           </Link>
         </div>

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { Ticket, XCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -177,10 +177,13 @@ export default function MyTicketsPage() {
       }
       toast.error(response.data?.message || 'Không thể tạo liên kết thanh toán cho vé này.');
     } catch (err: unknown) {
-      const apiErr = err as { response?: { data?: { message?: string; code?: string } } };
+      const apiErr = err as { response?: { status?: number; data?: { message?: string; code?: string } } };
       toast.error(apiErr.response?.data?.message || 'Không thể kết nối đến máy chủ thanh toán.');
       const code = apiErr.response?.data?.code;
+      const httpStatus = apiErr.response?.status;
       if (
+        httpStatus === 409 ||
+        httpStatus === 410 ||
         code === 'RESERVATION_EXPIRED' ||
         code === 'PAYMENT_NOT_PENDING' ||
         code === 'PAYMENT_ALREADY_PAID' ||
@@ -211,8 +214,22 @@ export default function MyTicketsPage() {
         toast.error(response.data?.message || 'Không thể hủy giữ chỗ lúc này.');
       }
     } catch (err: unknown) {
-      const apiErr = err as { response?: { data?: { message?: string } } };
+      const apiErr = err as { response?: { status?: number; data?: { message?: string; code?: string } } };
       toast.error(apiErr.response?.data?.message || 'Có lỗi xảy ra khi hủy giữ chỗ.');
+      const httpStatus = apiErr.response?.status;
+      const code = apiErr.response?.data?.code;
+      if (
+        httpStatus === 409 ||
+        httpStatus === 410 ||
+        code === 'RESERVATION_EXPIRED' ||
+        code === 'RESERVATION_NOT_FOUND' ||
+        code === 'SEAT_NOT_LOCKED'
+      ) {
+        void Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['tickets'] }),
+          queryClient.invalidateQueries({ queryKey: ['events'] }),
+        ]);
+      }
     } finally {
       setReleasingTicketId(null);
     }
@@ -274,15 +291,23 @@ export default function MyTicketsPage() {
               ? `Không có vé nào trên trang ${currentPage}.` 
               : 'Bạn chưa có vé nào thuộc danh mục này.'}
           </p>
-          {currentPage > 1 && (
+          {currentPage > 1 ? (
             <button
               type="button"
               onClick={handleResetToFirstPage}
               aria-label="Quay lại trang 1 danh sách vé"
-              className="mt-4 min-h-11 inline-flex items-center justify-center px-4 py-2 rounded-xl bg-brand-primary text-xs font-bold text-white hover:bg-brand-primary/90 transition-colors focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer"
+              className="mt-4 min-h-11 inline-flex items-center justify-center px-4 py-2 rounded-xl bg-brand-primary text-xs font-bold text-white hover:bg-brand-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer"
             >
               Quay lại trang 1
             </button>
+          ) : (
+            <Link
+              to="/#events"
+              aria-label="Khám phá sự kiện ngay"
+              className="mt-4 min-h-11 inline-flex items-center justify-center px-4 py-2 rounded-xl bg-brand-primary text-xs font-bold text-white hover:bg-brand-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer"
+            >
+              Khám phá sự kiện
+            </Link>
           )}
         </div>
       ) : (

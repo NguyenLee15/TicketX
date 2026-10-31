@@ -166,11 +166,23 @@ export default function CheckoutModal({
 
   const handleProceedPayOS = () => {
     if (!paymentData?.checkoutUrl) return;
-    if (paymentData.checkoutUrl.startsWith('http')) {
-      window.location.href = paymentData.checkoutUrl;
-    } else {
-      navigate(paymentData.checkoutUrl);
+    try {
+      const parsedUrl = new URL(paymentData.checkoutUrl, window.location.origin);
+      if (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:') {
+        if (paymentData.checkoutUrl.startsWith('http://') || paymentData.checkoutUrl.startsWith('https://')) {
+          window.location.href = paymentData.checkoutUrl;
+        } else {
+          navigate(parsedUrl.pathname + parsedUrl.search + parsedUrl.hash);
+        }
+        return;
+      }
+    } catch {
+      if (paymentData.checkoutUrl.startsWith('/') && !paymentData.checkoutUrl.startsWith('//')) {
+        navigate(paymentData.checkoutUrl);
+        return;
+      }
     }
+    toast.error('Đường dẫn thanh toán không hợp lệ.');
   };
 
   const handleReleaseAndClose = async () => {

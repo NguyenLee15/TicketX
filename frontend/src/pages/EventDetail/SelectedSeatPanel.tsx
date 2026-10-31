@@ -76,7 +76,7 @@ export const SelectedSeatPanel: React.FC<SelectedSeatPanelProps> = ({
             <Link
               to="/my-tickets"
               aria-label={`Tiếp tục thanh toán cho ghế hàng ${selectedSeat.row} số ${selectedSeat.number}`}
-              className="w-full py-3.5 bg-warning hover:bg-warning/90 text-surface-base font-bold rounded-lg transition-[background-color,transform] flex items-center justify-center text-sm group relative overflow-hidden active:scale-98 focus-visible:ring-2 focus-visible:ring-warning"
+              className="w-full min-h-11 py-3.5 bg-warning hover:bg-warning/90 text-surface-base font-bold rounded-lg transition-[background-color,transform] flex items-center justify-center text-sm group relative overflow-hidden active:scale-98 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning cursor-pointer"
             >
               <span>Ghế Đang Giữ - Tiếp Tục Thanh Toán</span>
               <ArrowRight className="ml-1.5 w-4 h-4 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
@@ -88,7 +88,7 @@ export const SelectedSeatPanel: React.FC<SelectedSeatPanelProps> = ({
               disabled={locking}
               aria-busy={locking}
               aria-label={`Khóa ghế hàng ${selectedSeat.row} số ${selectedSeat.number} và đặt vé`}
-              className="w-full py-3.5 bg-brand-primary hover:bg-brand-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-[background-color,transform] flex items-center justify-center text-sm group relative overflow-hidden active:scale-98 focus-visible:ring-2 focus-visible:ring-brand-primary"
+              className="w-full min-h-11 py-3.5 bg-brand-primary hover:bg-brand-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-[background-color,transform] flex items-center justify-center text-sm group relative overflow-hidden active:scale-98 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer"
             >
               {locking ? (
                 <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />

@@ -3345,4 +3345,314 @@ describe('Admin Portal Remediation Verification', () => {
       expect(cancelBtn).toHaveClass('min-h-11');
     });
   });
+
+  describe('Customer Portal Deep Audit & Remediation (Round 39)', () => {
+    beforeEach(() => {
+      useAuthStore.setState({
+        user: { id: 'user-1', name: 'Customer User', email: 'customer@test.com', role: 'Customer' },
+        token: null,
+        isHydrating: false,
+      });
+    });
+
+    it('EventDetailPage error recovery button and link provide min-h-11 and accessible focus rings', async () => {
+      vi.mocked(api.get).mockRejectedValueOnce(new Error('Network failure'));
+
+      const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+      });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter initialEntries={['/events/invalid-event-id']}>
+            <Routes>
+              <Route path="/events/:id" element={<EventDetailPage />} />
+            </Routes>
+          </MemoryRouter>
+        </QueryClientProvider>
+      );
+
+      const retryBtn = await screen.findByRole('button', { name: /Thử lại tải sự kiện/i });
+      expect(retryBtn).toHaveClass('min-h-11');
+      expect(retryBtn).toHaveClass('focus-visible:ring-2');
+
+      const backLink = screen.getByRole('link', { name: /Quay lại danh sách sự kiện/i });
+      expect(backLink).toHaveClass('min-h-11');
+      expect(backLink).toHaveClass('focus-visible:ring-2');
+    });
+
+    it('SelectedSeatPanel action buttons and links enforce min-h-11 and focus-visible:outline-none', () => {
+      const mockSeat = {
+        id: 'seat-1',
+        eventId: 'event-1',
+        row: 'A',
+        number: 1,
+        price: 250000,
+        status: 0 as const,
+        tier: 0 as const,
+        version: 'ver-1',
+      };
+
+      const { unmount } = render(
+        <MemoryRouter>
+          <SelectedSeatPanel
+            selectedSeat={mockSeat}
+            lockTimeLeft={null}
+            locking={false}
+            onBookTicket={vi.fn()}
+          />
+        </MemoryRouter>
+      );
+
+      const bookBtn = screen.getByRole('button', { name: /Khóa ghế hàng A số 1 và đặt vé/i });
+      expect(bookBtn).toHaveClass('min-h-11');
+      expect(bookBtn).toHaveClass('focus-visible:outline-none');
+      expect(bookBtn).toHaveClass('focus-visible:ring-2');
+      unmount();
+
+      render(
+        <MemoryRouter>
+          <SelectedSeatPanel
+            selectedSeat={{ ...mockSeat, status: 1 as const, isLockedByCurrentUser: true }}
+            lockTimeLeft={300}
+            locking={false}
+            onBookTicket={vi.fn()}
+          />
+        </MemoryRouter>
+      );
+
+      const resumeLink = screen.getByRole('link', { name: /Tiếp tục thanh toán cho ghế hàng A số 1/i });
+      expect(resumeLink).toHaveClass('min-h-11');
+      expect(resumeLink).toHaveClass('focus-visible:outline-none');
+      expect(resumeLink).toHaveClass('focus-visible:ring-2');
+    });
+
+    it('MyTicketsPage renders accessible discovery link when page 1 has no tickets', async () => {
+      vi.mocked(api.get).mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: {
+            items: [],
+            nextCursor: null,
+            hasMore: false,
+          },
+        },
+      });
+
+      const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+      });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter initialEntries={['/my-tickets']}>
+            <MyTicketsPage />
+          </MemoryRouter>
+        </QueryClientProvider>
+      );
+
+      const emptyTitle = await screen.findByText(/Không tìm thấy vé nào/i);
+      expect(emptyTitle).toBeInTheDocument();
+
+      const exploreLink = screen.getByRole('link', { name: /Khám phá sự kiện ngay/i });
+      expect(exploreLink).toHaveAttribute('href', '/#events');
+      expect(exploreLink).toHaveClass('min-h-11');
+      expect(exploreLink).toHaveClass('focus-visible:ring-2');
+    });
+
+    it('MyTicketsPage invalidates tickets query on 409 conflict during resume payment', async () => {
+      const mockTicket = {
+        id: 'ticket-resume-conflict',
+        eventId: 'ev-1',
+        seatId: 'seat-1',
+        eventTitle: 'Concert Test',
+        eventDescription: 'Mô tả',
+        eventDate: '2026-11-20T19:00:00Z',
+        endDate: '2026-11-20T22:00:00Z',
+        location: 'Hanoi',
+        category: 'Concert',
+        imageUrl: 'https://example.com/img.jpg',
+        row: 'B',
+        number: 5,
+        tier: 0,
+        price: 200000,
+        status: 'Pending',
+        orderCode: '998877',
+        qrCodeSignature: '',
+        refundCutoffHours: 24,
+        canRefund: false,
+      };
+
+      vi.mocked(api.get).mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: {
+            items: [mockTicket],
+            nextCursor: null,
+            hasMore: false,
+          },
+        },
+      });
+
+      vi.mocked(api.post).mockImplementationOnce(async (_url: string) => {
+        const err: any = new Error('Conflict');
+        err.response = { status: 409, data: { message: 'Reservation has expired or was claimed by another customer' } };
+        throw err;
+      });
+
+      const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+      });
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter initialEntries={['/my-tickets']}>
+            <MyTicketsPage />
+          </MemoryRouter>
+        </QueryClientProvider>
+      );
+
+      const resumeBtn = await screen.findByRole('button', { name: /Tiếp tục thanh toán vé sự kiện Concert Test/i });
+      fireEvent.click(resumeBtn);
+
+      await waitFor(() => {
+        expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['tickets'] });
+      });
+    });
+
+    it('MyTicketsPage invalidates tickets and events queries on 409 conflict during reservation release', async () => {
+      const mockTicket = {
+        id: 'ticket-release-conflict',
+        eventId: 'ev-1',
+        seatId: 'seat-1',
+        eventTitle: 'Concert Test',
+        eventDescription: 'Mô tả',
+        eventDate: '2026-11-20T19:00:00Z',
+        endDate: '2026-11-20T22:00:00Z',
+        location: 'Hanoi',
+        category: 'Concert',
+        imageUrl: 'https://example.com/img.jpg',
+        row: 'B',
+        number: 5,
+        tier: 0,
+        price: 200000,
+        status: 'Pending',
+        orderCode: '998877',
+        qrCodeSignature: '',
+        refundCutoffHours: 24,
+        canRefund: false,
+      };
+
+      vi.mocked(api.get).mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: {
+            items: [mockTicket],
+            nextCursor: null,
+            hasMore: false,
+          },
+        },
+      });
+
+      let sentHeaders: Record<string, string> | undefined;
+      vi.mocked(api.post).mockImplementationOnce(async (_url: string, _body: unknown, config: any) => {
+        sentHeaders = config?.headers;
+        const err: any = new Error('Conflict');
+        err.response = { status: 409, data: { code: 'RESERVATION_EXPIRED', message: 'Hết hạn giữ chỗ' } };
+        throw err;
+      });
+
+      const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+      });
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter initialEntries={['/my-tickets']}>
+            <MyTicketsPage />
+          </MemoryRouter>
+        </QueryClientProvider>
+      );
+
+      const releaseBtn = await screen.findByRole('button', { name: /Hủy giữ chỗ vé sự kiện Concert Test/i });
+      fireEvent.click(releaseBtn);
+
+      await waitFor(() => {
+        expect(sentHeaders?.['Idempotency-Key']).toBeDefined();
+        expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['tickets'] });
+        expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['events'] });
+      });
+    });
+
+    it('EventDetailPage sends valid v4 UUID Idempotency-Key header on seat lock', async () => {
+      vi.mocked(api.get).mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: {
+            id: 'ev-idemp-1',
+            title: 'Concert Idemp',
+            description: 'Desc',
+            date: '2026-12-01T19:00:00Z',
+            totalSeats: 1,
+            availableSeatsCount: 1,
+            basePrice: 100000,
+            status: 1,
+            seats: [
+              {
+                id: 'seat-idemp-1',
+                eventId: 'ev-idemp-1',
+                row: 'A',
+                number: 1,
+                price: 100000,
+                status: 0,
+                tier: 0,
+                version: 'ver-1',
+              },
+            ],
+          },
+        },
+      });
+
+      let capturedHeaders: Record<string, string> | undefined;
+      vi.mocked(api.post).mockImplementationOnce(async (_url: string, _body: unknown, config: any) => {
+        capturedHeaders = config?.headers;
+        return {
+          data: {
+            success: true,
+            data: {
+              ticketId: 't-1',
+              expiresAt: new Date(Date.now() + 300000).toISOString(),
+            },
+          },
+        };
+      });
+
+      const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+      });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter initialEntries={['/events/ev-idemp-1']}>
+            <Routes>
+              <Route path="/events/:id" element={<EventDetailPage />} />
+            </Routes>
+          </MemoryRouter>
+        </QueryClientProvider>
+      );
+
+      const seatBtn = await screen.findByRole('button', { name: /Hàng A, ghế 1/i });
+      fireEvent.click(seatBtn);
+
+      const bookBtn = await screen.findByRole('button', { name: /Khóa ghế hàng A số 1 và đặt vé/i });
+      fireEvent.click(bookBtn);
+
+      await waitFor(() => {
+        expect(capturedHeaders?.['Idempotency-Key']).toBeDefined();
+        expect(isValidUuidV4(capturedHeaders!['Idempotency-Key'])).toBe(true);
+      });
+    });
+  });
 });
