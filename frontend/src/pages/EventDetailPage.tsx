@@ -33,6 +33,7 @@ export default function EventDetailPage() {
   const [locking, setLocking] = useState(false);
   const [ticketId, setTicketId] = useState<string | null>(null);
   const [lockExpiresAt, setLockExpiresAt] = useState<string | null>(null);
+  const [lockServerTime, setLockServerTime] = useState<string | null>(null);
 
   const { isAuthenticated, user, isHydrating } = useAuthStore();
   const navigate = useNavigate();
@@ -50,6 +51,7 @@ export default function EventDetailPage() {
     const cleared = clearCheckoutState();
     setTicketId(cleared.ticketId);
     setLockExpiresAt(cleared.lockExpiresAt);
+    setLockServerTime(null);
   }, [id]);
 
   // Lock expiration callback
@@ -60,15 +62,17 @@ export default function EventDetailPage() {
     const cleared = clearCheckoutState();
     setTicketId(cleared.ticketId);
     setLockExpiresAt(cleared.lockExpiresAt);
+    setLockServerTime(null);
     if (!isCheckoutOpenRef.current) {
       setSelectedSeat(null);
       void refetchEvent();
     }
   }, [refetchEvent]);
 
-  // Lock timer synchronized with server expiresAt
+  // Lock timer synchronized with server expiresAt & serverTime
   const { timeLeft: lockTimeLeft, setTimeLeft: setLockTimeLeft } = useReservationCountdown({
     lockExpiresAt,
+    serverTime: lockServerTime,
     onExpire: handleLockExpire
   });
 
@@ -190,22 +194,28 @@ export default function EventDetailPage() {
           });
         }
         
-        // Sync timer with server expiresAt
+        // Sync timer with server expiresAt & serverTime (clock skew safe)
         if (res.data.data.expiresAt) {
           const expiresMs = new Date(res.data.data.expiresAt).getTime();
-          const remainingSecs = Math.floor((expiresMs - Date.now()) / 1000);
+          const serverTimeStr = typeof res.data.data.serverTime === 'string' ? res.data.data.serverTime : null;
+          const parsedServerMs = serverTimeStr ? new Date(serverTimeStr).getTime() : Number.NaN;
+          const referenceNowMs = !Number.isNaN(parsedServerMs) ? parsedServerMs : Date.now();
+          const remainingSecs = Math.floor((expiresMs - referenceNowMs) / 1000);
           if (remainingSecs <= 0) {
             setTicketId(null);
             setLockExpiresAt(null);
+            setLockServerTime(null);
             setLockTimeLeft(0);
             setIsCheckoutOpen(false);
             toast.error('Thời gian giữ chỗ đã hết hạn. Vui lòng chọn lại ghế.');
             void refetchEvent();
             return;
           }
+          setLockServerTime(serverTimeStr);
           setLockExpiresAt(res.data.data.expiresAt);
           setLockTimeLeft(remainingSecs);
         } else {
+          setLockServerTime(null);
           setLockExpiresAt(null);
           setLockTimeLeft(300);
         }
@@ -263,7 +273,7 @@ export default function EventDetailPage() {
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-2 border border-border-subtle text-text-secondary text-xs font-semibold" role="status" aria-live="polite">
           <span className={`h-2 w-2 rounded-full ${seatConnectionStatus === 'connected' ? 'bg-success' : seatConnectionStatus === 'connecting' || seatConnectionStatus === 'reconnecting' ? 'bg-warning' : 'bg-danger'}`} aria-hidden="true" />
           <span>{seatConnectionStatus === 'connected' ? 'Đã đồng bộ ghế' : seatConnectionStatus === 'connecting' || seatConnectionStatus === 'reconnecting' ? 'Đang kết nối ghế' : 'Chưa đồng bộ ghế'}</span>
-          {seatConnectionStatus === 'disconnected' && <button type="button" onClick={retrySeatConnection} aria-label="Thử lại kết nối đồng bộ ghế" className="underline underline-offset-2 hover:text-white">Thử lại</button>}
+          {seatConnectionStatus === 'disconnected' && <button type="button" onClick={retrySeatConnection} aria-label="Thử lại kết nối đồng bộ ghế" className="min-h-11 px-2 inline-flex items-center underline underline-offset-2 hover:text-white rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer">Thử lại</button>}
         </div>
       </div>
 
@@ -297,12 +307,14 @@ export default function EventDetailPage() {
           event={event}
           ticketId={ticketId}
           expiresAt={lockExpiresAt || undefined}
+          serverTime={lockServerTime}
            onClose={() => {
             setIsCheckoutOpen(false);
             lockingSeatRef.current = null;
             const cleared = clearCheckoutState();
             setTicketId(cleared.ticketId);
             setLockExpiresAt(cleared.lockExpiresAt);
+            setLockServerTime(null);
             setLockTimeLeft(cleared.lockTimeLeft);
             setSelectedSeat(null);
             void refetchEvent();

@@ -22,7 +22,7 @@ public sealed class ReservationsController : ControllerBase
     [Idempotent]
     public async Task<IActionResult> Release(Guid ticketId, [FromBody] ReleaseReservationRequest? request, CancellationToken cancellationToken = default)
     {
-        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId) || userId == Guid.Empty)
             return Unauthorized(new 
             { 
                 type = "https://tools.ietf.org/html/rfc9457",
@@ -43,7 +43,7 @@ public sealed class ReservationsController : ControllerBase
             {
                 "RESERVATION_FORBIDDEN" => StatusCodes.Status403Forbidden,
                 "RESERVATION_NOT_FOUND" => StatusCodes.Status404NotFound,
-                "RESERVATION_LOCK_UNAVAILABLE" => StatusCodes.Status503ServiceUnavailable,
+                "RESERVATION_LOCK_UNAVAILABLE" or "RESERVATION_LOCK_LOST" => StatusCodes.Status503ServiceUnavailable,
                 _ => StatusCodes.Status409Conflict
             };
             return StatusCode(status, new 

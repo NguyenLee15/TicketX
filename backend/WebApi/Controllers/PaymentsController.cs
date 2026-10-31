@@ -102,7 +102,8 @@ public class PaymentsController : ControllerBase
             : Respond(result, notFound: true);
     }
 
-    private bool TryGetUserId(out Guid userId) => Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
+    private bool TryGetUserId(out Guid userId) =>
+        Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId) && userId != Guid.Empty;
 
     private IActionResult UnauthorizedEnvelope() => Unauthorized(new
     {
@@ -135,7 +136,7 @@ public class PaymentsController : ControllerBase
                 bin = result.Bin,
                 description = result.Description
             }});
-        if (notFound && result.Code == "PAYMENT_NOT_FOUND")
+        if (result.Code == "PAYMENT_NOT_FOUND")
             return NotFound(new 
             { 
                 type = "https://tools.ietf.org/html/rfc9457",

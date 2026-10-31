@@ -5,7 +5,8 @@ public sealed record ReservationResult(
     string Code,
     string Message,
     Guid? TicketId = null,
-    DateTime? ExpiresAt = null);
+    DateTime? ExpiresAt = null,
+    DateTime? ServerTime = null);
 
 public interface IReservationOperations
 {

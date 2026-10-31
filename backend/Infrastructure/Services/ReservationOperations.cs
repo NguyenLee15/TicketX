@@ -107,7 +107,8 @@ public sealed class ReservationOperations : IReservationOperations
                         ticket.RegenerateOrderCode();
                     }
                 }
-                var expiresAt = _time.UtcNow.Add(holdDuration);
+                var serverTime = _time.UtcNow;
+                var expiresAt = serverTime.Add(holdDuration);
                 try { _scheduler.Schedule(ticket.Id, holdDuration); }
                 catch (Exception ex) { _logger.LogError(ex, "Reservation {TicketId} committed but expiry scheduling failed; stale-lock reconciliation remains active", ticket.Id); }
                 try
@@ -128,7 +129,7 @@ public sealed class ReservationOperations : IReservationOperations
                 {
                     _logger.LogWarning(ex, "Reservation {TicketId} committed but private realtime notification failed", ticket.Id);
                 }
-                return new ReservationResult(true, "RESERVATION_CREATED", "Giữ ghế thành công.", ticket.Id, expiresAt);
+                return new ReservationResult(true, "RESERVATION_CREATED", "Giữ ghế thành công.", ticket.Id, expiresAt, serverTime);
             }
             }
             catch (DbUpdateConcurrencyException)

@@ -358,6 +358,103 @@ public sealed class CustomerCheckoutOperationsTests : IDisposable
         result.Description.Should().Be($"TICKEX {ticket.OrderCode}");
     }
 
+    [Fact]
+    public async Task CreatePaymentLink_WhenDistributedLockThrows_ReturnsProviderUnavailableWithoutCrash()
+    {
+        var user = new User("Customer", "lock-throws@test.local", "hash");
+        var @event = new Event("Future", "Description", DateTime.UtcNow.AddDays(2), DateTime.UtcNow.AddDays(2).AddHours(2), "HCM", "Venue", 1);
+        @event.GenerateSeatsMatrix(1, 1);
+        _context.AddRange(user, @event);
+        await _context.SaveChangesAsync();
+        var seat = await _context.Seats.SingleAsync();
+        seat.Lock(user.Id);
+        var ticket = new Ticket(@event.Id, seat.Id, user.Id, seat.Price);
+        _context.Tickets.Add(ticket);
+        await _context.SaveChangesAsync();
+
+        var payos = new Mock<IPayOSService>();
+        var locks = new Mock<IDistributedLockService>();
+        locks.Setup(x => x.AcquireLockAsync(It.IsAny<string>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Redis connection refused"));
+
+        var operations = CreateOperations(payos.Object, locks.Object);
+        var result = await operations.CreatePaymentLinkAsync(ticket.Id, user.Id, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.Code.Should().Be("PAYMENT_PROVIDER_UNAVAILABLE");
+        payos.Verify(x => x.CreatePaymentLink(It.IsAny<long>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreatePaymentLink_WhenDistributedLockLeaseLostDuringPayOSCall_ReturnsInProgressWithoutSavingUrl()
+    {
+        var user = new User("Customer", "lease-lost@test.local", "hash");
+        var @event = new Event("Future", "Description", DateTime.UtcNow.AddDays(2), DateTime.UtcNow.AddDays(2).AddHours(2), "HCM", "Venue", 1);
+        @event.GenerateSeatsMatrix(1, 1);
+        _context.AddRange(user, @event);
+        await _context.SaveChangesAsync();
+        var seat = await _context.Seats.SingleAsync();
+        seat.Lock(user.Id);
+        var ticket = new Ticket(@event.Id, seat.Id, user.Id, seat.Price);
+        _context.Tickets.Add(ticket);
+        await _context.SaveChangesAsync();
+
+        var lease = new Mock<IDistributedLockLease>();
+        lease.SetupGet(x => x.IsValid).Returns(false);
+
+        var locks = new Mock<IDistributedLockService>();
+        locks.Setup(x => x.AcquireLockAsync(It.IsAny<string>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(lease.Object);
+
+        var payos = new Mock<IPayOSService>();
+        payos.Setup(x => x.CreatePaymentLink(It.IsAny<long>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CreatePaymentResult { CheckoutUrl = "https://pay.example/checkout" });
+
+        var operations = CreateOperations(payos.Object, locks.Object);
+        var result = await operations.CreatePaymentLinkAsync(ticket.Id, user.Id, CancellationToken.None);
+
+        result.Success.Should().BeFalse();
+        result.Code.Should().Be("PAYMENT_LINK_IN_PROGRESS");
+        var persistedTx = await _context.PaymentTransactions.AsNoTracking().SingleAsync(x => x.TicketId == ticket.Id);
+        persistedTx.CheckoutUrl.Should().BeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task ReserveAsync_WhenSuccessful_ReturnsServerTimeAndExpiresAtMatchingTimePolicy()
+    {
+        var user = new User("Customer", "server-time@test.local", "hash");
+        var fixedNow = new DateTime(2027, 5, 10, 14, 0, 0, DateTimeKind.Utc);
+        var @event = new Event("Future", "Description", fixedNow.AddDays(2), fixedNow.AddDays(2).AddHours(2), "HCM", "Venue", 1);
+        @event.GenerateSeatsMatrix(1, 1);
+        _context.AddRange(user, @event);
+        await _context.SaveChangesAsync();
+        var seat = await _context.Seats.SingleAsync();
+
+        var lease = new Mock<IDistributedLockLease>();
+        lease.SetupGet(x => x.IsValid).Returns(true);
+        var locks = new Mock<IDistributedLockService>();
+        locks.Setup(x => x.AcquireLockAsync(It.IsAny<string>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(lease.Object);
+
+        var time = new Mock<ITimePolicy>();
+        time.SetupGet(x => x.UtcNow).Returns(fixedNow);
+
+        var reservationOps = new ReservationOperations(
+            _context,
+            locks.Object,
+            Mock.Of<ISeatNotificationService>(),
+            Mock.Of<IReservationExpiryScheduler>(),
+            Microsoft.Extensions.Options.Options.Create(new TickeX.Application.Seats.ReservationOptions { HoldMinutes = 5, MaximumPendingSeatsPerEvent = 4 }),
+            NullLogger<ReservationOperations>.Instance,
+            time.Object);
+
+        var reserveResult = await reservationOps.ReserveAsync(@event.Id, seat.Id, user.Id, seat.Version, CancellationToken.None);
+
+        reserveResult.Success.Should().BeTrue();
+        reserveResult.ServerTime.Should().Be(fixedNow);
+        reserveResult.ExpiresAt.Should().Be(fixedNow.AddMinutes(5));
+    }
+
     private CustomerCheckoutOperations CreateOperations(IPayOSService payos, IDistributedLockService? locks = null)
     {
         var settings = new Dictionary<string, string?>

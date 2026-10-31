@@ -19,6 +19,7 @@ interface CheckoutModalProps {
   seat: Seat;
   ticketId: string | null;
   expiresAt: string | null | undefined;
+  serverTime?: string | null;
 }
 
 export default function CheckoutModal({
@@ -28,6 +29,7 @@ export default function CheckoutModal({
   seat,
   ticketId,
   expiresAt,
+  serverTime,
 }: CheckoutModalProps) {
   const navigate = useNavigate();
   const [paymentData, setPaymentData] = useState<PaymentInfo | null>(null);
@@ -35,9 +37,18 @@ export default function CheckoutModal({
   const [paymentInitError, setPaymentInitError] = useState<string | null>(null);
   const [paymentRetryKey, setPaymentRetryKey] = useState(0);
 
+  const clockOffsetMsRef = useRef<number>(0);
+  if (serverTime) {
+    const serverMs = new Date(serverTime).getTime();
+    if (!Number.isNaN(serverMs)) {
+      clockOffsetMsRef.current = serverMs - Date.now();
+    }
+  }
+
   const calculateRemaining = useCallback((target: string | null | undefined) => {
     if (!target) return 0;
-    const diff = Math.floor((new Date(target).getTime() - Date.now()) / 1000);
+    const now = Date.now() + clockOffsetMsRef.current;
+    const diff = Math.floor((new Date(target).getTime() - now) / 1000);
     return diff > 0 ? diff : 0;
   }, []);
 
@@ -60,10 +71,10 @@ export default function CheckoutModal({
 
   useModalAccessibility(Boolean(isOpen), releasing || loadingPayment, handleModalClose, modalRef);
 
-  // Sync timeLeft when expiresAt changes
+  // Sync timeLeft when expiresAt or serverTime changes
   useEffect(() => {
     setTimeLeft(calculateRemaining(expiresAt));
-  }, [expiresAt, calculateRemaining]);
+  }, [expiresAt, serverTime, calculateRemaining]);
 
   // Fetch payment link from backend
   useEffect(() => {

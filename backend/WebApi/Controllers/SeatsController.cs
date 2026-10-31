@@ -28,7 +28,7 @@ public class SeatsController : ControllerBase
     public async Task<IActionResult> LockSeat(Guid id, [FromBody] LockSeatRequest request, CancellationToken cancellationToken = default)
     {
         var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var currentUserId))
+        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var currentUserId) || currentUserId == Guid.Empty)
         {
             return Unauthorized(new 
             { 
@@ -90,7 +90,9 @@ public class SeatsController : ControllerBase
         {
             var statusCode = lockResult.Code switch
             {
-                "SEAT_VERSION_CONFLICT" or "SEAT_UNAVAILABLE" or "RESERVATION_LIMIT_REACHED" or "EVENT_NOT_ON_SALE" or "RESERVATION_LOCK_UNAVAILABLE"
+                "RESERVATION_LOCK_UNAVAILABLE" or "RESERVATION_LOCK_LOST"
+                    => StatusCodes.Status503ServiceUnavailable,
+                "SEAT_VERSION_CONFLICT" or "SEAT_UNAVAILABLE" or "RESERVATION_LIMIT_REACHED" or "EVENT_NOT_ON_SALE"
                     => StatusCodes.Status409Conflict,
                 _ => StatusCodes.Status400BadRequest
             };
@@ -115,7 +117,8 @@ public class SeatsController : ControllerBase
             data = new 
             { 
                 ticketId = lockResult.TicketId,
-                expiresAt = lockResult.ExpiresAt
+                expiresAt = lockResult.ExpiresAt,
+                serverTime = lockResult.ServerTime
             }, 
             code = lockResult.Code,
             message = lockResult.Message

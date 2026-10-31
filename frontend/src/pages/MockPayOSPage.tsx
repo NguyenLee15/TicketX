@@ -10,6 +10,7 @@ export default function MockPayOSPage() {
   const [status, setStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const [amount, setAmount] = useState(0);
   const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const orderCode = searchParams.get('orderCode');
 
   useEffect(() => {
     return () => {
@@ -17,7 +18,23 @@ export default function MockPayOSPage() {
     };
   }, []);
 
-  const orderCode = searchParams.get('orderCode');
+  useEffect(() => {
+    if (!import.meta.env.DEV || !orderCode) return;
+    let isMounted = true;
+    api
+      .get(`/api/payments/status/${encodeURIComponent(orderCode)}`)
+      .then(res => {
+        if (isMounted) {
+          setAmount(res.data?.data?.amount ?? res.data?.data?.price ?? 0);
+        }
+      })
+      .catch(() => {
+        // Ignore transient status lookup errors in sandbox view
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [orderCode]);
 
   if (!import.meta.env.DEV) {
     return (
@@ -25,15 +42,11 @@ export default function MockPayOSPage() {
         <div className="surface-panel p-8 text-center max-w-md w-full">
           <h1 className="text-xl font-bold text-danger mb-2">Không khả dụng</h1>
           <p className="text-text-secondary mb-6">Trang mô phỏng thanh toán này chỉ có sẵn trong môi trường phát triển.</p>
-          <button type="button" onClick={() => navigate('/')} className="btn-primary w-full">Trở Về Trang Chủ</button>
+          <button type="button" onClick={() => navigate('/')} className="btn-primary w-full min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary">Trở Về Trang Chủ</button>
         </div>
       </div>
     );
   }
-  
-  useEffect(() => {
-    if (orderCode) api.get(`/api/payments/status/${encodeURIComponent(orderCode)}`).then(res => setAmount(res.data?.data?.amount ?? res.data?.data?.price ?? 0));
-  }, [orderCode]);
 
   const handleSimulatePayment = async (isSuccess: boolean) => {
     setStatus('processing');
@@ -62,7 +75,7 @@ export default function MockPayOSPage() {
         <div className="surface-panel p-8 text-center max-w-md w-full">
           <h1 className="text-xl font-bold text-danger mb-2">Phiên Giao Dịch Không Hợp Lệ</h1>
           <p className="text-text-secondary mb-6">Thiếu thông tin mã đơn hàng thanh toán.</p>
-          <button type="button" onClick={() => navigate('/')} className="btn-primary w-full">Trở Về Trang Chủ</button>
+          <button type="button" onClick={() => navigate('/')} className="btn-primary w-full min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary">Trở Về Trang Chủ</button>
         </div>
       </div>
     );
@@ -112,14 +125,14 @@ export default function MockPayOSPage() {
                   <button 
                     type="button"
                     onClick={() => handleSimulatePayment(true)}
-                    className="w-full py-3.5 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl transition-colors shadow-md shadow-green-500/20"
+                    className="w-full min-h-11 py-3.5 bg-green-500 hover:bg-green-600 text-white font-bold rounded-xl transition-colors shadow-md shadow-green-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600 cursor-pointer"
                   >
                     Mô phỏng: Thanh toán Thành công
                   </button>
                   <button 
                     type="button"
                     onClick={() => handleSimulatePayment(false)}
-                    className="w-full py-3.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl transition-colors border border-red-200"
+                    className="w-full min-h-11 py-3.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl transition-colors border border-red-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 cursor-pointer"
                   >
                     Mô phỏng: Hủy Thanh toán
                   </button>
@@ -137,7 +150,7 @@ export default function MockPayOSPage() {
                 {status === 'success' && (
                   <>
                     <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
-                      <svg className="w-10 h-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-10 h-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
@@ -148,7 +161,7 @@ export default function MockPayOSPage() {
                 {status === 'error' && (
                   <>
                     <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
-                      <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </div>
@@ -192,13 +205,13 @@ export default function MockPayOSPage() {
               <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Hình thức thanh toán</h3>
               <div className="flex gap-2">
                 <div className="w-12 h-10 bg-white border border-gray-200 rounded flex items-center justify-center shadow-sm">
-                  <CreditCard className="w-5 h-5 text-gray-400" />
+                  <CreditCard className="w-5 h-5 text-gray-400" aria-hidden="true" />
                 </div>
                 <div className="w-12 h-10 bg-white border border-gray-200 rounded flex items-center justify-center shadow-sm">
-                  <Building2 className="w-5 h-5 text-gray-400" />
+                  <Building2 className="w-5 h-5 text-gray-400" aria-hidden="true" />
                 </div>
                 <div className="w-12 h-10 bg-white border border-gray-200 rounded flex items-center justify-center shadow-sm">
-                  <Smartphone className="w-5 h-5 text-gray-400" />
+                  <Smartphone className="w-5 h-5 text-gray-400" aria-hidden="true" />
                 </div>
               </div>
             </div>

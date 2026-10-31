@@ -84,8 +84,20 @@ public sealed class CustomerCheckoutOperations : ICustomerCheckoutOperations
         IDistributedLockLease? paymentLinkLease = null;
         if (_locks is not null)
         {
-            paymentLinkLease = await _locks.AcquireLockAsync(
-                $"payment:lock:{ticket.OrderCode}", TimeSpan.FromSeconds(30), cancellationToken);
+            try
+            {
+                paymentLinkLease = await _locks.AcquireLockAsync(
+                    $"payment:lock:{ticket.OrderCode}", TimeSpan.FromSeconds(30), cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Distributed lock unavailable when creating payment link for {OrderCode}", ticket.OrderCode);
+                return Fail("PAYMENT_PROVIDER_UNAVAILABLE", "Hệ thống khóa phân tán tạm thời gián đoạn. Vui lòng thử lại sau ít giây.");
+            }
             if (paymentLinkLease is null)
                 return Fail("PAYMENT_LINK_IN_PROGRESS", "Yêu cầu thanh toán đang được xử lý. Vui lòng chờ giây lát.");
         }
@@ -215,6 +227,9 @@ public sealed class CustomerCheckoutOperations : ICustomerCheckoutOperations
             }
             return Fail("RESERVATION_EXPIRED", "Thời gian giữ vé đã hết hạn trong lúc khởi tạo thanh toán. Vui lòng chọn lại ghế.");
         }
+
+        if (heldLease is { IsValid: false })
+            return Fail("PAYMENT_LINK_IN_PROGRESS", "Phiên tạo liên kết thanh toán đã hết thời gian khóa. Vui lòng thử lại sau ít giây.");
 
         transaction.SetCheckoutUrl(checkoutUrl);
         await _context.SaveChangesAsync(cancellationToken);

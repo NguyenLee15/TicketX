@@ -26,11 +26,11 @@ public class UsersController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> GetProfile(CancellationToken cancellationToken = default)
     {
-        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+        var userId = GetAuthenticatedUserId();
+        if (userId is null)
             return UnauthorizedEnvelope();
 
-        var result = await _mediator.Send(new GetUserProfileQuery(userId), cancellationToken);
+        var result = await _mediator.Send(new GetUserProfileQuery(userId.Value), cancellationToken);
 
         if (result == null) 
             return NotFound(new
@@ -54,11 +54,11 @@ public class UsersController : ControllerBase
     [Idempotent]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request, CancellationToken cancellationToken = default)
     {
-        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+        var userId = GetAuthenticatedUserId();
+        if (userId is null)
             return UnauthorizedEnvelope();
 
-        var command = new UpdateProfileCommand(userId, request.Name, request.Phone, request.AvatarUrl);
+        var command = new UpdateProfileCommand(userId.Value, request.Name, request.Phone, request.AvatarUrl);
         var success = await _mediator.Send(command, cancellationToken);
 
         if (!success) 
@@ -84,11 +84,11 @@ public class UsersController : ControllerBase
     [EnableRateLimiting("AuthPolicy")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request, CancellationToken cancellationToken = default)
     {
-        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+        var userId = GetAuthenticatedUserId();
+        if (userId is null)
             return UnauthorizedEnvelope();
 
-        var command = new ChangePasswordCommand(userId, request.CurrentPassword, request.NewPassword);
+        var command = new ChangePasswordCommand(userId.Value, request.CurrentPassword, request.NewPassword);
         var success = await _mediator.Send(command, cancellationToken);
 
         if (!success) 
@@ -144,7 +144,7 @@ public class UsersController : ControllerBase
     }
 
     private Guid? GetAuthenticatedUserId() =>
-        Guid.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var userId) ? userId : null;
+        Guid.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var userId) && userId != Guid.Empty ? userId : null;
 
     private IActionResult UnauthorizedEnvelope() => Unauthorized(new
     {
