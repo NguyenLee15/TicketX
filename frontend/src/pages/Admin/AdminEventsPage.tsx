@@ -13,6 +13,7 @@ import { AdminEventsSkeleton } from './Events/AdminEventsSkeleton';
 import { adminEventsPagedResponseSchema } from '../../schemas/adminSchemas';
 import { AdminEventsHeader } from './Events/AdminEventsHeader';
 import { AdminEventModalState, AdminEventsModals } from './Events/AdminEventsModals';
+import { createIdempotencyKey } from '../../utils/idempotency';
 
 export default function AdminEventsPage() {
   const [urlSearchParams, setUrlSearchParams] = useSearchParams();
@@ -140,7 +141,9 @@ export default function AdminEventsPage() {
           expectedVersion: modalState.form.event.version
         };
 
-        const response = await api.put(`/api/events/${modalState.form.event.id}`, payload);
+        const response = await api.put(`/api/events/${modalState.form.event.id}`, payload, {
+          headers: { 'Idempotency-Key': createIdempotencyKey() }
+        });
         if (response.data.success) {
           toast.success('Cập nhật sự kiện thành công');
           void queryClient.invalidateQueries({ queryKey: ['events'] });
@@ -169,7 +172,9 @@ export default function AdminEventsPage() {
           status: formValueToEventStatus(data.status)
         };
 
-        const response = await api.post('/api/events', payload);
+        const response = await api.post('/api/events', payload, {
+          headers: { 'Idempotency-Key': createIdempotencyKey() }
+        });
         if (response.data.success) {
           toast.success('Tạo sự kiện và khởi tạo ma trận ghế thành công!');
           void queryClient.invalidateQueries({ queryKey: ['events'] });
@@ -199,6 +204,7 @@ export default function AdminEventsPage() {
     try {
       const res = await api.delete(`/api/events/${modalState.deleteTarget.id}`, {
         params: modalState.deleteTarget.version ? { expectedVersion: modalState.deleteTarget.version } : undefined,
+        headers: { 'Idempotency-Key': createIdempotencyKey() }
       });
       if (res.data.success) {
         toast.success(`Đã xóa sự kiện "${modalState.deleteTarget.title}"`);
@@ -229,6 +235,8 @@ export default function AdminEventsPage() {
       const res = await api.post(`/api/events/${modalState.cancelTarget.id}/cancel`, {
         reason,
         expectedVersion: modalState.cancelTarget.version,
+      }, {
+        headers: { 'Idempotency-Key': createIdempotencyKey() }
       });
       if (res.data.success) {
         toast.success(`Đã hủy sự kiện "${modalState.cancelTarget.title}". Các vé đã bán đang chờ xử lý hoàn tiền.`);

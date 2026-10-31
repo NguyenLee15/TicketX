@@ -402,9 +402,10 @@ describe('Admin Portal Remediation Verification', () => {
       fireEvent.click(confirmDeleteBtn);
 
       await waitFor(() => {
-        expect(api.delete).toHaveBeenCalledWith('/api/events/event-to-delete', {
+        expect(api.delete).toHaveBeenCalledWith('/api/events/event-to-delete', expect.objectContaining({
           params: { expectedVersion: 'version-token-123' },
-        });
+          headers: expect.objectContaining({ 'Idempotency-Key': expect.any(String) }),
+        }));
       });
 
       // Verifies refresh was triggered
@@ -3653,6 +3654,265 @@ describe('Admin Portal Remediation Verification', () => {
         expect(capturedHeaders?.['Idempotency-Key']).toBeDefined();
         expect(isValidUuidV4(capturedHeaders!['Idempotency-Key'])).toBe(true);
       });
+    });
+  });
+
+  describe('Admin Portal Deep Audit & Remediation (Round 40)', () => {
+    it('AdminEventsPage sends valid v4 UUID Idempotency-Key on event cancellation', async () => {
+      const mockEvents = [
+        {
+          id: 'ev-cancel-r40',
+          title: 'Sự kiện kiểm tra Idempotency Hủy',
+          description: 'Mô tả test',
+          date: '2026-12-10T19:00:00Z',
+          endDate: '2026-12-10T22:00:00Z',
+          location: 'Hà Nội',
+          venueName: 'Sân Vận Động Mỹ Đình',
+          category: 'Concert',
+          imageUrl: 'https://example.com/banner.jpg',
+          totalSeats: 50,
+          availableSeatsCount: 50,
+          basePrice: 150000,
+          status: 1,
+          version: 'v-cancel-40',
+        },
+      ];
+
+      vi.mocked(api.get).mockResolvedValue({
+        data: {
+          success: true,
+          data: {
+            items: mockEvents,
+            totalCount: 1,
+            totalPages: 1,
+            page: 1,
+            pageSize: 10,
+          },
+        },
+      });
+
+      let capturedCancelHeaders: Record<string, string> | undefined;
+      vi.mocked(api.post).mockImplementationOnce(async (_url: string, _body: unknown, config: any) => {
+        capturedCancelHeaders = config?.headers;
+        return {
+          data: {
+            success: true,
+            data: { id: 'ev-cancel-r40', status: 3 },
+          },
+        };
+      });
+
+      const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+      });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter>
+            <AdminEventsPage />
+          </MemoryRouter>
+        </QueryClientProvider>
+      );
+
+      await screen.findAllByText('Sự kiện kiểm tra Idempotency Hủy');
+
+      const cancelButtons = screen.getAllByRole('button', { name: /Hủy sự kiện/i });
+      fireEvent.click(cancelButtons[0]);
+
+      const reasonInput = screen.getByLabelText(/Lý do hủy sự kiện/i);
+      fireEvent.change(reasonInput, { target: { value: 'Lý do kiểm thử tự động' } });
+
+      const confirmBtn = screen.getByRole('button', { name: /Xác Nhận Hủy Sự Kiện/i });
+      fireEvent.click(confirmBtn);
+
+      await waitFor(() => {
+        expect(capturedCancelHeaders?.['Idempotency-Key']).toBeDefined();
+        expect(isValidUuidV4(capturedCancelHeaders!['Idempotency-Key'])).toBe(true);
+      });
+    });
+
+    it('AdminUsersPage sends valid v4 UUID Idempotency-Key on role update and block toggle', async () => {
+      const mockUsers = [
+        {
+          id: 'user-r40-target',
+          name: 'Nguyễn Văn Target',
+          email: 'target@example.com',
+          role: 'Customer',
+          isBlocked: false,
+          createdAt: '2026-01-01T00:00:00Z',
+          version: 'user-ver-100',
+        },
+      ];
+
+      vi.mocked(api.get).mockResolvedValue({
+        data: {
+          success: true,
+          data: {
+            items: mockUsers,
+            totalCount: 1,
+            totalPages: 1,
+            page: 1,
+            pageSize: 10,
+          },
+        },
+      });
+
+      let capturedRoleHeaders: Record<string, string> | undefined;
+      vi.mocked(api.put).mockImplementationOnce(async (_url: string, _body: unknown, config: any) => {
+        capturedRoleHeaders = config?.headers;
+        return {
+          data: {
+            success: true,
+            data: { id: 'user-r40-target', role: 'Staff' },
+          },
+        };
+      });
+
+      useAuthStore.setState({
+        user: { id: 'admin-curr-1', name: 'Super Admin', email: 'admin@tickex.vn', role: 'Admin' },
+        token: null,
+      });
+
+      const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+      });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter>
+            <AdminUsersPage />
+          </MemoryRouter>
+        </QueryClientProvider>
+      );
+
+      await screen.findAllByText('Nguyễn Văn Target');
+
+      const roleSelects = screen.getAllByLabelText(/Phân quyền cho người dùng Nguyễn Văn Target/i);
+      fireEvent.change(roleSelects[0], { target: { value: 'Staff' } });
+
+      const confirmChangeRoleBtn = await screen.findByRole('button', { name: /Xác nhận đổi quyền/i });
+      fireEvent.click(confirmChangeRoleBtn);
+
+      await waitFor(() => {
+        expect(capturedRoleHeaders?.['Idempotency-Key']).toBeDefined();
+        expect(isValidUuidV4(capturedRoleHeaders!['Idempotency-Key'])).toBe(true);
+      });
+
+      // Now test block toggle
+      let capturedBlockHeaders: Record<string, string> | undefined;
+      vi.mocked(api.put).mockImplementationOnce(async (_url: string, _body: unknown, config: any) => {
+        capturedBlockHeaders = config?.headers;
+        return {
+          data: {
+            success: true,
+            data: { id: 'user-r40-target', isBlocked: true },
+          },
+        };
+      });
+
+      const blockButtons = screen.getAllByRole('button', { name: /Khóa tài khoản Nguyễn Văn Target/i });
+      fireEvent.click(blockButtons[0]);
+
+      const confirmBlockBtn = await screen.findByRole('button', { name: /Xác nhận khóa/i });
+      fireEvent.click(confirmBlockBtn);
+
+      await waitFor(() => {
+        expect(capturedBlockHeaders?.['Idempotency-Key']).toBeDefined();
+        expect(isValidUuidV4(capturedBlockHeaders!['Idempotency-Key'])).toBe(true);
+      });
+    });
+
+    it('AdminScanTicketPage sends valid v4 UUID Idempotency-Key on ticket check-in', async () => {
+      let capturedCheckInHeaders: Record<string, string> | undefined;
+      vi.mocked(api.post).mockImplementationOnce(async (_url: string, _body: unknown, config: any) => {
+        capturedCheckInHeaders = config?.headers;
+        return {
+          data: {
+            success: true,
+            data: {
+              ticketId: 't-checkin-40',
+              eventName: 'Concert Âm Nhạc R40',
+              attendeeName: 'Trần Kiểm Tra',
+              row: 'C',
+              number: 12,
+              price: 250000,
+              tier: 'VIP',
+              checkInTime: new Date().toISOString(),
+              scannedBy: 'admin',
+            },
+          },
+        };
+      });
+
+      const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+      });
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter>
+            <AdminScanTicketPage />
+          </MemoryRouter>
+        </QueryClientProvider>
+      );
+
+      const input = screen.getByPlaceholderText(/Dán chuỗi token chữ ký số/i);
+      fireEvent.change(input, { target: { value: 'ticketpayload.validjwtmocksignature' } });
+
+      const scanBtn = screen.getByRole('button', { name: /Soát Vé/i });
+      fireEvent.click(scanBtn);
+
+      await waitFor(() => {
+        expect(capturedCheckInHeaders?.['Idempotency-Key']).toBeDefined();
+        expect(isValidUuidV4(capturedCheckInHeaders!['Idempotency-Key'])).toBe(true);
+      });
+    });
+
+    it('AdminUsersTable pagination and mobile actions enforce WCAG 2.1 AA 44x44px touch targets', () => {
+      const mockUsers = [
+        {
+          id: 'user-a11y-1',
+          name: 'Lê Văn A11y',
+          email: 'a11y@example.com',
+          role: 'Customer',
+          isBlocked: false,
+          createdAt: '2026-01-01T00:00:00Z',
+          version: 'v1',
+        },
+      ];
+
+      render(
+        <AdminUsersTable
+          users={mockUsers}
+          currentUserId="admin-user-0"
+          isSubmitting={false}
+          onRequestChangeRole={vi.fn()}
+          onRequestToggleBlock={vi.fn()}
+          page={2}
+          totalPages={5}
+          totalCount={50}
+          onPageChange={vi.fn()}
+        />
+      );
+
+      const prevBtn = screen.getByRole('button', { name: /Trang trước/i });
+      const nextBtn = screen.getByRole('button', { name: /Trang sau/i });
+
+      expect(prevBtn.className).toContain('min-h-11');
+      expect(prevBtn.className).toContain('min-w-11');
+      expect(prevBtn.className).toContain('focus-visible:ring-2');
+
+      expect(nextBtn.className).toContain('min-h-11');
+      expect(nextBtn.className).toContain('min-w-11');
+      expect(nextBtn.className).toContain('focus-visible:ring-2');
+
+      const blockBtns = screen.getAllByRole('button', { name: /Khóa tài khoản Lê Văn A11y/i });
+      expect(blockBtns.length).toBe(2);
+      expect(blockBtns[1].className).toContain('min-h-11');
+
+      const selects = screen.getAllByLabelText(/Phân quyền cho người dùng Lê Văn A11y/i);
+      expect(selects.length).toBe(2);
+      expect(selects[1].className).toContain('min-h-11');
     });
   });
 });

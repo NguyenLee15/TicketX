@@ -6,6 +6,7 @@ import api from '../../services/api';
 import { useAuthStore } from '../../stores/useAuthStore';
 import ConfirmModal from '../../components/Admin/ConfirmModal';
 import { adminUsersPagedResponseSchema } from '../../schemas/adminSchemas';
+import { createIdempotencyKey } from '../../utils/idempotency';
 import { AdminUsersFilterBar } from './Users/AdminUsersFilterBar';
 import { AdminUsersTable, AdminUserItem } from './Users/AdminUsersTable';
 import { AdminUsersSkeleton } from './Users/AdminUsersSkeleton';
@@ -159,6 +160,8 @@ export default function AdminUsersPage() {
         const res = await api.put(`/api/admin/users/${confirmModal.userId}/role`, {
           role: confirmModal.newRole,
           expectedVersion: confirmModal.expectedVersion
+        }, {
+          headers: { 'Idempotency-Key': createIdempotencyKey() }
         });
         if (res.data.success) {
           toast.success(`Đã cập nhật vai trò của ${confirmModal.userName} thành "${confirmModal.newRole}"`);
@@ -171,6 +174,8 @@ export default function AdminUsersPage() {
         const res = await api.put(`/api/admin/users/${confirmModal.userId}/block`, {
           isBlocked: confirmModal.targetBlocked,
           expectedVersion: confirmModal.expectedVersion
+        }, {
+          headers: { 'Idempotency-Key': createIdempotencyKey() }
         });
         if (res.data.success) {
           toast.success(`Đã ${confirmModal.targetBlocked ? 'khóa' : 'mở khóa'} tài khoản của ${confirmModal.userName}`);

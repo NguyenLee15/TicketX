@@ -207,7 +207,7 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
                   aria-label={`Phân quyền cho người dùng ${user.name}`}
                   disabled={isSelf || isSubmitting}
                   onChange={(e) => onRequestChangeRole(user, e.target.value)}
-                  className="bg-surface-2 border border-border-subtle rounded-xl px-2.5 py-1.5 text-xs text-white flex-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-40"
+                  className="min-h-11 bg-surface-2 border border-border-subtle rounded-xl px-3 py-2 text-xs text-white flex-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-40"
                 >
                   <option value="Customer">Khách hàng</option>
                   <option value="Staff">Soát vé (Staff)</option>
@@ -219,7 +219,7 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
                   onClick={() => onRequestToggleBlock(user, !user.isBlocked)}
                   disabled={isSelf || isSubmitting}
                   aria-label={user.isBlocked ? `Mở khóa tài khoản ${user.name}` : `Khóa tài khoản ${user.name}`}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border shrink-0 disabled:opacity-40 ${
+                  className={`min-h-11 px-3.5 py-2 inline-flex items-center justify-center rounded-xl text-xs font-bold border shrink-0 disabled:opacity-40 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${
                     user.isBlocked 
                       ? 'bg-success/15 text-success border-success/30' 
                       : 'bg-danger/15 text-danger border-danger/30'
@@ -248,14 +248,14 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
             type="button"
             onClick={() => onPageChange(Math.max(1, page - 1))}
             disabled={page <= 1}
-            className="p-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-white border border-border-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+            className="min-h-11 min-w-11 inline-flex items-center justify-center p-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-white border border-border-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
             title="Trang trước"
             aria-label="Trang trước"
           >
             <ChevronLeft className="w-4 h-4" aria-hidden="true" />
           </button>
           
-          <span className="px-3 py-1 rounded-xl bg-surface-2 border border-border-subtle text-white font-mono">
+          <span className="min-h-11 px-3.5 inline-flex items-center justify-center rounded-xl bg-surface-2 border border-border-subtle text-white font-mono text-xs">
             {page}
           </span>
 
@@ -263,7 +263,7 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
             type="button"
             onClick={() => onPageChange(Math.min(totalPages, page + 1))}
             disabled={page >= totalPages}
-            className="p-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-white border border-border-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+            className="min-h-11 min-w-11 inline-flex items-center justify-center p-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-white border border-border-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
             title="Trang sau"
             aria-label="Trang sau"
           >

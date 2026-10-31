@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import { scanTicketDataSchema } from '../../schemas/adminSchemas';
+import { createIdempotencyKey } from '../../utils/idempotency';
 import { ScanCameraPanel } from './Scan/ScanCameraPanel';
 import { ScanResultDisplay, ScanResult } from './Scan/ScanResultDisplay';
 import { RecentScansList } from './Scan/RecentScansList';
@@ -40,7 +41,9 @@ export default function AdminScanTicketPage() {
         return;
       }
 
-      const response = await api.post('/api/tickets/check-in', { qrToken: trimmed });
+      const response = await api.post('/api/tickets/check-in', { qrToken: trimmed }, {
+        headers: { 'Idempotency-Key': createIdempotencyKey() }
+      });
 
 
       const createScanId = () => `scan-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
