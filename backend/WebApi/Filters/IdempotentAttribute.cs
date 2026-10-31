@@ -62,7 +62,7 @@ public sealed class IdempotencyFilter : IAsyncActionFilter
 
     private static ObjectResult Error(HttpContext context, int status, string code, string title, string message) => new(new
     {
-        type = "https://tools.ietf.org/html/rfc9457", title, status, success = false, code, message,
+        type = "https://tools.ietf.org/html/rfc9457", title, status, detail = message, success = false, code, message,
         traceId = context.TraceIdentifier, instance = context.Request.Path.Value,
         error = new { code, message }
     }) { StatusCode = status };

@@ -168,8 +168,13 @@ public sealed class ReservationOperations : IReservationOperations
                 .FirstOrDefaultAsync(t => t.Id == ticketId, cancellationToken);
             if (current == null || (requireOwner && current.UserId != userId) || current.Status != TicketStatus.Pending)
                 return Fail("RESERVATION_NOT_PENDING", "Lượt giữ ghế đã thay đổi.");
-            if (current.Seat?.Status == SeatStatus.Locked && (!requireOwner || current.Seat.LockedByUserId == userId))
+            var beforeSeatStatus = current.Seat?.Status;
+            var seatReleased = false;
+            if (current.Seat?.Status == SeatStatus.Locked && (current.Seat.LockedByUserId == null || current.Seat.LockedByUserId == current.UserId))
+            {
                 current.Seat.Release();
+                seatReleased = true;
+            }
 
             var userEmail = string.Empty;
             if (requireOwner && userId != Guid.Empty)
@@ -186,22 +191,32 @@ public sealed class ReservationOperations : IReservationOperations
                 action: "RESERVATION_RELEASED",
                 entityName: "Ticket",
                 entityId: current.Id.ToString(),
-                beforeState: $"Status={TicketStatus.Pending},SeatStatus={current.Seat?.Status}",
+                beforeState: $"Status={TicketStatus.Pending},SeatStatus={beforeSeatStatus}",
                 afterState: $"Status={TicketStatus.Cancelled},Reason={reason}"));
             current.Cancel();
             if (!lease.IsValid) return Fail("RESERVATION_LOCK_LOST", "Khóa hủy giữ ghế đã hết hạn. Vui lòng thử lại.");
-            await _context.SaveChangesAsync(cancellationToken);
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Fail("RESERVATION_NOT_PENDING", "Lượt giữ ghế đã thay đổi.");
+            }
             if (_catalogCache is not null) await _catalogCache.InvalidateAsync(CancellationToken.None);
-            if (current.Seat != null)
+            if (seatReleased && current.Seat != null)
+            {
+                var versionToken = Convert.ToBase64String(current.Seat.Version);
                 try
                 {
                     await _notifications.NotifySeatStatusChanged(
-                        current.EventId, current.SeatId, current.Seat.Status.ToString(), Convert.ToBase64String(current.Seat.Version));
+                        current.EventId, current.SeatId, current.Seat.Status.ToString(), versionToken);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogWarning(ex, "Reservation {TicketId} was released but realtime notification failed", current.Id);
                 }
+            }
             return new ReservationResult(true, "RESERVATION_RELEASED", "Đã hủy lượt giữ ghế.");
         }
     }

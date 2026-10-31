@@ -137,6 +137,7 @@ export default function ProfilePage() {
         if (user) {
           setAuth({ ...user, name: values.name.trim(), avatarUrl: values.avatarUrl.trim() }, token);
         }
+        await queryClient.invalidateQueries({ queryKey: ['user-profile'] });
       } else {
         toast.error(res.data?.message || 'Không thể cập nhật hồ sơ');
       }

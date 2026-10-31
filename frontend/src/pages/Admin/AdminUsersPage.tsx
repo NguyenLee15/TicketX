@@ -69,7 +69,11 @@ export default function AdminUsersPage() {
           } else if (data && data.items) {
             setUsers(data.items as AdminUserItem[]);
             setTotalCount(data.totalCount || 0);
-            setTotalPages(data.totalPages || 1);
+            const nextTotalPages = data.totalPages || 1;
+            setTotalPages(nextTotalPages);
+            if (page > nextTotalPages) {
+              setPage(nextTotalPages);
+            }
           }
         } else {
           setLoadError(true);

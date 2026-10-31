@@ -28,6 +28,24 @@ public class EventsController : ControllerBase
     [EnableRateLimiting("PublicReadPolicy")]
     public async Task<IActionResult> GetEvents([FromQuery] GetEventsQuery query, CancellationToken cancellationToken = default)
     {
+        var effectivePageSize = query.Limit ?? query.PageSize;
+        if (query.Page < 1 || effectivePageSize is < 1 or > 50 || ((long)query.Page - 1) * effectivePageSize > int.MaxValue)
+        {
+            return BadRequest(new
+            {
+                type = "https://tools.ietf.org/html/rfc9457",
+                title = "Pagination Out Of Range",
+                status = StatusCodes.Status400BadRequest,
+                success = false,
+                code = "PAGINATION_OUT_OF_RANGE",
+                message = "page phải dương và pageSize/limit phải nằm trong khoảng 1–50.",
+                detail = "page phải dương và pageSize/limit phải nằm trong khoảng 1–50.",
+                instance = HttpContext.Request.Path.Value,
+                traceId = HttpContext.TraceIdentifier,
+                error = new { code = "PAGINATION_OUT_OF_RANGE", message = "page phải dương và pageSize/limit phải nằm trong khoảng 1–50." }
+            });
+        }
+
         try
         {
             var result = await _mediator.Send(query, cancellationToken);
@@ -56,6 +74,23 @@ public class EventsController : ControllerBase
     [EnableRateLimiting("AdminPolicy")]
     public async Task<IActionResult> GetAdminEvents([FromQuery] GetAdminEventsQuery query, CancellationToken cancellationToken = default)
     {
+        if (query.Page < 1 || query.PageSize is < 1 or > 50 || ((long)query.Page - 1) * query.PageSize > int.MaxValue)
+        {
+            return BadRequest(new
+            {
+                type = "https://tools.ietf.org/html/rfc9457",
+                title = "Pagination Out Of Range",
+                status = StatusCodes.Status400BadRequest,
+                success = false,
+                code = "PAGINATION_OUT_OF_RANGE",
+                message = "page phải dương và pageSize phải nằm trong khoảng 1–50.",
+                detail = "page phải dương và pageSize phải nằm trong khoảng 1–50.",
+                instance = HttpContext.Request.Path.Value,
+                traceId = HttpContext.TraceIdentifier,
+                error = new { code = "PAGINATION_OUT_OF_RANGE", message = "page phải dương và pageSize phải nằm trong khoảng 1–50." }
+            });
+        }
+
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(new { success = true, data = result });
     }
@@ -257,7 +292,7 @@ public class EventsController : ControllerBase
             return StatusCode(result.StatusCode, new 
             { 
                 type = "https://tools.ietf.org/html/rfc9457",
-                title = result.ErrorCode,
+                title = MapErrorCodeToTitle(result.ErrorCode),
                 status = result.StatusCode,
                 success = false, 
                 code = result.ErrorCode, 
@@ -305,7 +340,7 @@ public class EventsController : ControllerBase
             return StatusCode(result.StatusCode, new 
             { 
                 type = "https://tools.ietf.org/html/rfc9457",
-                title = result.ErrorCode,
+                title = MapErrorCodeToTitle(result.ErrorCode),
                 status = result.StatusCode,
                 success = false, 
                 code = result.ErrorCode, 
@@ -336,7 +371,7 @@ public class EventsController : ControllerBase
             return StatusCode(result.StatusCode, new 
             { 
                 type = "https://tools.ietf.org/html/rfc9457",
-                title = result.ErrorCode,
+                title = MapErrorCodeToTitle(result.ErrorCode),
                 status = result.StatusCode,
                 success = false, 
                 code = result.ErrorCode, 
@@ -349,4 +384,13 @@ public class EventsController : ControllerBase
 
         return Ok(new { success = true, code = "OK", message = result.Message, data = (object?)null });
     }
+
+    private static string MapErrorCodeToTitle(string? errorCode) => errorCode switch
+    {
+        "EVENT_NOT_FOUND" => "Event Not Found",
+        "EVENT_CONCURRENCY_CONFLICT" => "Concurrency Conflict",
+        "EVENT_LOCK_UNAVAILABLE" or "EVENT_LOCK_LOST" => "Service Unavailable",
+        "EVENT_ALREADY_CANCELLED" or "EVENT_COMPLETED" or "EVENT_HAS_TICKETS" => "Event State Conflict",
+        _ => "Event Operation Failed"
+    };
 }

@@ -178,7 +178,7 @@ public class TicketsController : ControllerBase
             return StatusCode(statusCode, new
             {
                 type = "https://tools.ietf.org/html/rfc9457",
-                title = result.Code,
+                title = MapErrorCodeToTitle(result.Code),
                 status = statusCode,
                 success = false,
                 code = result.Code,
@@ -231,7 +231,7 @@ public class TicketsController : ControllerBase
             return StatusCode(result.StatusCode, new 
             { 
                 type = "https://tools.ietf.org/html/rfc9457",
-                title = result.Code,
+                title = MapErrorCodeToTitle(result.Code),
                 status = result.StatusCode,
                 success = false, 
                 code = result.Code, 
@@ -245,4 +245,17 @@ public class TicketsController : ControllerBase
 
         return Ok(new { success = true, message = result.Message, data = result.Ticket });
     }
+
+    private static string MapErrorCodeToTitle(string? errorCode) => errorCode switch
+    {
+        "REFUND_LOCK_UNAVAILABLE" or "REFUND_LOCK_LOST" or "CHECKIN_LOCK_UNAVAILABLE" or "CHECKIN_LOCK_LOST" => "Service Unavailable",
+        "REFUND_CONCURRENCY_CONFLICT" or "CHECKIN_CONCURRENCY_CONFLICT" => "Concurrency Conflict",
+        "REFUND_DESTINATION_REQUIRED" => "Refund Destination Required",
+        "REFUND_TICKET_NOT_FOUND" or "REFUND_EVENT_NOT_FOUND" or "CHECKIN_TICKET_NOT_FOUND" => "Resource Not Found",
+        "REFUND_FORBIDDEN" or "CHECKIN_FORBIDDEN" => "Forbidden",
+        "REFUND_TICKET_USED" or "REFUND_ALREADY_CANCELLED" or "REFUND_TICKET_NOT_PAID" or "REFUND_CUTOFF_EXPIRED" => "Refund Policy Conflict",
+        "CHECKIN_ALREADY_USED" or "CHECKIN_TICKET_NOT_PAID" or "CHECKIN_EVENT_NOT_ACTIVE" => "Check-In Conflict",
+        "CHECKIN_INVALID_QR" => "Invalid QR Token",
+        _ => "Ticket Operation Failed"
+    };
 }

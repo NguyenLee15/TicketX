@@ -53,6 +53,43 @@ public sealed class ChangePasswordSecurityTests : IDisposable
         persistedUser.PasswordHash.Should().Be("old-hash");
     }
 
+    [Fact]
+    public async Task ChangePassword_WhenSuccessful_RotatesSecurityStampAndPersistsAuditLog()
+    {
+        var user = new User("Customer", "audit-pass@test.local", "old-hash");
+        _context.Users.Add(user);
+        await _context.SaveChangesAsync();
+        var initialStamp = user.SecurityStamp;
+
+        var hasher = new Mock<IPasswordHasher>();
+        hasher.Setup(x => x.Verify("old-password", "old-hash")).Returns(true);
+        hasher.Setup(x => x.Hash("NewPassword2026")).Returns("new-hash");
+
+        var refreshTokens = new Mock<IRefreshTokenStore>();
+        refreshTokens
+            .Setup(x => x.RevokeAllForUserAsync(user.Id, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var handler = new ChangePasswordCommandHandler(_context, hasher.Object, refreshTokens.Object);
+
+        var success = await handler.Handle(
+            new ChangePasswordCommand(user.Id, "old-password", "NewPassword2026"),
+            CancellationToken.None);
+
+        success.Should().BeTrue();
+
+        using var verificationContext = new ApplicationDbContext(new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlite(_connection)
+            .Options);
+        var persistedUser = await verificationContext.Users.SingleAsync(x => x.Id == user.Id);
+        persistedUser.PasswordHash.Should().Be("new-hash");
+        persistedUser.SecurityStamp.Should().NotBe(initialStamp);
+
+        var audit = await verificationContext.AuditLogs.SingleOrDefaultAsync(x => x.UserId == user.Id && x.Action == "USER_PASSWORD_CHANGED");
+        audit.Should().NotBeNull();
+        audit!.EntityName.Should().Be("User");
+    }
+
     public void Dispose()
     {
         _context.Dispose();

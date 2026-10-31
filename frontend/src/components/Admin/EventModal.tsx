@@ -55,6 +55,7 @@ export default function EventModal({ isOpen, onClose, onSubmit, event, isLoading
   const watchedSeatsPerRow = watch('seatsPerRow') || 12;
   const totalMatrixSeats = watchedRowCount * watchedSeatsPerRow;
   const hasTicketHistory = Boolean(event?.hasTicketHistory);
+  const isCancelled = Boolean(event && eventStatusToFormValue(event.status) === 'Cancelled');
 
   useEffect(() => {
     if (event) {
@@ -134,7 +135,7 @@ export default function EventModal({ isOpen, onClose, onSubmit, event, isLoading
           {event ? 'Chỉnh Sửa Sự Kiện' : 'Tạo Sự Kiện Mới & Thiết Lập Ghế'}
         </h2>
 
-        {event?.status === 'Cancelled' && (
+        {isCancelled && (
           <div role="alert" className="p-3 bg-danger/10 border border-danger/30 rounded-xl text-xs text-danger mb-4">
             Sự kiện này đã bị hủy và không thể chỉnh sửa thông tin.
           </div>
@@ -314,15 +315,15 @@ export default function EventModal({ isOpen, onClose, onSubmit, event, isLoading
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="px-4 py-2 bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-white font-bold rounded-xl transition-colors border border-border-subtle text-xs sm:text-sm disabled:opacity-40"
+              className="min-h-11 inline-flex items-center justify-center px-4 py-2 bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-white font-bold rounded-xl transition-colors border border-border-subtle text-xs sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-40"
             >
               Hủy
             </button>
             <button 
               type="submit"
-              disabled={isLoading || event?.status === 'Cancelled'}
+              disabled={isLoading || isCancelled}
               aria-busy={isLoading}
-              className="px-5 py-2 bg-brand-primary hover:bg-brand-primary/90 text-white font-bold rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary shadow-md shadow-brand-glow flex items-center gap-1.5 text-xs sm:text-sm active:scale-95 disabled:opacity-50"
+              className="min-h-11 inline-flex items-center justify-center px-5 py-2 bg-brand-primary hover:bg-brand-primary/90 text-white font-bold rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary shadow-md shadow-brand-glow gap-1.5 text-xs sm:text-sm active:scale-95 disabled:opacity-50"
             >
               {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />}
               {event ? 'Lưu Thay Đổi' : 'Tạo Sự Kiện & Khởi Tạo Ghế'}

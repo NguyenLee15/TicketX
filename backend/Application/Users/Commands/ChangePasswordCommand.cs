@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TickeX.Application.Interfaces;
+using TickeX.Domain.Entities;
 
 namespace TickeX.Application.Users.Commands;
 
@@ -40,6 +41,14 @@ public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordComman
         {
             await using var transaction = await _context.BeginTransactionAsync(cancellationToken);
             user.ChangePassword(_passwordHasher.Hash(request.NewPassword));
+            _context.AuditLogs.Add(new AuditLog(
+                user.Id,
+                user.Email,
+                "USER_PASSWORD_CHANGED",
+                nameof(User),
+                user.Id.ToString(),
+                "PasswordSet",
+                "PasswordRotated"));
             await _context.SaveChangesAsync(cancellationToken);
             if (_refreshTokens is not null)
                 await _refreshTokens.RevokeAllForUserAsync(user.Id, cancellationToken);

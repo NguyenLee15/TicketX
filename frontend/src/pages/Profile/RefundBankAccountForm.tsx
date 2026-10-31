@@ -96,7 +96,7 @@ export function RefundBankAccountForm({ bankBin, accountName, maskedAccount, onS
                     setIsConfirmingDelete(false);
                     void onDelete();
                   }}
-                  className="rounded bg-danger px-2.5 py-1 text-xs font-semibold text-white hover:bg-danger/90 disabled:opacity-60"
+                  className="min-h-9 inline-flex items-center justify-center rounded bg-danger px-3 py-1 text-xs font-semibold text-white hover:bg-danger/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger disabled:opacity-60"
                 >
                   Xác nhận
                 </button>
@@ -105,7 +105,7 @@ export function RefundBankAccountForm({ bankBin, accountName, maskedAccount, onS
                   disabled={isSubmitting}
                   aria-describedby="refund-confirm-delete-text"
                   onClick={() => setIsConfirmingDelete(false)}
-                  className="rounded border border-border-subtle bg-surface-2 px-2.5 py-1 text-xs font-medium text-text-secondary hover:text-white"
+                  className="min-h-9 inline-flex items-center justify-center rounded border border-border-subtle bg-surface-2 px-3 py-1 text-xs font-medium text-text-secondary hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
                 >
                   Hủy
                 </button>

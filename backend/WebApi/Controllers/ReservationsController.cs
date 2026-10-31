@@ -46,10 +46,17 @@ public sealed class ReservationsController : ControllerBase
                 "RESERVATION_LOCK_UNAVAILABLE" or "RESERVATION_LOCK_LOST" => StatusCodes.Status503ServiceUnavailable,
                 _ => StatusCodes.Status409Conflict
             };
+            var title = result.Code switch
+            {
+                "RESERVATION_FORBIDDEN" => "Forbidden",
+                "RESERVATION_NOT_FOUND" => "Reservation Not Found",
+                "RESERVATION_LOCK_UNAVAILABLE" or "RESERVATION_LOCK_LOST" => "Service Unavailable",
+                _ => "Reservation Conflict"
+            };
             return StatusCode(status, new 
             { 
                 type = "https://tools.ietf.org/html/rfc9457",
-                title = result.Code,
+                title,
                 status,
                 success = false, 
                 code = result.Code, 

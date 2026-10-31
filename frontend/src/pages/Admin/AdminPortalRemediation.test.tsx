@@ -3307,5 +3307,42 @@ describe('Admin Portal Remediation Verification', () => {
       const switchBtn = screen.getByRole('button', { name: /Đổi camera trước sau/i });
       expect(switchBtn).toHaveClass('min-h-11');
     });
+
+    it('EventModal locks Submit button and shows warning when event status is Cancelled (enum or string)', () => {
+      const cancelledEvent = {
+        id: 'ev-cancelled-1',
+        title: 'Sự kiện đã hủy',
+        description: 'Mô tả',
+        date: '2026-12-01T19:00:00Z',
+        endDate: '2026-12-01T22:00:00Z',
+        location: 'Hà Nội',
+        venueName: 'Nhà hát lớn',
+        totalSeats: 100,
+        category: 'Concert',
+        imageUrl: 'https://example.com/img.jpg',
+        bannerUrl: '',
+        organizerName: 'Organizer',
+        basePrice: 100000,
+        status: 3 as unknown as string, // EventStatus.Cancelled = 3
+        refundCutoffHours: 24,
+        version: 'version-1',
+      };
+
+      render(
+        <EventModal
+          isOpen={true}
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+          event={cancelledEvent as any}
+        />
+      );
+
+      expect(screen.getByRole('alert')).toHaveTextContent(/Sự kiện này đã bị hủy và không thể chỉnh sửa/i);
+      const submitBtn = screen.getByRole('button', { name: /Lưu Thay Đổi/i });
+      expect(submitBtn).toBeDisabled();
+      expect(submitBtn).toHaveClass('min-h-11');
+      const cancelBtn = screen.getByRole('button', { name: /Hủy/i });
+      expect(cancelBtn).toHaveClass('min-h-11');
+    });
   });
 });

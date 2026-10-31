@@ -24,6 +24,10 @@ public class GlobalExceptionMiddleware
         catch (ValidationException ex)
         {
             _logger.LogWarning(ex, "Validation error occurred at {Path} (TraceId: {TraceId})", context.Request.Path, context.TraceIdentifier);
+            if (context.Response.HasStarted)
+            {
+                throw;
+            }
             context.Response.ContentType = "application/problem+json";
             context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
 
@@ -38,6 +42,7 @@ public class GlobalExceptionMiddleware
                 type = "https://tools.ietf.org/html/rfc9457",
                 title = "Validation Failed",
                 status = (int)HttpStatusCode.BadRequest,
+                detail = "Dữ liệu đầu vào không hợp lệ.",
                 success = false,
                 message = "Dữ liệu đầu vào không hợp lệ.",
                 code = "VALIDATION_FAILED",
@@ -60,6 +65,10 @@ public class GlobalExceptionMiddleware
         catch (ArgumentException ex)
         {
             _logger.LogWarning(ex, "Invalid argument at {Path} (TraceId: {TraceId}): {Message}", context.Request.Path, context.TraceIdentifier, ex.Message);
+            if (context.Response.HasStarted)
+            {
+                throw;
+            }
             context.Response.ContentType = "application/problem+json";
             context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
 
@@ -68,6 +77,7 @@ public class GlobalExceptionMiddleware
                 type = "https://tools.ietf.org/html/rfc9457",
                 title = "Bad Request",
                 status = (int)HttpStatusCode.BadRequest,
+                detail = ex.Message,
                 success = false,
                 message = ex.Message,
                 code = "INVALID_ARGUMENT",
@@ -89,6 +99,10 @@ public class GlobalExceptionMiddleware
         {
             _logger.LogError(ex, "An unhandled exception occurred at {Path} (TraceId: {TraceId}): {Message}",
                 context.Request.Path, context.TraceIdentifier, ex.Message);
+            if (context.Response.HasStarted)
+            {
+                throw;
+            }
             context.Response.ContentType = "application/problem+json";
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
@@ -97,6 +111,7 @@ public class GlobalExceptionMiddleware
                 type = "https://tools.ietf.org/html/rfc9457",
                 title = "Internal Server Error",
                 status = (int)HttpStatusCode.InternalServerError,
+                detail = "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.",
                 success = false,
                 message = "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.",
                 code = "INTERNAL_ERROR",

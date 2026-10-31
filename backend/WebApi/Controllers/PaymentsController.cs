@@ -140,7 +140,7 @@ public class PaymentsController : ControllerBase
             return NotFound(new 
             { 
                 type = "https://tools.ietf.org/html/rfc9457",
-                title = result.Code,
+                title = "Payment Not Found",
                 status = StatusCodes.Status404NotFound,
                 success = false, 
                 code = result.Code, 
@@ -154,7 +154,7 @@ public class PaymentsController : ControllerBase
             return StatusCode(StatusCodes.Status403Forbidden, new 
             { 
                 type = "https://tools.ietf.org/html/rfc9457",
-                title = result.Code,
+                title = "Forbidden",
                 status = StatusCodes.Status403Forbidden,
                 success = false, 
                 code = result.Code, 
@@ -168,7 +168,7 @@ public class PaymentsController : ControllerBase
             return StatusCode(StatusCodes.Status503ServiceUnavailable, new 
             { 
                 type = "https://tools.ietf.org/html/rfc9457",
-                title = result.Code,
+                title = "Payment Provider Unavailable",
                 status = StatusCodes.Status503ServiceUnavailable,
                 success = false, 
                 code = result.Code, 
@@ -181,7 +181,7 @@ public class PaymentsController : ControllerBase
         return BadRequest(new 
         { 
             type = "https://tools.ietf.org/html/rfc9457",
-            title = result.Code,
+            title = "Payment Request Failed",
             status = StatusCodes.Status400BadRequest,
             success = false, 
             code = result.Code, 

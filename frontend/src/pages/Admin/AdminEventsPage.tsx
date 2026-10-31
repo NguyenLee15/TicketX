@@ -70,8 +70,12 @@ export default function AdminEventsPage() {
         if (parsed.success) {
           const data = parsed.data;
           setEvents(data.items as Event[]);
-          setTotalPages(data.totalPages || 1);
+          const nextTotalPages = data.totalPages || 1;
+          setTotalPages(nextTotalPages);
           setTotalCount(data.totalCount || 0);
+          if (page > nextTotalPages) {
+            setPage(nextTotalPages);
+          }
         } else {
           setLoadError(true);
           toast.error('Dữ liệu sự kiện từ máy chủ không đúng định dạng.');
@@ -266,7 +270,7 @@ export default function AdminEventsPage() {
       {loadError && !loading && (
         <div role="alert" className="flex items-center justify-between gap-3 rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-xs text-danger">
           <span>Không thể tải danh sách sự kiện.</span>
-          <button type="button" onClick={fetchEvents} aria-label="Thử lại tải danh sách sự kiện" className="rounded-lg border border-danger/30 px-3 py-1.5 font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger">Thử lại</button>
+          <button type="button" onClick={fetchEvents} aria-label="Thử lại tải danh sách sự kiện" className="min-h-11 inline-flex items-center rounded-lg border border-danger/30 px-3 py-1.5 font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger cursor-pointer">Thử lại</button>
         </div>
       )}
 

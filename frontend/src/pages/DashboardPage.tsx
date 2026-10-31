@@ -47,6 +47,12 @@ export default function DashboardPage() {
   const totalPages = catalogResult?.totalPages ?? 1;
   const totalCount = catalogResult?.totalCount ?? 0;
 
+  useEffect(() => {
+    if (!loading && !loadError && totalPages > 0 && page > totalPages) {
+      updateFilters({ page: totalPages });
+    }
+  }, [loading, loadError, totalPages, page, updateFilters]);
+
   const resetFilters = () => {
     setSearchInput('');
     setUrlParams(writeCatalogState({ search: '', category: 'All', sort: 'date_asc', page: 1 }));
@@ -135,7 +141,7 @@ export default function DashboardPage() {
               type="button"
               aria-label="Trang sau"
               onClick={() => updateFilters({ page: Math.min(totalPages, page + 1) })}
-              disabled={page === totalPages}
+              disabled={page >= totalPages}
               className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border-subtle bg-surface-2 disabled:opacity-40 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
             >
               <ChevronRight className="h-4 w-4" aria-hidden="true" />

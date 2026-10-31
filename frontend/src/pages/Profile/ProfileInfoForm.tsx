@@ -153,7 +153,7 @@ export function ProfileInfoForm({
               type="submit" 
               disabled={isSubmitting}
               aria-busy={isSubmitting}
-              className="w-full sm:w-auto px-6 py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white font-bold rounded-xl transition-[opacity,transform,box-shadow] shadow-md shadow-brand-glow flex items-center justify-center gap-1.5 text-xs sm:text-sm disabled:opacity-50 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+              className="w-full sm:w-auto min-h-11 px-6 py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white font-bold rounded-xl transition-[opacity,transform,box-shadow] shadow-md shadow-brand-glow inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm disabled:opacity-50 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
             >
               {isSubmitting ? (
                 <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />

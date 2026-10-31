@@ -869,6 +869,55 @@ public sealed class CustomerCoreBehaviorTests : IDisposable
     }
 
     [Fact]
+    public async Task ExpireAsync_WhenSeatAlreadyReclaimedByAnotherUser_CancelsStaleTicketWithoutReleasingNewUsersSeatLock()
+    {
+        var userA = new User("Customer A", "userA@test.local", "hash");
+        var userB = new User("Customer B", "userB@test.local", "hash");
+        var @event = CreateEvent("Concert Stale", DateTime.UtcNow.AddDays(2));
+        _context.Users.AddRange(userA, userB);
+        _context.Events.Add(@event);
+        await _context.SaveChangesAsync();
+
+        var seat = new Seat(@event.Id, "A", 1, 200000m, SeatTier.Standard);
+        _context.Seats.Add(seat);
+        await _context.SaveChangesAsync();
+
+        // Ticket A was created, but then expired and User B reclaimed the seat
+        var ticketA = new Ticket(@event.Id, seat.Id, userA.Id, seat.Price);
+        seat.Lock(userB.Id, DateTime.UtcNow); // Seat is now actively locked by User B!
+        _context.Tickets.Add(ticketA);
+        await _context.SaveChangesAsync();
+
+        var lockService = new Mock<IDistributedLockService>();
+        lockService.Setup(x => x.AcquireLockAsync(It.IsAny<string>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new TestDistributedLockLease());
+
+        var mockNotifications = new Mock<ISeatNotificationService>();
+
+        var operations = new ReservationOperations(
+            _context,
+            lockService.Object,
+            mockNotifications.Object,
+            Mock.Of<IReservationExpiryScheduler>(),
+            Options.Create(new ReservationOptions { HoldMinutes = 10 }),
+            NullLogger<ReservationOperations>.Instance,
+            new UtcTimePolicy());
+
+        var result = await operations.ExpireAsync(ticketA.Id, CancellationToken.None);
+
+        result.Success.Should().BeTrue();
+        // Ticket A is cancelled
+        ticketA.Status.Should().Be(TicketStatus.Cancelled);
+        // But seat is NOT released! It must remain locked by User B
+        seat.Status.Should().Be(SeatStatus.Locked);
+        seat.LockedByUserId.Should().Be(userB.Id);
+
+        // SignalR should NOT broadcast available status
+        mockNotifications.Verify(x => x.NotifySeatStatusChanged(
+            It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime?>(), It.IsAny<Guid?>()), Times.Never);
+    }
+
+    [Fact]
     public async Task GetEventWithSeatsQuery_PopulatesLockExpiresAtForCurrentUserOnly_AndReturnsServerTime()
     {
         var fixedNow = new DateTime(2026, 11, 1, 10, 0, 0, DateTimeKind.Utc);
