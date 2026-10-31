@@ -51,17 +51,17 @@ function App() {
       return;
     }
 
-    let active = true;
+    
     api.post('/api/auth/refresh', {})
       .then(response => {
-        if (!active || !response.data?.success) {
-          if (active) setHydrating(false);
+        if (!response.data?.success) {
+          setHydrating(false);
           return;
         }
         const parsed = authRefreshResponseSchema.safeParse(response.data.data);
         if (!parsed.success) {
-          if (active && useAuthStore.getState().user) logout();
-          if (active) setHydrating(false);
+          if (useAuthStore.getState().user) logout();
+          setHydrating(false);
           return;
         }
         const data = parsed.data;
@@ -74,11 +74,11 @@ function App() {
         }, data.token ?? null);
       })
       .catch(() => {
-        if (active && useAuthStore.getState().user) logout();
-        if (active) setHydrating(false);
+        if (useAuthStore.getState().user) logout();
+        setHydrating(false);
       });
 
-    return () => { active = false; };
+    
   }, [logout, setAuth, setHydrating]);
 
   return (
