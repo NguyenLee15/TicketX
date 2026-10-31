@@ -5,6 +5,7 @@ import { AlertTriangle, Loader2, RefreshCw } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '../../services/api';
 import { adminRefundsPagedResponseSchema } from '../../schemas/adminSchemas';
+import { createIdempotencyKey } from '../../utils/idempotency';
 
 // Uses centralized adminRefundsPagedResponseSchema from adminSchemas.ts
 
@@ -46,12 +47,19 @@ export default function AdminRefundsPage() {
   const retryRefund = async (id: string, expectedVersion?: string | null) => {
     setRetrying(id);
     try {
-      await api.post(`/api/admin/refunds/${id}/retries`, null, { params: expectedVersion ? { expectedVersion } : undefined });
+      await api.post(`/api/admin/refunds/${id}/retries`, null, {
+        params: expectedVersion ? { expectedVersion } : undefined,
+        headers: { 'Idempotency-Key': createIdempotencyKey() }
+      });
       toast.success('Đã gửi yêu cầu đối soát và xử lý lại.');
       await queryClient.invalidateQueries({ queryKey: ['admin', 'refunds'] });
     } catch (error: unknown) {
-      const response = (error as { response?: { data?: { message?: string } } }).response;
-      toast.error(response?.data?.message || 'PayOS chưa có trạng thái cuối để xử lý lại.');
+      const response = (error as { response?: { status?: number; data?: { message?: string } } }).response;
+      if (response?.status === 409) {
+        toast.error('Yêu cầu hoàn tiền đã được xử lý bởi tác vụ khác. Đang làm mới dữ liệu...');
+      } else {
+        toast.error(response?.data?.message || 'PayOS chưa có trạng thái cuối để xử lý lại.');
+      }
       await queryClient.invalidateQueries({ queryKey: ['admin', 'refunds'] });
     } finally { setRetrying(null); }
   };

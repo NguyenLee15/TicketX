@@ -83,7 +83,7 @@ export default function ConfirmModal({
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 py-2 bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-white rounded-xl text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary border border-border-subtle disabled:opacity-40"
+            className="min-h-11 inline-flex items-center justify-center px-4 py-2 bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-white rounded-xl text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary border border-border-subtle disabled:opacity-40"
           >
             {cancelText}
           </button>
@@ -92,7 +92,7 @@ export default function ConfirmModal({
             onClick={onConfirm}
             disabled={isLoading}
             aria-busy={isLoading}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary flex items-center gap-1.5 shadow-md active:scale-95 disabled:opacity-50 ${
+            className={`min-h-11 inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary gap-1.5 shadow-md active:scale-95 disabled:opacity-50 ${
               isDanger
                 ? 'bg-danger hover:bg-danger/90 text-white shadow-danger/20'
                 : isWarning

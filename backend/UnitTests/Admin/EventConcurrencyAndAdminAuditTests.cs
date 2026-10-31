@@ -520,4 +520,31 @@ public class EventConcurrencyAndAdminAuditTests : IDisposable
         var result = await handler.Handle(new RetryRefundRequestCommand(refund.Id, staleVersion), CancellationToken.None);
         result.Should().Be("REFUND_CONCURRENCY_CONFLICT");
     }
+
+    [Fact]
+    public async Task GetRefundRequestsQuery_UsesDeterministicSecondarySort_WhenCreatedAtIsIdentical()
+    {
+        var fixedDate = new DateTime(2026, 11, 1, 12, 0, 0, DateTimeKind.Utc);
+        var refund1 = new RefundRequest(Guid.NewGuid(), Guid.NewGuid(), 100000m, "idem-1");
+        var refund2 = new RefundRequest(Guid.NewGuid(), Guid.NewGuid(), 200000m, "idem-2");
+        var refund3 = new RefundRequest(Guid.NewGuid(), Guid.NewGuid(), 300000m, "idem-3");
+
+        typeof(RefundRequest).GetProperty("CreatedAt")?.SetValue(refund1, fixedDate);
+        typeof(RefundRequest).GetProperty("CreatedAt")?.SetValue(refund2, fixedDate);
+        typeof(RefundRequest).GetProperty("CreatedAt")?.SetValue(refund3, fixedDate);
+
+        _context.RefundRequests.AddRange(refund1, refund2, refund3);
+        await _context.SaveChangesAsync();
+
+        var handler = new GetRefundRequestsQueryHandler(_context);
+        var page1 = await handler.Handle(new GetRefundRequestsQuery(1, 2), CancellationToken.None);
+        var page2 = await handler.Handle(new GetRefundRequestsQuery(2, 2), CancellationToken.None);
+
+        page1.Items.Should().HaveCount(2);
+        page2.Items.Should().HaveCount(1);
+
+        var allIds = page1.Items.Select(x => x.Id).Concat(page2.Items.Select(x => x.Id)).ToList();
+        allIds.Should().OnlyHaveUniqueItems();
+        allIds.Should().BeInDescendingOrder();
+    }
 }

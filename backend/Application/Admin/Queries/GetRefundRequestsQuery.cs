@@ -15,7 +15,7 @@ public sealed class GetRefundRequestsQueryHandler(IApplicationDbContext context)
         var page = Math.Clamp(request.Page > 0 ? request.Page : 1, 1, 10000);
         var pageSize = Math.Clamp(request.PageSize > 0 ? request.PageSize : 25, 1, 50);
 
-        var query = context.RefundRequests.AsNoTracking().OrderByDescending(x => x.CreatedAt);
+        var query = context.RefundRequests.AsNoTracking().OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id);
         var count = await query.CountAsync(cancellationToken);
         var rawItems = await query.Skip((page - 1) * pageSize).Take(pageSize)
             .Select(x => new

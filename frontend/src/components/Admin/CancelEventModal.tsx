@@ -111,7 +111,7 @@ export default function CancelEventModal({
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="px-4 py-2 bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-white rounded-xl text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary border border-border-subtle disabled:opacity-40"
+              className="min-h-11 inline-flex items-center justify-center px-4 py-2 bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-white rounded-xl text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary border border-border-subtle disabled:opacity-40"
             >
               Quay Lại
             </button>
@@ -119,7 +119,7 @@ export default function CancelEventModal({
               type="submit"
               disabled={isLoading}
               aria-busy={isLoading}
-              className="px-4 py-2 bg-danger hover:bg-danger/90 text-white rounded-xl text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger shadow-md shadow-danger/20 flex items-center gap-1.5 active:scale-95 disabled:opacity-50"
+              className="min-h-11 inline-flex items-center justify-center px-4 py-2 bg-danger hover:bg-danger/90 text-white rounded-xl text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger shadow-md shadow-danger/20 gap-1.5 active:scale-95 disabled:opacity-50"
             >
               {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />}
               Xác Nhận Hủy Sự Kiện

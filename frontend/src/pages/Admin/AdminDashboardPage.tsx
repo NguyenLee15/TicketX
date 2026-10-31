@@ -112,7 +112,7 @@ export default function AdminDashboardPage() {
     return (
       <div role="alert" className="min-h-[40vh] flex flex-col items-center justify-center gap-4 text-center">
         <p className="text-text-secondary">{error ? 'Không thể tải dữ liệu quản trị.' : 'Chưa có dữ liệu quản trị.'}</p>
-        <button type="button" aria-label="Thử lại tải dữ liệu bảng điều khiển" onClick={fetchStats} className="px-4 py-2 rounded-xl bg-brand-primary text-white font-bold focus-visible:ring-2 focus-visible:ring-white">Thử lại</button>
+        <button type="button" aria-label="Thử lại tải dữ liệu bảng điều khiển" onClick={fetchStats} className="min-h-11 inline-flex items-center justify-center px-4 py-2 rounded-xl bg-brand-primary text-white font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer">Thử lại</button>
       </div>
     );
   }
@@ -141,7 +141,7 @@ export default function AdminDashboardPage() {
         <div className="flex items-center gap-2 text-xs text-text-tertiary bg-surface-2 px-3 py-1.5 rounded-xl border border-border-subtle">
           <Clock className="w-3.5 h-3.5 text-brand-primary" aria-hidden="true" />
           <span aria-live="polite">Cập nhật: {lastUpdated ? dateTimeFormatter.format(lastUpdated) : '—'}</span>
-          <button type="button" onClick={fetchStats} disabled={isRefreshing} aria-busy={isRefreshing} aria-label="Làm mới dữ liệu bảng điều khiển" className="p-1 rounded-md hover:bg-surface-3 text-text-secondary hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-50">
+          <button type="button" onClick={fetchStats} disabled={isRefreshing} aria-busy={isRefreshing} aria-label="Làm mới dữ liệu bảng điều khiển" className="min-w-11 min-h-11 p-2 inline-flex items-center justify-center rounded-xl hover:bg-surface-3 text-text-secondary hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-50 cursor-pointer">
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin motion-reduce:animate-none' : ''}`} aria-hidden="true" />
           </button>
         </div>

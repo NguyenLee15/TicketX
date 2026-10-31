@@ -36,6 +36,21 @@ public class AdminController : ControllerBase
     [HttpGet("users")]
     public async Task<IActionResult> GetUsers([FromQuery] GetUsersQuery query, CancellationToken cancellationToken = default)
     {
+        if (query.Page < 1 || query.PageSize is < 1 or > 50 || ((long)query.Page - 1) * query.PageSize > int.MaxValue)
+            return BadRequest(new 
+            { 
+                type = "https://tools.ietf.org/html/rfc9457",
+                title = "Pagination Out Of Range",
+                status = StatusCodes.Status400BadRequest,
+                success = false, 
+                code = "PAGINATION_OUT_OF_RANGE", 
+                message = "page phải dương và pageSize phải nằm trong khoảng 1–50.",
+                detail = "page phải dương và pageSize phải nằm trong khoảng 1–50.",
+                instance = HttpContext.Request.Path.Value,
+                traceId = HttpContext.TraceIdentifier,
+                error = new { code = "PAGINATION_OUT_OF_RANGE", message = "page phải dương và pageSize phải nằm trong khoảng 1–50." }
+            });
+
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(new { success = true, data = result });
     }
@@ -205,7 +220,7 @@ public class AdminController : ControllerBase
             return StatusCode(result.StatusCode, new 
             { 
                 type = "https://tools.ietf.org/html/rfc9457",
-                title = result.ErrorCode,
+                title = MapErrorCodeToTitle(result.ErrorCode),
                 status = result.StatusCode,
                 success = false, 
                 code = result.ErrorCode, 
@@ -272,7 +287,7 @@ public class AdminController : ControllerBase
             return StatusCode(result.StatusCode, new 
             { 
                 type = "https://tools.ietf.org/html/rfc9457",
-                title = result.ErrorCode,
+                title = MapErrorCodeToTitle(result.ErrorCode),
                 status = result.StatusCode,
                 success = false, 
                 code = result.ErrorCode, 
@@ -285,5 +300,16 @@ public class AdminController : ControllerBase
 
         return Ok(new { success = true, code = "OK", message = result.Message, data = (object?)null });
     }
+
+    private static string MapErrorCodeToTitle(string errorCode) => errorCode switch
+    {
+        "USER_CONCURRENCY_CONFLICT" => "User Concurrency Conflict",
+        "USER_NOT_FOUND" => "User Not Found",
+        "INVALID_VERSION" => "Invalid Version",
+        "CANNOT_MODIFY_SELF" => "Cannot Modify Self",
+        "LAST_ADMIN_PROTECTION" => "Last Admin Protection",
+        "INVALID_ROLE" => "Invalid Role",
+        _ => "Admin Operation Failed"
+    };
 
 }

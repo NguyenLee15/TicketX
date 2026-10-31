@@ -3078,7 +3078,12 @@ describe('Admin Portal Remediation Verification', () => {
         expect(api.post).toHaveBeenCalledWith(
           '/api/admin/refunds/refund-12345678/retries',
           null,
-          { params: { expectedVersion: 'version-base64-abc' } }
+          expect.objectContaining({
+            params: { expectedVersion: 'version-base64-abc' },
+            headers: expect.objectContaining({
+              'Idempotency-Key': expect.any(String),
+            }),
+          })
         );
       });
     });
@@ -3201,6 +3206,106 @@ describe('Admin Portal Remediation Verification', () => {
       expect(confirmModalClose).toHaveClass('min-h-11');
       expect(confirmModalClose).toHaveClass('min-w-11');
       expect(confirmModalClose).toHaveClass('focus-visible:ring-2');
+    });
+  });
+
+  describe('Admin Portal Deep Audit & Remediation (Round 37)', () => {
+    it('CancelEventModal and ConfirmModal action buttons enforce min-h-11', () => {
+      const { unmount: unmountCancel } = render(
+        <CancelEventModal
+          isOpen={true}
+          onClose={vi.fn()}
+          onConfirm={vi.fn()}
+          eventTitle="Test Event"
+        />
+      );
+      const cancelBackBtn = screen.getByRole('button', { name: /Quay Lại/i });
+      const cancelSubmitBtn = screen.getByRole('button', { name: /Xác Nhận Hủy Sự Kiện/i });
+      expect(cancelBackBtn).toHaveClass('min-h-11');
+      expect(cancelSubmitBtn).toHaveClass('min-h-11');
+      unmountCancel();
+
+      render(
+        <ConfirmModal
+          isOpen={true}
+          onClose={vi.fn()}
+          onConfirm={vi.fn()}
+          title="Xác nhận thao tác"
+          message="Bạn có chắc chắn muốn thực hiện?"
+          confirmText="Đồng ý"
+          cancelText="Hủy bỏ"
+        />
+      );
+      const confirmBackBtn = screen.getByRole('button', { name: /Hủy bỏ/i });
+      const confirmSubmitBtn = screen.getByRole('button', { name: /Đồng ý/i });
+      expect(confirmBackBtn).toHaveClass('min-h-11');
+      expect(confirmSubmitBtn).toHaveClass('min-h-11');
+    });
+
+    it('AdminRefundsPage passes Idempotency-Key header on retry and invalidates query on 409 conflict', async () => {
+      const mockRefund = {
+        id: '11111111-2222-3333-4444-555555555555',
+        eventId: '11111111-1111-1111-1111-111111111111',
+        ticketId: '22222222-2222-2222-2222-222222222222',
+        amount: 200000,
+        status: 'NeedsReview',
+        attempts: 1,
+        providerStatus: 'FAILED',
+        providerReference: 'ref-1',
+        lastError: 'Bank error',
+        createdAt: '2026-11-01T10:00:00Z',
+        nextAttemptAt: null,
+        version: 'AAAAAAAAAAA=',
+      };
+
+      vi.mocked(api.get).mockResolvedValueOnce({
+        data: {
+          success: true,
+          data: {
+            items: [mockRefund],
+            page: 1,
+            pageSize: 25,
+            totalCount: 1,
+          },
+        },
+      });
+
+      let sentHeaders: Record<string, string> | undefined;
+      vi.mocked(api.post).mockImplementationOnce(async (_url: string, _body: unknown, config: any) => {
+        sentHeaders = config?.headers;
+        const error: any = new Error('Conflict');
+        error.response = { status: 409, data: { message: 'Concurrency conflict' } };
+        throw error;
+      });
+
+      const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+      });
+      const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+      render(
+        <QueryClientProvider client={queryClient}>
+          <MemoryRouter initialEntries={['/admin/refunds']}>
+            <AdminRefundsPage />
+          </MemoryRouter>
+        </QueryClientProvider>
+      );
+
+      const retryBtn = await screen.findByRole('button', { name: /Đối soát lại yêu cầu 11111111/i });
+      fireEvent.click(retryBtn);
+
+      await waitFor(() => {
+        expect(sentHeaders?.['Idempotency-Key']).toBeDefined();
+        expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['admin', 'refunds'] });
+      });
+    });
+
+    it('ScanCameraPanel manual scan button and switch camera button have min-h-11', () => {
+      render(<ScanCameraPanel onScanToken={vi.fn()} isVerifying={false} />);
+      const scanBtn = screen.getByRole('button', { name: /Thực hiện soát vé thủ công/i });
+      expect(scanBtn).toHaveClass('min-h-11');
+      const switchBtn = screen.getByRole('button', { name: /Đổi camera trước sau/i });
+      expect(switchBtn).toHaveClass('min-h-11');
     });
   });
 });

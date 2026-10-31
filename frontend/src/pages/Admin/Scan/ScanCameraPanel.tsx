@@ -146,7 +146,7 @@ export const ScanCameraPanel: React.FC<ScanCameraPanelProps> = ({ onScanToken, i
             disabled={!cameraActive}
             aria-label="Đổi camera trước sau"
             title="Đổi camera Trước / Sau"
-            className="p-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-white border border-border-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary active:scale-95 disabled:opacity-40"
+            className="min-w-11 min-h-11 p-2 inline-flex items-center justify-center rounded-xl bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-white border border-border-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary active:scale-95 disabled:opacity-40 cursor-pointer"
           >
             <SwitchCamera className="w-4 h-4 text-brand-primary" aria-hidden="true" />
           </button>
@@ -154,7 +154,7 @@ export const ScanCameraPanel: React.FC<ScanCameraPanelProps> = ({ onScanToken, i
             type="button"
             onClick={toggleCamera}
             aria-label={cameraActive ? 'Tắt camera quét mã' : 'Bật camera quét mã'}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary active:scale-95 ${
+            className={`min-h-11 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary active:scale-95 cursor-pointer ${
               cameraActive 
                 ? 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20' 
                 : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20'
@@ -170,7 +170,7 @@ export const ScanCameraPanel: React.FC<ScanCameraPanelProps> = ({ onScanToken, i
             type="button"
             onClick={handlePasteClipboard}
             aria-label="Dán mã vé từ bộ nhớ tạm"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-xs text-text-secondary hover:text-white border border-border-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary active:scale-95"
+            className="min-h-11 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-xs text-text-secondary hover:text-white border border-border-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary active:scale-95 cursor-pointer"
           >
             <Clipboard className="w-3.5 h-3.5 text-brand-primary" aria-hidden="true" />
             Dán Clipboard
@@ -195,7 +195,7 @@ export const ScanCameraPanel: React.FC<ScanCameraPanelProps> = ({ onScanToken, i
                   type="button"
                   onClick={() => { setCameraError(null); setCameraActive(true); setRetryNonce(n => n + 1); }}
                   aria-label="Thử lại kết nối camera"
-                  className="px-4 py-2 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-xl text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+                  className="min-h-11 inline-flex items-center justify-center px-4 py-2 bg-brand-primary hover:bg-brand-primary/90 text-white rounded-xl text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer"
                 >
                   Thử lại kết nối
                 </button>
@@ -235,7 +235,7 @@ export const ScanCameraPanel: React.FC<ScanCameraPanelProps> = ({ onScanToken, i
             disabled={isVerifying || !ticketInput.trim()}
             aria-busy={isVerifying}
             aria-label="Thực hiện soát vé thủ công"
-            className="px-5 py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white font-bold rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-50 flex items-center gap-1.5 shrink-0 shadow-md shadow-brand-glow text-xs sm:text-sm active:scale-95"
+            className="min-h-11 inline-flex items-center justify-center px-5 py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white font-bold rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-50 gap-1.5 shrink-0 shadow-md shadow-brand-glow text-xs sm:text-sm active:scale-95 cursor-pointer"
           >
             {isVerifying ? <RefreshCw className="w-4 h-4 animate-spin" aria-hidden="true" /> : <UserCheck className="w-4 h-4" aria-hidden="true" />}
             Soát Vé
