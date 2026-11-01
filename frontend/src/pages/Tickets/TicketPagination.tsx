@@ -34,7 +34,7 @@ export const TicketPagination: React.FC<TicketPaginationProps> = React.memo(({
         aria-label="Trang trước"
         className={`inline-flex min-h-11 items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all border ${
           hasPrevPage && !isLoading
-            ? 'bg-surface-2 hover:bg-surface-3 text-white border-border-subtle hover:border-border-default cursor-pointer'
+            ? 'bg-surface-2 hover:bg-surface-3 active:scale-[0.98] text-white border-border-subtle hover:border-border-default cursor-pointer'
             : 'bg-surface-1/50 text-text-tertiary border-border-subtle/50 cursor-not-allowed opacity-50'
         } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary`}
       >
@@ -44,7 +44,7 @@ export const TicketPagination: React.FC<TicketPaginationProps> = React.memo(({
 
       <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-2/80 border border-border-subtle text-xs font-medium text-text-secondary">
         <span>Trang</span>
-        <span className="font-bold text-brand-primary px-1.5 py-0.5 rounded bg-surface-3">
+        <span className="font-bold text-brand-primary px-1.5 py-0.5 rounded bg-surface-3 tabular-nums">
           {currentPage}
         </span>
       </div>
@@ -56,7 +56,7 @@ export const TicketPagination: React.FC<TicketPaginationProps> = React.memo(({
         aria-label="Trang sau"
         className={`inline-flex min-h-11 items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all border ${
           hasNextPage && !isLoading
-            ? 'bg-surface-2 hover:bg-surface-3 text-white border-border-subtle hover:border-border-default cursor-pointer'
+            ? 'bg-surface-2 hover:bg-surface-3 active:scale-[0.98] text-white border-border-subtle hover:border-border-default cursor-pointer'
             : 'bg-surface-1/50 text-text-tertiary border-border-subtle/50 cursor-not-allowed opacity-50'
         } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary`}
       >

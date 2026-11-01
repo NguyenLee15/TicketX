@@ -43,7 +43,7 @@ export const SelectedSeatPanel: React.FC<SelectedSeatPanelProps> = ({
             </div>
             <div className="text-right relative z-10">
               <p className="text-[10px] text-text-tertiary font-bold uppercase tracking-wider mb-0.5">Giá vé</p>
-              <p className="text-xl font-black text-success font-display tracking-tight">{formatCurrency(selectedSeat.price)}</p>
+              <p className="text-xl font-black text-success font-display tracking-tight tabular-nums">{formatCurrency(selectedSeat.price)}</p>
             </div>
           </div>
 
@@ -59,7 +59,7 @@ export const SelectedSeatPanel: React.FC<SelectedSeatPanelProps> = ({
                   <p className="text-[11px] text-warning font-bold">Đang khóa độc quyền</p>
                 </div>
               </div>
-              <span role="timer" aria-label={`Thời gian giữ chỗ còn ${formatTimer(lockTimeLeft)}`} className="text-xl font-mono font-black text-warning bg-warning/10 px-2.5 py-0.5 rounded-lg border border-warning/20">
+              <span role="timer" aria-label={`Thời gian giữ chỗ còn ${formatTimer(lockTimeLeft)}`} className="text-xl font-mono font-black text-warning bg-warning/10 px-2.5 py-0.5 rounded-lg border border-warning/20 tabular-nums">
                 {formatTimer(lockTimeLeft)}
               </span>
               <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
@@ -76,7 +76,7 @@ export const SelectedSeatPanel: React.FC<SelectedSeatPanelProps> = ({
             <Link
               to="/my-tickets"
               aria-label={`Tiếp tục thanh toán cho ghế hàng ${selectedSeat.row} số ${selectedSeat.number}`}
-              className="w-full min-h-11 py-3.5 bg-warning hover:bg-warning/90 text-surface-base font-bold rounded-lg transition-[background-color,transform] flex items-center justify-center text-sm group relative overflow-hidden active:scale-98 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning cursor-pointer"
+              className="w-full min-h-11 py-3.5 bg-warning hover:bg-warning/90 text-surface-0 font-extrabold rounded-lg transition-[background-color,transform] flex items-center justify-center text-sm group relative overflow-hidden active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning cursor-pointer"
             >
               <span>Ghế Đang Giữ - Tiếp Tục Thanh Toán</span>
               <ArrowRight className="ml-1.5 w-4 h-4 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
@@ -88,7 +88,7 @@ export const SelectedSeatPanel: React.FC<SelectedSeatPanelProps> = ({
               disabled={locking}
               aria-busy={locking}
               aria-label={`Khóa ghế hàng ${selectedSeat.row} số ${selectedSeat.number} và đặt vé`}
-              className="w-full min-h-11 py-3.5 bg-brand-primary hover:bg-brand-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-[background-color,transform] flex items-center justify-center text-sm group relative overflow-hidden active:scale-98 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer"
+              className="w-full min-h-11 py-3.5 bg-brand-primary hover:bg-brand-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-[background-color,transform] flex items-center justify-center text-sm group relative overflow-hidden active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer"
             >
               {locking ? (
                 <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />

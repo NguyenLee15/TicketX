@@ -90,7 +90,7 @@ export function DashboardKpiGrid({ stats }: DashboardKpiGridProps) {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
       {statCards.map((stat) => (
         <div 
           key={stat.title}
@@ -107,11 +107,11 @@ export function DashboardKpiGrid({ stats }: DashboardKpiGridProps) {
           
           <div className="relative z-10">
             <p className="text-xs text-text-secondary font-bold uppercase tracking-wider mb-0.5">{stat.title}</p>
-            <p className="text-2xl lg:text-3xl font-display font-black text-white tracking-tight break-words">
+            <p className="text-2xl lg:text-3xl font-display font-black text-white tracking-tight break-words tabular-nums">
               {stat.value}
             </p>
             {stat.subtitle && (
-              <p className="text-[11px] text-text-tertiary mt-1 font-medium whitespace-nowrap">{stat.subtitle}</p>
+              <p className="text-[11px] text-text-tertiary mt-1 font-medium whitespace-nowrap tabular-nums">{stat.subtitle}</p>
             )}
           </div>
         </div>

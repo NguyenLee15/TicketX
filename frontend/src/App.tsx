@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import api from './services/api';
 import { useAuthStore } from './stores/useAuthStore';
 
@@ -84,7 +85,7 @@ function App() {
   return (
     <BrowserRouter>
       <ErrorBoundary>
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-text-secondary">Đang tải…</div>}>
+        <Suspense fallback={<div className="min-h-dvh bg-surface-base flex flex-col items-center justify-center gap-3 text-text-secondary"><Loader2 className="w-8 h-8 text-brand-primary animate-spin" aria-hidden="true" /><span className="text-sm font-medium">Đang tải…</span></div>}>
         <Routes>
         {/* Admin & Staff Portal */}
         <Route
@@ -142,7 +143,7 @@ function App() {
           <Route
             path="/mock-payos"
             element={
-              <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Đang tải...</div>}>
+              <Suspense fallback={<div className="min-h-dvh bg-surface-base flex flex-col items-center justify-center gap-3 text-text-secondary"><Loader2 className="w-8 h-8 text-brand-primary animate-spin" aria-hidden="true" /><span className="text-sm font-medium">Đang tải...</span></div>}>
                 <MockPayOSPage />
               </Suspense>
             }

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { Zap } from 'lucide-react';
 import { EventDetail, Seat } from '../types';
 import api from '../services/api';
 import { CheckoutInvoice } from './Checkout/CheckoutInvoice';
@@ -233,9 +234,9 @@ export default function CheckoutModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="checkout-modal-title">
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-md animate-in fade-in duration-300" onClick={() => !isSimulating && setShowCloseConfirm(true)} aria-hidden="true" />
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-md animate-backdrop-in" onClick={() => !isSimulating && setShowCloseConfirm(true)} aria-hidden="true" />
 
-      <div ref={modalRef} className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-surface-1 border border-border-subtle shadow-2xl p-6 sm:p-7 space-y-5 animate-in zoom-in-95 duration-200 text-text-primary z-10 max-h-[90vh] overflow-y-auto">
+      <div ref={modalRef} className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-surface-1 border border-border-subtle shadow-2xl p-6 sm:p-7 space-y-5 animate-modal-pop text-text-primary z-10 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <CheckoutModalHeader onRequestClose={() => !isSimulating && setShowCloseConfirm(true)} />
 
@@ -267,9 +268,14 @@ export default function CheckoutModal({
                   onClick={handleSimulatePayment}
                   disabled={isSimulating}
                   aria-busy={isSimulating}
-                  className="w-full py-2 bg-warning/10 hover:bg-warning/20 border border-warning/30 text-warning text-xs font-bold rounded-lg transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full py-2 bg-warning/10 hover:bg-warning/20 border border-warning/30 text-warning text-xs font-bold rounded-lg transition-[background-color,transform] active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 inline-flex items-center justify-center gap-1.5"
                 >
-                  {isSimulating ? 'Đang xác nhận thanh toán…' : '⚡ [DEV] Giả lập Thanh Toán Thành Công'}
+                  {isSimulating ? 'Đang xác nhận thanh toán…' : (
+                    <>
+                      <Zap className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" />
+                      <span>[DEV] Giả lập Thanh Toán Thành Công</span>
+                    </>
+                  )}
                 </button>
               )}
 
@@ -278,7 +284,7 @@ export default function CheckoutModal({
                 onClick={() => setShowCloseConfirm(true)}
                 disabled={releasing}
                 aria-busy={releasing}
-                className="w-full py-2.5 bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-white text-xs font-semibold rounded-xl transition-colors border border-border-subtle cursor-pointer"
+                className="w-full py-2.5 bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-white text-xs font-semibold rounded-xl transition-[background-color,transform] active:scale-[0.98] border border-border-subtle cursor-pointer"
               >
                 {releasing ? 'Đang trả ghế…' : 'Trả Ghế & Quay Lại'}
               </button>

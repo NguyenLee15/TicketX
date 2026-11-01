@@ -63,7 +63,7 @@ export const CheckoutInvoice: React.FC<CheckoutInvoiceProps> = React.memo(({
           aria-atomic="true"
           aria-live="polite"
           aria-label={`Thời gian giữ chỗ còn lại: ${status === 'error' ? 'Hết hạn' : formatTime(timeLeft)}`}
-          className={`font-mono font-bold text-sm ${timeLeft < 60 ? 'text-danger animate-pulse' : 'text-warning'}`}
+          className={`font-mono font-bold text-sm tabular-nums ${timeLeft < 60 ? 'text-danger animate-pulse' : 'text-warning'}`}
         >
           {status === 'error' ? 'Hết hạn' : formatTime(timeLeft)}
         </span>
@@ -87,7 +87,7 @@ export const CheckoutInvoice: React.FC<CheckoutInvoiceProps> = React.memo(({
 
         <div className="flex justify-between items-center text-text-secondary">
           <span>Đơn giá vé:</span>
-          <span className="text-white font-medium">{formatCurrency(seat.price)}</span>
+          <span className="text-white font-medium tabular-nums">{formatCurrency(seat.price)}</span>
         </div>
 
         <div className="flex justify-between items-center text-text-secondary">
@@ -97,7 +97,7 @@ export const CheckoutInvoice: React.FC<CheckoutInvoiceProps> = React.memo(({
 
         <div className="pt-2 border-t border-border-subtle/60 flex justify-between items-center">
           <span className="text-white font-bold text-sm">Tổng thanh toán:</span>
-          <span className="text-brand-primary font-black text-base font-display">
+          <span className="text-brand-primary font-black text-base font-display tabular-nums">
             {formatCurrency(seat.price)}
           </span>
         </div>

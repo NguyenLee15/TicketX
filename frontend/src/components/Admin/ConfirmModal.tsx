@@ -37,14 +37,14 @@ export default function ConfirmModal({
 
   return (
     <div 
-      className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-surface-1/95 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-surface-1/95 animate-backdrop-in"
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-modal-title"
     >
       <div 
         ref={modalRef}
-        className="bg-surface-1 border border-border-subtle p-6 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto overscroll-contain space-y-4 shadow-2xl relative animate-in zoom-in-95 duration-200"
+        className="bg-surface-1 border border-border-subtle p-6 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto overscroll-contain space-y-4 shadow-2xl relative animate-modal-pop"
       >
         <button
           type="button"
@@ -83,7 +83,7 @@ export default function ConfirmModal({
             type="button"
             onClick={onClose}
             disabled={isLoading}
-            className="min-h-11 inline-flex items-center justify-center px-4 py-2 bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-white rounded-xl text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary border border-border-subtle disabled:opacity-40"
+            className="min-h-11 inline-flex items-center justify-center px-4 py-2 bg-surface-2 hover:bg-surface-3 active:scale-[0.98] text-text-secondary hover:text-white rounded-xl text-xs font-bold transition-[background-color,transform] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary border border-border-subtle disabled:opacity-40"
           >
             {cancelText}
           </button>
@@ -92,7 +92,7 @@ export default function ConfirmModal({
             onClick={onConfirm}
             disabled={isLoading}
             aria-busy={isLoading}
-            className={`min-h-11 inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary gap-1.5 shadow-md active:scale-95 disabled:opacity-50 ${
+            className={`min-h-11 inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs font-bold transition-[background-color,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary gap-1.5 shadow-md active:scale-[0.98] cursor-pointer disabled:opacity-50 ${
               isDanger
                 ? 'bg-danger hover:bg-danger/90 text-white shadow-danger/20'
                 : isWarning

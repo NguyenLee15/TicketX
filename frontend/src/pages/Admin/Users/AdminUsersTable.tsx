@@ -84,7 +84,7 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
                               </span>
                             )}
                           </div>
-                          <span className="text-[10px] font-mono text-text-tertiary whitespace-nowrap">
+                          <span className="text-[10px] font-mono text-text-tertiary whitespace-nowrap tabular-nums">
                             ID: {user.id.substring(0, 8)}...
                           </span>
                         </div>
@@ -98,7 +98,7 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
                         </div>
                         <div className="flex items-center gap-1.5 text-text-secondary">
                           <Phone className="w-3.5 h-3.5 opacity-50 shrink-0" aria-hidden="true" />
-                          <span>{user.phone || 'Chưa cập nhật SĐT'}</span>
+                          <span className="font-mono tabular-nums">{user.phone || 'Chưa cập nhật SĐT'}</span>
                         </div>
                       </div>
                     </td>
@@ -240,7 +240,7 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
       {/* Server-side Pagination Bar */}
       <nav aria-label="Phân trang người dùng" className="flex flex-col sm:flex-row items-center justify-between gap-3 px-2 pt-2 text-xs text-text-secondary">
         <p>
-          Hiển thị <span className="font-bold text-white">{users.length}</span> / <span className="font-bold text-white">{totalCount}</span> người dùng (Trang {page}/{totalPages})
+          Hiển thị <span className="font-bold text-white tabular-nums">{users.length}</span> / <span className="font-bold text-white tabular-nums">{totalCount}</span> người dùng (Trang <span className="tabular-nums">{page}</span>/<span className="tabular-nums">{totalPages}</span>)
         </p>
 
         <div className="flex items-center gap-1.5">
@@ -248,14 +248,14 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
             type="button"
             onClick={() => onPageChange(Math.max(1, page - 1))}
             disabled={page <= 1}
-            className="min-h-11 min-w-11 inline-flex items-center justify-center p-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-white border border-border-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+            className="min-h-11 min-w-11 inline-flex items-center justify-center p-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 active:scale-[0.98] text-white border border-border-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-[background-color,transform] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
             title="Trang trước"
             aria-label="Trang trước"
           >
             <ChevronLeft className="w-4 h-4" aria-hidden="true" />
           </button>
           
-          <span className="min-h-11 px-3.5 inline-flex items-center justify-center rounded-xl bg-surface-2 border border-border-subtle text-white font-mono text-xs">
+          <span className="min-h-11 px-3.5 inline-flex items-center justify-center rounded-xl bg-surface-2 border border-border-subtle text-white font-mono tabular-nums text-xs">
             {page}
           </span>
 
@@ -263,7 +263,7 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
             type="button"
             onClick={() => onPageChange(Math.min(totalPages, page + 1))}
             disabled={page >= totalPages}
-            className="min-h-11 min-w-11 inline-flex items-center justify-center p-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-white border border-border-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+            className="min-h-11 min-w-11 inline-flex items-center justify-center p-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 active:scale-[0.98] text-white border border-border-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-[background-color,transform] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
             title="Trang sau"
             aria-label="Trang sau"
           >

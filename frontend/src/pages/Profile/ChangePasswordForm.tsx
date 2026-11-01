@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { UseFormRegister, FieldErrors } from 'react-hook-form';
-import { Lock, Shield, Loader2 } from 'lucide-react';
+import { Lock, Shield, Loader2, Eye, EyeOff } from 'lucide-react';
 import { PasswordFormValues } from './profileSchemas';
 
 interface ChangePasswordFormProps {
@@ -16,6 +16,10 @@ export function ChangePasswordForm({
   onSubmit,
   isSubmitting
 }: ChangePasswordFormProps) {
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   return (
     <div className="lg:col-span-5">
       <div className="surface-panel p-6 sm:p-7 relative overflow-hidden h-full shadow-xl">
@@ -39,15 +43,24 @@ export function ChangePasswordForm({
               <input 
                 id="password-current"
                 autoComplete="current-password"
-                type="password" 
+                type={showCurrentPassword ? 'text' : 'password'}
                 aria-invalid={errors.currentPassword ? 'true' : 'false'}
                 aria-describedby={errors.currentPassword ? 'password-current-error' : undefined}
                 {...register('currentPassword')}
                 placeholder="••••••••"
-                className={`block w-full pl-10 pr-3 py-2 text-xs sm:text-sm border ${
+                className={`block w-full pl-10 pr-10 py-2 text-xs sm:text-sm border ${
                   errors.currentPassword ? 'border-danger' : 'border-border-subtle'
-                } rounded-xl bg-surface-2/50 text-white placeholder-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary transition-[colors,box-shadow] hover:bg-surface-2`}
+                } rounded-xl bg-surface-2/50 text-white placeholder-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary transition-[border-color,background-color,box-shadow] hover:bg-surface-2`}
               />
+              <button
+                type="button"
+                onClick={() => setShowCurrentPassword((prev) => !prev)}
+                aria-label={showCurrentPassword ? 'Ẩn mật khẩu hiện tại' : 'Hiện mật khẩu hiện tại'}
+                aria-pressed={showCurrentPassword}
+                className="absolute inset-y-0 right-0 px-3.5 min-w-11 min-h-11 flex items-center justify-center text-text-tertiary hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary rounded-xl cursor-pointer"
+              >
+                {showCurrentPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+              </button>
             </div>
             {errors.currentPassword && (
               <p id="password-current-error" role="alert" className="text-[11px] text-danger pl-1 animate-slide-up">{errors.currentPassword.message}</p>
@@ -63,15 +76,24 @@ export function ChangePasswordForm({
               <input 
                 id="password-new"
                 autoComplete="new-password"
-                type="password" 
+                type={showNewPassword ? 'text' : 'password'}
                 aria-invalid={errors.newPassword ? 'true' : 'false'}
                 aria-describedby={errors.newPassword ? 'password-new-error' : undefined}
                 {...register('newPassword')}
                 placeholder="••••••••"
-                className={`block w-full pl-10 pr-3 py-2 text-xs sm:text-sm border ${
+                className={`block w-full pl-10 pr-10 py-2 text-xs sm:text-sm border ${
                   errors.newPassword ? 'border-danger' : 'border-border-subtle'
-                } rounded-xl bg-surface-2/50 text-white placeholder-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary transition-[colors,box-shadow] hover:bg-surface-2`}
+                } rounded-xl bg-surface-2/50 text-white placeholder-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary transition-[border-color,background-color,box-shadow] hover:bg-surface-2`}
               />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword((prev) => !prev)}
+                aria-label={showNewPassword ? 'Ẩn mật khẩu mới' : 'Hiện mật khẩu mới'}
+                aria-pressed={showNewPassword}
+                className="absolute inset-y-0 right-0 px-3.5 min-w-11 min-h-11 flex items-center justify-center text-text-tertiary hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary rounded-xl cursor-pointer"
+              >
+                {showNewPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+              </button>
             </div>
             {errors.newPassword && (
               <p id="password-new-error" role="alert" className="text-[11px] text-danger pl-1 animate-slide-up">{errors.newPassword.message}</p>
@@ -87,15 +109,24 @@ export function ChangePasswordForm({
               <input 
                 id="password-confirm"
                 autoComplete="new-password"
-                type="password" 
+                type={showConfirmPassword ? 'text' : 'password'}
                 aria-invalid={errors.confirmPassword ? 'true' : 'false'}
                 aria-describedby={errors.confirmPassword ? 'password-confirm-error' : undefined}
                 {...register('confirmPassword')}
                 placeholder="••••••••"
-                className={`block w-full pl-10 pr-3 py-2 text-xs sm:text-sm border ${
+                className={`block w-full pl-10 pr-10 py-2 text-xs sm:text-sm border ${
                   errors.confirmPassword ? 'border-danger' : 'border-border-subtle'
-                } rounded-xl bg-surface-2/50 text-white placeholder-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary transition-[colors,box-shadow] hover:bg-surface-2`}
+                } rounded-xl bg-surface-2/50 text-white placeholder-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary transition-[border-color,background-color,box-shadow] hover:bg-surface-2`}
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
+                aria-label={showConfirmPassword ? 'Ẩn xác nhận mật khẩu' : 'Hiện xác nhận mật khẩu'}
+                aria-pressed={showConfirmPassword}
+                className="absolute inset-y-0 right-0 px-3.5 min-w-11 min-h-11 flex items-center justify-center text-text-tertiary hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary rounded-xl cursor-pointer"
+              >
+                {showConfirmPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+              </button>
             </div>
             {errors.confirmPassword && (
               <p id="password-confirm-error" role="alert" className="text-[11px] text-danger pl-1 animate-slide-up">{errors.confirmPassword.message}</p>
@@ -107,7 +138,7 @@ export function ChangePasswordForm({
               type="submit" 
               disabled={isSubmitting}
               aria-busy={isSubmitting}
-              className="w-full min-h-11 py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white font-bold rounded-lg transition-[background-color,transform] inline-flex items-center justify-center gap-1.5 text-sm disabled:opacity-50 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+              className="w-full min-h-11 py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white font-bold rounded-xl transition-[background-color,transform] inline-flex items-center justify-center gap-1.5 text-sm disabled:opacity-50 active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
             >
               {isSubmitting ? (
                 <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
@@ -122,4 +153,3 @@ export function ChangePasswordForm({
     </div>
   );
 }
-

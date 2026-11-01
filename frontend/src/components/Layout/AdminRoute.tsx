@@ -16,7 +16,7 @@ export default function AdminRoute({ children, allowedRoles = ['Admin'] }: Admin
       <div
         role="status"
         aria-busy="true"
-        className="min-h-screen bg-surface-base flex items-center justify-center"
+        className="min-h-dvh bg-surface-base flex flex-col items-center justify-center gap-3"
       >
         <Loader2 className="h-8 w-8 text-brand-primary animate-spin" aria-hidden="true" />
         <span className="sr-only">Đang xác thực thông tin tài khoản...</span>

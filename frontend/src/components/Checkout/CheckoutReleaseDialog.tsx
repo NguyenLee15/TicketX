@@ -23,12 +23,12 @@ export const CheckoutReleaseDialog: React.FC<CheckoutReleaseDialogProps> = React
 
   return (
     <div 
-      className="absolute inset-0 z-20 flex items-center justify-center bg-surface-1/95 p-5 animate-in fade-in duration-200" 
+      className="absolute inset-0 z-20 flex items-center justify-center bg-surface-1/95 p-5 animate-backdrop-in" 
       role="alertdialog" 
       aria-modal="true" 
       aria-labelledby="release-confirm-title"
     >
-      <div ref={dialogRef} className="w-full max-w-sm rounded-2xl border border-border-subtle bg-surface-2 p-5 shadow-2xl space-y-3">
+      <div ref={dialogRef} className="w-full max-w-sm rounded-2xl border border-border-subtle bg-surface-2 p-5 shadow-2xl space-y-3 animate-modal-pop">
         <h2 id="release-confirm-title" className="text-base font-bold text-white">
           Rời phiên thanh toán?
         </h2>
@@ -47,7 +47,7 @@ export const CheckoutReleaseDialog: React.FC<CheckoutReleaseDialogProps> = React
             type="button" 
             onClick={onCancel} 
             disabled={releasing} 
-            className="min-h-11 rounded-xl border border-border-subtle bg-surface-3 px-4 py-2 text-xs font-bold text-text-secondary hover:text-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+            className="min-h-11 rounded-xl border border-border-subtle bg-surface-3 px-4 py-2 text-xs font-bold text-text-secondary hover:text-white transition-[background-color,transform] active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
           >
             Tiếp tục thanh toán
           </button>
@@ -56,7 +56,7 @@ export const CheckoutReleaseDialog: React.FC<CheckoutReleaseDialogProps> = React
             onClick={onConfirm} 
             disabled={releasing} 
             aria-busy={releasing} 
-            className="min-h-11 rounded-xl bg-danger px-4 py-2 text-xs font-bold text-white hover:bg-danger/90 transition-colors cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
+            className="min-h-11 rounded-xl bg-danger px-4 py-2 text-xs font-bold text-white hover:bg-danger/90 transition-[background-color,transform] active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
           >
             {releasing ? 'Đang trả ghế…' : 'Trả ghế & đóng'}
           </button>

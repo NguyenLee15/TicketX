@@ -90,7 +90,7 @@ export default function LoginForm({ serverError, onSubmit, onClearServerError }:
               {...register('email')}
               className={`block w-full pl-10 pr-3.5 py-2.5 bg-surface-2 border ${
                 errors.email ? 'border-danger focus:border-danger focus:ring-danger' : 'border-border-subtle focus:border-brand-primary focus:ring-brand-primary'
-              } rounded-xl text-white placeholder-text-tertiary focus:outline-none focus-visible:ring-2 transition-[colors,box-shadow] text-xs sm:text-sm`}
+              } rounded-xl text-white placeholder-text-tertiary focus:outline-none focus-visible:ring-2 transition-[border-color,background-color,box-shadow] text-xs sm:text-sm`}
               placeholder="name@example.com"
             />
           </div>
@@ -118,7 +118,7 @@ export default function LoginForm({ serverError, onSubmit, onClearServerError }:
               {...register('password')}
               className={`block w-full pl-10 pr-10 py-2.5 bg-surface-2 border ${
                 errors.password ? 'border-danger focus:border-danger focus:ring-danger' : 'border-border-subtle focus:border-brand-primary focus:ring-brand-primary'
-              } rounded-xl text-white placeholder-text-tertiary focus:outline-none focus-visible:ring-2 transition-[colors,box-shadow] text-xs sm:text-sm`}
+              } rounded-xl text-white placeholder-text-tertiary focus:outline-none focus-visible:ring-2 transition-[border-color,background-color,box-shadow] text-xs sm:text-sm`}
               placeholder="Mật khẩu của bạn"
             />
             <button
@@ -173,7 +173,7 @@ export default function LoginForm({ serverError, onSubmit, onClearServerError }:
         type="submit"
         disabled={isSubmitting}
         aria-busy={isSubmitting}
-        className="group w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold text-black bg-white hover:bg-gray-100 transition-[colors,transform,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-70 disabled:cursor-not-allowed active:scale-[0.98] shadow-lg"
+        className="group w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold text-white bg-brand-primary hover:bg-brand-primary/90 transition-[background-color,transform,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-70 disabled:cursor-not-allowed active:scale-[0.98] shadow-lg shadow-brand-glow cursor-pointer"
       >
         {isSubmitting ? (
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />

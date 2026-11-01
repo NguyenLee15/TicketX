@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { AlertTriangle, Loader2, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Loader2, RefreshCw, RotateCcw } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '../../services/api';
 import { adminRefundsPagedResponseSchema } from '../../schemas/adminSchemas';
@@ -12,11 +12,11 @@ import { createIdempotencyKey } from '../../utils/idempotency';
 const money = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 });
 
 const refundStatusMap: Record<string, { label: string; className: string }> = {
-  Pending: { label: 'Chờ xử lý', className: 'bg-surface-2 text-text-secondary' },
-  Processing: { label: 'Đang xử lý', className: 'bg-brand-primary/15 text-brand-primary' },
-  Succeeded: { label: 'Thành công', className: 'bg-success/15 text-success' },
-  Failed: { label: 'Thất bại', className: 'bg-danger/15 text-danger' },
-  NeedsReview: { label: 'Cần đối soát', className: 'bg-warning/15 text-warning font-semibold' },
+  Pending: { label: 'Chờ xử lý', className: 'bg-surface-2 text-text-secondary border border-border-subtle' },
+  Processing: { label: 'Đang xử lý', className: 'bg-brand-primary/15 text-brand-primary border border-brand-primary/30' },
+  Succeeded: { label: 'Thành công', className: 'bg-success/15 text-success border border-success/30' },
+  Failed: { label: 'Thất bại', className: 'bg-danger/15 text-danger border border-danger/30' },
+  NeedsReview: { label: 'Cần đối soát', className: 'bg-warning/15 text-warning border border-warning/30 font-semibold' },
 };
 
 export default function AdminRefundsPage() {
@@ -64,43 +64,147 @@ export default function AdminRefundsPage() {
     } finally { setRetrying(null); }
   };
 
-  if (refundsQuery.isLoading) return <div role="status" className="p-8 text-text-secondary" aria-busy="true"><Loader2 className="mr-2 inline h-4 w-4 animate-spin" aria-hidden="true" /> Đang tải yêu cầu hoàn tiền</div>;
-  if (refundsQuery.isError) return <section className="surface-panel m-6 p-6"><p role="alert" className="mb-3 text-danger">Không tải được danh sách hoàn tiền.</p><button type="button" aria-label="Thử lại tải danh sách hoàn tiền" className="min-h-11 rounded-lg bg-brand-primary px-4 py-2 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary" onClick={() => void refundsQuery.refetch()}>Thử lại</button></section>;
+  if (refundsQuery.isLoading) {
+    return (
+      <div role="status" className="p-8 text-text-secondary flex items-center justify-center min-h-[40vh]" aria-busy="true">
+        <Loader2 className="mr-2 inline h-5 w-5 animate-spin text-brand-primary" aria-hidden="true" />
+        <span>Đang tải yêu cầu hoàn tiền...</span>
+      </div>
+    );
+  }
+
+  if (refundsQuery.isError) {
+    return (
+      <section className="surface-panel m-6 p-6 text-center max-w-lg mx-auto">
+        <p role="alert" className="mb-3 text-danger font-semibold">Không tải được danh sách hoàn tiền.</p>
+        <button 
+          type="button" 
+          aria-label="Thử lại tải danh sách hoàn tiền" 
+          className="min-h-11 rounded-xl bg-brand-primary px-5 py-2 text-white font-bold hover:bg-brand-primary/90 transition-[background-color,transform] active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary" 
+          onClick={() => void refundsQuery.refetch()}
+        >
+          Thử lại
+        </button>
+      </section>
+    );
+  }
 
   const data = refundsQuery.data;
   if (!data) return null;
   const pages = Math.max(1, Math.ceil(data.totalCount / data.pageSize));
 
   return (
-    <div className="space-y-5 p-4 sm:p-6">
-      <header><h1 className="text-2xl font-bold text-white">Hoàn tiền</h1><p className="mt-1 text-sm text-text-secondary">Theo dõi lệnh chi và xử lý các yêu cầu cần đối soát.</p></header>
+    <div className="space-y-6 p-4 sm:p-6 max-w-7xl mx-auto animate-fade-in text-text-primary">
+      {/* Header Banner */}
+      <div className="surface-panel flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-5 sm:p-6">
+        <div>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-primary/15 border border-brand-primary/30 w-fit mb-1.5 text-xs font-bold text-brand-primary">
+            <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+            Đối Soát & Xử Lý Hoàn Tiền
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-display font-black text-white tracking-tight">Hoàn Tiền Vé</h1>
+          <p className="mt-1 text-xs sm:text-sm text-text-secondary">Theo dõi lệnh chi và xử lý các yêu cầu cần đối soát cổng thanh toán.</p>
+        </div>
+      </div>
+
+      {/* Responsive Table View */}
       <div 
         role="region" 
         aria-label="Bảng yêu cầu hoàn tiền" 
         tabIndex={0} 
-        className="overflow-x-auto rounded-xl border border-border-subtle bg-surface-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-primary"
+        className="overflow-x-auto rounded-2xl border border-border-subtle bg-surface-1 shadow-lg focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-primary"
       >
         <table aria-label="Danh sách yêu cầu hoàn tiền" className="w-full min-w-[850px] text-left text-sm">
-          <thead className="border-b border-border-subtle text-xs uppercase text-text-secondary"><tr><th scope="col" className="p-3">Yêu cầu / Vé</th><th scope="col" className="p-3">Số tiền</th><th scope="col" className="p-3">Trạng thái</th><th scope="col" className="p-3">PayOS</th><th scope="col" className="p-3">Lần thử</th><th scope="col" className="p-3">Thao tác</th></tr></thead>
-          <tbody>
-            {data.items.map(refund => <tr key={refund.id} className="border-b border-border-subtle/70 align-top">
-              <td className="p-3"><div className="font-medium text-white">{refund.id.slice(0, 8)}</div><div className="text-xs text-text-secondary">Vé {refund.ticketId.slice(0, 8)}</div></td>
-              <td className="whitespace-nowrap p-3 tabular-nums">{money.format(refund.amount)}</td>
-              <td className="p-3">
-                <span className={`rounded-md px-2 py-1 text-xs ${refundStatusMap[refund.status]?.className || 'bg-surface-2 text-text-secondary'}`}>
-                  {refundStatusMap[refund.status]?.label || refund.status}
-                </span>
-                {refund.lastError && <p className="mt-2 flex max-w-sm gap-1.5 text-xs text-warning"><AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />{refund.lastError}</p>}
-              </td>
-              <td className="p-3">{refund.providerStatus ?? '—'}{refund.providerReference && <p className="mt-1 max-w-40 truncate text-xs text-text-secondary">{refund.providerReference}</p>}</td>
-              <td className="p-3 tabular-nums">{refund.attempts}</td>
-              <td className="p-3">{refund.status === 'NeedsReview' && <button type="button" disabled={Boolean(retrying)} aria-busy={retrying === refund.id} aria-label={`Đối soát lại yêu cầu ${refund.id.slice(0, 8)}`} onClick={() => void retryRefund(refund.id, refund.version)} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-brand-primary/40 px-3 text-xs font-semibold text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-60">{retrying === refund.id ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <RefreshCw className="h-4 w-4" aria-hidden="true" />} Đối soát / thử lại</button>}</td>
-            </tr>)}
-            {data.items.length === 0 && <tr><td colSpan={6} role="status" className="p-10 text-center text-text-secondary">Chưa có yêu cầu hoàn tiền.</td></tr>}
+          <thead className="border-b border-border-subtle bg-surface-2/40 text-[11px] font-bold uppercase tracking-wider text-text-secondary">
+            <tr>
+              <th scope="col" className="p-3.5">Yêu cầu / Vé</th>
+              <th scope="col" className="p-3.5">Số tiền</th>
+              <th scope="col" className="p-3.5">Trạng thái</th>
+              <th scope="col" className="p-3.5">PayOS</th>
+              <th scope="col" className="p-3.5">Lần thử</th>
+              <th scope="col" className="p-3.5">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border-subtle/70">
+            {data.items.map(refund => (
+              <tr key={refund.id} className="hover:bg-surface-2/30 transition-colors align-top">
+                <td className="p-3.5">
+                  <div className="font-mono font-bold text-white text-xs">{refund.id.slice(0, 8)}</div>
+                  <div className="text-xs text-text-secondary font-mono">Vé #{refund.ticketId.slice(0, 8)}</div>
+                </td>
+                <td className="whitespace-nowrap p-3.5 tabular-nums font-mono font-bold text-white text-sm">
+                  {money.format(refund.amount)}
+                </td>
+                <td className="p-3.5">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${refundStatusMap[refund.status]?.className || 'bg-surface-2 text-text-secondary'}`}>
+                    {refundStatusMap[refund.status]?.label || refund.status}
+                  </span>
+                  {refund.lastError && (
+                    <p className="mt-2 flex max-w-sm gap-1.5 text-xs text-warning">
+                      <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                      <span>{refund.lastError}</span>
+                    </p>
+                  )}
+                </td>
+                <td className="p-3.5 text-xs">
+                  <span className="font-medium text-white">{refund.providerStatus ?? '—'}</span>
+                  {refund.providerReference && (
+                    <p className="mt-0.5 max-w-40 truncate text-[11px] text-text-secondary font-mono">{refund.providerReference}</p>
+                  )}
+                </td>
+                <td className="p-3.5 tabular-nums font-mono text-xs text-text-secondary">{refund.attempts}</td>
+                <td className="p-3.5 whitespace-nowrap">
+                  {refund.status === 'NeedsReview' && (
+                    <button 
+                      type="button" 
+                      disabled={Boolean(retrying)} 
+                      aria-busy={retrying === refund.id} 
+                      aria-label={`Đối soát lại yêu cầu ${refund.id.slice(0, 8)}`} 
+                      onClick={() => void retryRefund(refund.id, refund.version)} 
+                      className="inline-flex min-h-11 items-center gap-1.5 rounded-xl border border-brand-primary/40 bg-brand-primary/10 hover:bg-brand-primary/20 px-3 text-xs font-semibold text-brand-primary transition-[background-color,transform] active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-60"
+                    >
+                      {retrying === refund.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />}
+                      <span>Đối soát / thử lại</span>
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+            {data.items.length === 0 && (
+              <tr>
+                <td colSpan={6} role="status" className="p-10 text-center text-text-secondary text-xs sm:text-sm">
+                  Chưa có yêu cầu hoàn tiền.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
-      <nav aria-label="Phân trang yêu cầu hoàn tiền" className="flex items-center justify-between text-sm text-text-secondary"><span>{data.totalCount} yêu cầu · Trang {page}/{pages}</span><div className="flex gap-2"><button type="button" aria-label="Trang trước" disabled={page <= 1} onClick={() => setPage(value => Math.max(1, value - 1))} className="min-h-11 rounded-lg border border-border-subtle px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-40">Trước</button><button type="button" aria-label="Trang sau" disabled={page >= pages} onClick={() => setPage(value => Math.min(pages, value + 1))} className="min-h-11 rounded-lg border border-border-subtle px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-40">Sau</button></div></nav>
+
+      {/* Pagination Bar */}
+      <nav aria-label="Phân trang yêu cầu hoàn tiền" className="flex items-center justify-between text-sm text-text-secondary">
+        <span>{data.totalCount} yêu cầu · Trang {page}/{pages}</span>
+        <div className="flex gap-2">
+          <button 
+            type="button" 
+            aria-label="Trang trước" 
+            disabled={page <= 1} 
+            onClick={() => setPage(value => Math.max(1, value - 1))} 
+            className="min-h-11 rounded-xl border border-border-subtle bg-surface-2 hover:bg-surface-3 active:scale-[0.98] px-4 text-white transition-[background-color,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          >
+            Trước
+          </button>
+          <button 
+            type="button" 
+            aria-label="Trang sau" 
+            disabled={page >= pages} 
+            onClick={() => setPage(value => Math.min(pages, value + 1))} 
+            className="min-h-11 rounded-xl border border-border-subtle bg-surface-2 hover:bg-surface-3 active:scale-[0.98] px-4 text-white transition-[background-color,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          >
+            Sau
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }

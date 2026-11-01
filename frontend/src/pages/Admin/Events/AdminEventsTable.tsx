@@ -43,7 +43,7 @@ export const AdminEventsTable: React.FC<AdminEventsTableProps> = ({
               <tr className="border-b border-border-subtle bg-surface-2/30 text-[11px] font-bold text-text-tertiary uppercase tracking-wider">
                 <th scope="col" className="px-5 py-3.5 whitespace-nowrap">Sự Kiện</th>
                 <th scope="col" className="px-5 py-3.5 whitespace-nowrap">Trạng Thái</th>
-                <th scope="col" className="px-5 py-3.5 whitespace-nowrap">Giá Vé Cơ Bản</th>
+                <th scope="col" className="px-5 py-3.5 text-right whitespace-nowrap">Giá Vé Cơ Bản</th>
                 <th scope="col" className="px-5 py-3.5 whitespace-nowrap">Thời Gian Diễn Ra</th>
                 <th scope="col" className="px-5 py-3.5 whitespace-nowrap">Địa Điểm</th>
                 <th scope="col" className="px-5 py-3.5 text-right whitespace-nowrap">Thao Tác</th>
@@ -79,7 +79,7 @@ export const AdminEventsTable: React.FC<AdminEventsTableProps> = ({
                               <span>•</span>
                               <span className="flex items-center gap-1 whitespace-nowrap">
                                 <Grid3X3 className="w-3 h-3 text-text-tertiary" aria-hidden="true" />
-                                {event.totalSeats} Ghế
+                                <span className="tabular-nums">{event.totalSeats}</span> Ghế
                               </span>
                             </div>
                           </div>
@@ -88,7 +88,7 @@ export const AdminEventsTable: React.FC<AdminEventsTableProps> = ({
                       <td className="px-5 py-3.5 whitespace-nowrap">
                         <EventStatusBadge status={event.status} isDeleted={event.isDeleted} />
                       </td>
-                      <td className="px-5 py-3.5 font-bold text-white font-mono whitespace-nowrap">
+                      <td className="px-5 py-3.5 font-bold text-white font-mono text-right tabular-nums whitespace-nowrap">
                         {formatCurrency(event.basePrice)}
                       </td>
                       <td className="px-5 py-3.5 text-xs text-text-secondary whitespace-nowrap">
@@ -148,7 +148,7 @@ export const AdminEventsTable: React.FC<AdminEventsTableProps> = ({
               <div className="space-y-1.5 text-xs text-text-secondary pt-1 border-t border-border-subtle">
                 <div className="flex items-center justify-between">
                   <span className="text-text-tertiary">Giá cơ bản:</span>
-                  <span className="font-bold text-white font-mono">{formatCurrency(event.basePrice)}</span>
+                  <span className="font-bold text-white font-mono tabular-nums">{formatCurrency(event.basePrice)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-text-tertiary">Thời gian:</span>
@@ -175,7 +175,7 @@ export const AdminEventsTable: React.FC<AdminEventsTableProps> = ({
       {/* Server-side Pagination Bar */}
       <nav aria-label="Phân trang sự kiện" className="flex flex-col sm:flex-row items-center justify-between gap-3 px-2 pt-2 text-xs text-text-secondary">
         <p>
-          Hiển thị <span className="font-bold text-white">{events.length}</span> / <span className="font-bold text-white">{totalCount}</span> sự kiện (Trang {page}/{totalPages})
+          Hiển thị <span className="font-bold text-white tabular-nums">{events.length}</span> / <span className="font-bold text-white tabular-nums">{totalCount}</span> sự kiện (Trang <span className="tabular-nums">{page}</span>/<span className="tabular-nums">{totalPages}</span>)
         </p>
 
         <div className="flex items-center gap-1.5">
@@ -183,7 +183,7 @@ export const AdminEventsTable: React.FC<AdminEventsTableProps> = ({
             type="button"
             onClick={() => onPageChange(Math.max(1, page - 1))}
             disabled={page <= 1}
-            className="p-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-white border border-border-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+            className="p-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 active:scale-[0.98] text-white border border-border-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-[background-color,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer"
             title="Trang trước"
             aria-label="Trang trước"
           >
@@ -198,7 +198,7 @@ export const AdminEventsTable: React.FC<AdminEventsTableProps> = ({
             type="button"
             onClick={() => onPageChange(Math.min(totalPages, page + 1))}
             disabled={page >= totalPages}
-            className="p-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 text-white border border-border-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+            className="p-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 active:scale-[0.98] text-white border border-border-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-[background-color,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer"
             title="Trang sau"
             aria-label="Trang sau"
           >

@@ -154,7 +154,7 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
           </div>
           <div className="bg-surface-2/70 p-2.5 rounded-xl border border-border-subtle text-center">
             <div className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold mb-0.5 whitespace-nowrap">Số Ghế</div>
-            <div className="font-black text-lg text-white font-display whitespace-nowrap">{ticket.number}</div>
+            <div className="font-black text-lg text-white font-display whitespace-nowrap tabular-nums">{ticket.number}</div>
           </div>
           <div className="bg-surface-2/70 p-2.5 rounded-xl border border-border-subtle text-center">
             <div className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold mb-0.5 whitespace-nowrap">Hạng Vé</div>
@@ -164,7 +164,7 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
           </div>
           <div className="bg-surface-2/70 p-2.5 rounded-xl border border-border-subtle text-center">
             <div className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold mb-0.5 whitespace-nowrap">Giá Vé</div>
-            <div className="font-black text-xs sm:text-sm text-success font-display mt-0.5 whitespace-nowrap">
+            <div className="font-black text-xs sm:text-sm text-success font-display mt-0.5 whitespace-nowrap tabular-nums">
               {formatCurrency(ticket.price)}
             </div>
           </div>
@@ -186,7 +186,7 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
                   disabled={isResuming || isReleasing}
                   aria-busy={isResuming}
                   aria-label={`Tiếp tục thanh toán vé sự kiện ${ticket.eventTitle}`}
-                  className="min-h-11 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-primary hover:bg-brand-primary/90 text-white font-bold transition-colors text-xs whitespace-nowrap shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+                  className="min-h-11 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-primary hover:bg-brand-primary/90 text-white font-bold transition-[background-color,transform] active:scale-[0.98] text-xs whitespace-nowrap shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
                 >
                   {isResuming ? (
                     <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
@@ -204,7 +204,7 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
                   disabled={isResuming || isReleasing}
                   aria-busy={isReleasing}
                   aria-label={`Hủy giữ chỗ vé sự kiện ${ticket.eventTitle}`}
-                  className="min-h-11 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-3 hover:bg-danger/20 text-text-secondary hover:text-danger border border-border-subtle hover:border-danger/40 font-bold transition-colors text-xs whitespace-nowrap shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
+                  className="min-h-11 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-3 hover:bg-danger/20 text-text-secondary hover:text-danger border border-border-subtle hover:border-danger/40 font-bold transition-[background-color,border-color,color,transform] active:scale-[0.98] text-xs whitespace-nowrap shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
                 >
                   {isReleasing ? (
                     <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
@@ -233,7 +233,7 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
                 disabled={refundingId === ticket.id}
                 aria-busy={refundingId === ticket.id}
                 aria-label={`Yêu cầu hoàn vé sự kiện ${ticket.eventTitle}`}
-                className="min-h-11 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-danger/10 hover:bg-danger/20 text-danger border border-danger/30 font-bold transition-colors text-xs whitespace-nowrap shrink-0 cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
+                className="min-h-11 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-danger/10 hover:bg-danger/20 text-danger border border-danger/30 font-bold transition-[background-color,transform] active:scale-[0.98] text-xs whitespace-nowrap shrink-0 cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
               >
                 {refundingId === ticket.id ? (
                   <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
@@ -254,7 +254,7 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
       {/* Right: Live QR Code & Download Box */}
       <div className="p-5 sm:p-6 flex flex-col items-center justify-center md:w-72 bg-surface-2 relative z-10 space-y-3 shrink-0">
         {canShowQr ? (
-          <div className="bg-white p-3 rounded-xl shadow-xl relative group-hover:scale-105 transition-transform" role="img" aria-label={`Mã QR vé điện tử ${ticket.eventTitle}`}>
+          <div className="bg-white p-3 rounded-xl shadow-lg ring-1 ring-border-subtle relative" role="img" aria-label={`Mã QR vé điện tử ${ticket.eventTitle}`}>
             <QRCodeSVG id={`qr-svg-${ticket.id}`} value={ticket.qrCodeSignature} size={135} level="H" aria-hidden="true" />
           </div>
         ) : (
@@ -264,7 +264,7 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
         )}
 
         <div className="text-center">
-          <p className="text-[11px] font-mono font-bold text-text-secondary uppercase tracking-wider whitespace-nowrap">
+          <p className="text-[11px] font-mono font-bold text-text-secondary uppercase tracking-wider whitespace-nowrap tabular-nums">
             Mã đơn: #{ticket.orderCode}
           </p>
           <p className="text-[10px] text-text-tertiary whitespace-nowrap">
@@ -280,7 +280,7 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
           disabled={!canShowQr || isDownloadingPdf}
           aria-busy={isDownloadingPdf}
           aria-label={`Tải file vé PDF chuẩn cho sự kiện ${ticket.eventTitle}`}
-          className="flex items-center justify-center w-full min-h-11 py-2.5 bg-surface-3 hover:bg-surface-2 border border-border-subtle hover:border-brand-primary text-white text-xs font-bold rounded-xl transition-[background-color,border-color,opacity,transform] shadow-md group/btn active:scale-95 whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border-subtle cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+          className="flex items-center justify-center w-full min-h-11 py-2.5 bg-surface-3 hover:bg-surface-2 border border-border-subtle hover:border-brand-primary text-white text-xs font-bold rounded-xl transition-[background-color,border-color,opacity,transform] shadow-md group/btn active:scale-[0.98] whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border-subtle cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
         >
           {isDownloadingPdf ? (
             <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin text-brand-primary shrink-0" aria-hidden="true" />

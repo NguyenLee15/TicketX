@@ -89,8 +89,8 @@ export default function LoginPage() {
   };
 
   return (
-    <main id="main-content" tabIndex={-1} className="min-h-[100dvh] bg-surface-1 flex items-center justify-center py-10 px-4 relative text-text-primary focus:outline-none">
-      <div className="w-full max-w-md relative z-10 animate-scale-in">
+    <main id="main-content" tabIndex={-1} className="min-h-dvh bg-surface-base flex items-center justify-center py-10 px-4 relative text-text-primary focus:outline-none">
+      <div className="w-full max-w-md relative z-10 animate-modal-pop">
         {/* Sleek Floating Panel */}
         <div className="surface-panel p-6 sm:p-8 rounded-2xl relative">
           {/* Subtle top highlight */}

@@ -55,7 +55,7 @@ export function DiscoveryHero({
                 placeholder="Tên sự kiện, nghệ sĩ hoặc địa điểm"
                 className="min-h-11 w-full bg-transparent text-base text-text-primary placeholder:text-text-tertiary focus:outline-none"
               />
-              <button type="submit" className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg bg-brand-primary px-4 text-sm font-bold text-white transition-colors hover:bg-brand-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary">
+              <button type="submit" className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg bg-brand-primary px-4 text-sm font-bold text-white transition-[background-color,transform] hover:bg-brand-primary/90 active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary">
                 Tìm
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </button>
@@ -82,7 +82,7 @@ export function DiscoveryHero({
               type="button"
               aria-pressed={active}
               onClick={() => onCategoryChange(id)}
-              className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg border px-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${active ? 'border-brand-primary bg-brand-primary text-white' : 'border-border-subtle bg-surface-2 text-text-secondary hover:border-brand-primary/60 hover:text-text-primary'}`}
+              className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg border px-4 text-sm font-semibold transition-[background-color,border-color,color,transform] active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${active ? 'border-brand-primary bg-brand-primary text-white' : 'border-border-subtle bg-surface-2 text-text-secondary hover:border-brand-primary/60 hover:text-text-primary'}`}
             >
               <Icon className="h-4 w-4" aria-hidden="true" />
               {label}

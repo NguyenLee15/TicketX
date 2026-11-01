@@ -47,7 +47,7 @@ export default function StandardLayout() {
   }, [mobileOpen]);
 
   return (
-    <div className="min-h-screen bg-surface-1 text-text-primary font-sans flex flex-col relative overflow-hidden">
+    <div className="min-h-dvh bg-surface-1 text-text-primary font-sans flex flex-col relative overflow-hidden">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-white focus:text-black focus:rounded-lg">Bỏ qua đến nội dung chính</a>
       {/* Compact navigation shell */}
       <div className="fixed top-0 w-full z-50 pt-6 px-4 pointer-events-none">
@@ -61,12 +61,12 @@ export default function StandardLayout() {
             </Link>
             
             <nav aria-label="Điều hướng chính" className="hidden md:flex items-center gap-8">
-              <Link to="/" className={`text-sm font-medium transition-colors relative flex items-center gap-1.5 group ${pathname === '/' ? 'text-white font-bold' : 'text-text-secondary hover:text-white'}`}>
+              <Link to="/" className={`text-sm font-medium transition-colors relative py-1 flex items-center gap-1.5 group ${pathname === '/' ? 'text-white font-bold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-brand-primary' : 'text-text-secondary hover:text-white'}`}>
                 <Calendar className="w-4 h-4" aria-hidden="true" />
                 Sự kiện
               </Link>
               {isAuth && (
-                <Link to="/my-tickets" className={`text-sm font-medium transition-colors relative flex items-center gap-1.5 group ${pathname === '/my-tickets' ? 'text-white font-bold' : 'text-text-secondary hover:text-white'}`}>
+                <Link to="/my-tickets" className={`text-sm font-medium transition-colors relative py-1 flex items-center gap-1.5 group ${pathname === '/my-tickets' ? 'text-white font-bold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-brand-primary' : 'text-text-secondary hover:text-white'}`}>
                   <Ticket className="w-4 h-4" aria-hidden="true" />
                   Vé của tôi
                 </Link>
@@ -107,7 +107,7 @@ export default function StandardLayout() {
                   <Link to="/login" className="min-h-11 inline-flex items-center text-sm font-medium text-text-secondary hover:text-white transition-colors px-3 py-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary">
                     Đăng nhập
                   </Link>
-                  <Link to="/register" className="min-h-11 inline-flex items-center text-sm font-bold px-5 py-2 bg-brand-primary text-white hover:bg-brand-primary/90 rounded-lg transition-[background-color,transform] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary">
+                  <Link to="/register" className="min-h-11 inline-flex items-center text-sm font-bold px-5 py-2 bg-brand-primary text-white hover:bg-brand-primary/90 rounded-lg transition-[background-color,transform] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary shadow-sm shadow-brand-glow">
                     Đăng ký
                   </Link>
                 </div>
@@ -125,7 +125,7 @@ export default function StandardLayout() {
             </div>
           </header>
           {mobileOpen && (
-            <nav ref={mobileNavRef} aria-label="Menu điều hướng di động" className="md:hidden mt-2 surface-raised p-3 flex flex-col gap-1 pointer-events-auto overscroll-contain">
+            <nav ref={mobileNavRef} aria-label="Menu điều hướng di động" className="md:hidden mt-2 surface-raised p-3 flex flex-col gap-1 pointer-events-auto overscroll-contain animate-modal-pop">
               <Link onClick={() => setMobileOpen(false)} to="/" className="p-3 rounded-xl hover:bg-surface-2 flex items-center gap-2">
                 <Calendar className="w-4 h-4" aria-hidden="true" /> Sự kiện
               </Link>

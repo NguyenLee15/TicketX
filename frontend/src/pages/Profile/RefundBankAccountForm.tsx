@@ -28,7 +28,7 @@ export function RefundBankAccountForm({ bankBin, accountName, maskedAccount, onS
     });
   }, [bankBin, accountName, maskedAccount, reset]);
 
-  const fieldClass = 'w-full rounded-lg border border-border-subtle bg-surface-2 px-3 py-2.5 text-sm text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-brand-primary';
+  const fieldClass = 'w-full rounded-lg border border-border-subtle bg-surface-2 px-3 py-2.5 text-sm text-text-primary outline-none focus-visible:ring-2 focus-visible:ring-brand-primary font-mono tabular-nums';
 
   return (
     <section className="surface-panel p-6 sm:p-7" aria-labelledby="refund-bank-title">
@@ -39,7 +39,7 @@ export function RefundBankAccountForm({ bankBin, accountName, maskedAccount, onS
           <p className="text-xs text-text-secondary">Thông tin được mã hóa; số tài khoản chỉ hiển thị bốn số cuối.</p>
         </div>
       </div>
-      {maskedAccount && <p className="mb-4 text-sm text-text-secondary">Đang lưu: {bankBin} · {accountName} · {maskedAccount}</p>}
+      {maskedAccount && <p className="mb-4 text-sm text-text-secondary">Đang lưu: <span className="font-mono tabular-nums">{bankBin}</span> · {accountName} · <span className="font-mono tabular-nums">{maskedAccount}</span></p>}
       <form className="grid gap-4 sm:grid-cols-3" onSubmit={handleSubmit(onSave)} noValidate>
         <div>
           <label className="mb-1 block text-xs font-semibold text-text-secondary" htmlFor="refund-bank-bin">Mã BIN ngân hàng</label>
@@ -80,7 +80,7 @@ export function RefundBankAccountForm({ bankBin, accountName, maskedAccount, onS
           {errors.accountNumber && <p id="refund-account-number-error" role="alert" className="mt-1 text-xs text-danger">{errors.accountNumber.message}</p>}
         </div>
         <div className="flex flex-wrap gap-2 sm:col-span-3">
-          <button type="submit" disabled={isSubmitting} aria-busy={isSubmitting} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-brand-primary px-4 text-sm font-bold text-white disabled:opacity-60">
+          <button type="submit" disabled={isSubmitting} aria-busy={isSubmitting} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-brand-primary hover:bg-brand-primary/90 px-4 text-sm font-bold text-white transition-[background-color,transform] active:scale-[0.98] cursor-pointer disabled:opacity-60">
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Save className="h-4 w-4" aria-hidden="true" />} Lưu tài khoản
           </button>
           {maskedAccount && (
@@ -116,7 +116,7 @@ export function RefundBankAccountForm({ bankBin, accountName, maskedAccount, onS
                 disabled={isSubmitting}
                 aria-busy={isSubmitting}
                 onClick={() => setIsConfirmingDelete(true)}
-                className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-danger/40 px-4 text-sm font-semibold text-danger disabled:opacity-60"
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-danger/40 px-4 text-sm font-semibold text-danger hover:bg-danger/10 transition-[background-color,transform] active:scale-[0.98] cursor-pointer disabled:opacity-60"
               >
                 <Trash2 className="h-4 w-4" aria-hidden="true" /> Xóa tài khoản
               </button>

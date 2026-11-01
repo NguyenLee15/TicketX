@@ -44,12 +44,12 @@ export default function CancelEventModal({
 
   return (
     <div 
-      className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-surface-1/95 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-surface-1/95 animate-backdrop-in"
       role="dialog"
       aria-modal="true"
       aria-labelledby="cancel-event-title"
     >
-      <div ref={modalRef} className="bg-surface-1 border border-border-subtle p-6 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto overscroll-contain space-y-4 shadow-2xl relative animate-in zoom-in-95 duration-200">
+      <div ref={modalRef} className="bg-surface-1 border border-border-subtle p-6 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto overscroll-contain space-y-4 shadow-2xl relative animate-modal-pop">
         <button
           type="button"
           onClick={onClose}
@@ -111,7 +111,7 @@ export default function CancelEventModal({
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="min-h-11 inline-flex items-center justify-center px-4 py-2 bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-white rounded-xl text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary border border-border-subtle disabled:opacity-40"
+              className="min-h-11 inline-flex items-center justify-center px-4 py-2 bg-surface-2 hover:bg-surface-3 active:scale-[0.98] text-text-secondary hover:text-white rounded-xl text-xs font-bold transition-[background-color,transform] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary border border-border-subtle disabled:opacity-40"
             >
               Quay Lại
             </button>
@@ -119,7 +119,7 @@ export default function CancelEventModal({
               type="submit"
               disabled={isLoading}
               aria-busy={isLoading}
-              className="min-h-11 inline-flex items-center justify-center px-4 py-2 bg-danger hover:bg-danger/90 text-white rounded-xl text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger shadow-md shadow-danger/20 gap-1.5 active:scale-95 disabled:opacity-50"
+              className="min-h-11 inline-flex items-center justify-center px-4 py-2 bg-danger hover:bg-danger/90 text-white rounded-xl text-xs font-bold transition-[background-color,transform] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger shadow-md shadow-danger/20 gap-1.5 active:scale-[0.98] disabled:opacity-50"
             >
               {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />}
               Xác Nhận Hủy Sự Kiện

@@ -211,13 +211,13 @@ export default function ProfilePage() {
       <div className="surface-panel mx-auto flex min-h-[40vh] max-w-lg flex-col items-center justify-center gap-4 p-6 text-center" role="alert">
         <h1 className="text-xl font-display font-bold text-text-primary">Không thể tải hồ sơ</h1>
         <p className="text-base text-text-secondary">Kiểm tra kết nối rồi thử lại.</p>
-        <button type="button" onClick={() => void refreshProfile()} className="min-h-11 rounded-lg bg-brand-primary px-5 text-sm font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary">Thử lại</button>
+        <button type="button" onClick={() => void refreshProfile()} className="min-h-11 rounded-lg bg-brand-primary hover:bg-brand-primary/90 px-5 text-sm font-bold text-white transition-[background-color,transform] active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary">Thử lại</button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500 pb-12 relative text-text-primary">
+    <div className="max-w-5xl mx-auto space-y-8 animate-fade-in pb-12 relative text-text-primary">
       <div className="surface-panel flex flex-col gap-1.5 p-6 sm:p-8">
         <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-primary/10 border border-brand-primary/20 w-fit mb-1">
           <Shield className="w-3.5 h-3.5 text-brand-primary" aria-hidden="true" />

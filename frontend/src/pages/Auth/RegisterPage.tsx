@@ -3,7 +3,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Mail, Lock, User, ArrowRight, Loader2, Zap } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Loader2, Zap, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '../../services/api';
 import { useAuthStore } from '../../stores/useAuthStore';
@@ -26,6 +26,8 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const [serverError, setServerError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -122,9 +124,9 @@ export default function RegisterPage() {
   };
 
   return (
-    <main id="main-content" tabIndex={-1} className="min-h-dvh bg-surface-1 flex items-center justify-center p-4 relative overflow-hidden text-text-primary py-12 focus:outline-none">
+    <main id="main-content" tabIndex={-1} className="min-h-dvh bg-surface-base flex items-center justify-center p-4 relative overflow-hidden text-text-primary py-12 focus:outline-none">
       {/* Decorative Grid */}
-      <div className="w-full max-w-md relative z-10 animate-scale-in">
+      <div className="w-full max-w-md relative z-10 animate-modal-pop">
         {/* Sleek Floating Panel */}
         <div className="surface-panel p-6 sm:p-8 rounded-2xl relative overflow-hidden">
           {/* Subtle top highlight */}
@@ -161,7 +163,7 @@ export default function RegisterPage() {
                   aria-describedby={errors.name ? 'register-name-error' : undefined}
                   className={`block w-full pl-10 pr-3.5 py-2.5 bg-surface-2 border ${
                     errors.name ? 'border-danger focus:border-danger focus:ring-danger' : 'border-border-subtle focus:border-brand-primary focus:ring-brand-primary'
-                  } rounded-xl text-white placeholder-text-tertiary focus:outline-none focus-visible:ring-2 transition-[colors,box-shadow] text-xs sm:text-sm`}
+                  } rounded-xl text-white placeholder-text-tertiary focus:outline-none focus-visible:ring-2 transition-[border-color,background-color,box-shadow] text-xs sm:text-sm`}
                   placeholder="Họ và tên (VD: Nguyễn Văn An)"
                 />
               </div>
@@ -187,7 +189,7 @@ export default function RegisterPage() {
                   aria-describedby={errors.email ? 'register-email-error' : undefined}
                   className={`block w-full pl-10 pr-3.5 py-2.5 bg-surface-2 border ${
                     errors.email ? 'border-danger focus:border-danger focus:ring-danger' : 'border-border-subtle focus:border-brand-primary focus:ring-brand-primary'
-                  } rounded-xl text-white placeholder-text-tertiary focus:outline-none focus-visible:ring-2 transition-[colors,box-shadow] text-xs sm:text-sm`}
+                  } rounded-xl text-white placeholder-text-tertiary focus:outline-none focus-visible:ring-2 transition-[border-color,background-color,box-shadow] text-xs sm:text-sm`}
                   placeholder="Địa chỉ email (VD: an.nguyen@example.com)"
                 />
               </div>
@@ -205,17 +207,26 @@ export default function RegisterPage() {
                   <Lock className="h-4 w-4 text-text-tertiary group-focus-within:text-brand-primary transition-colors" aria-hidden="true" />
                 </div>
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   id="register-password"
                   {...register('password')}
                   autoComplete="new-password"
                   aria-invalid={errors.password ? 'true' : 'false'}
                   aria-describedby={errors.password ? 'register-password-error' : undefined}
-                  className={`block w-full pl-10 pr-3.5 py-2.5 bg-surface-2 border ${
+                  className={`block w-full pl-10 pr-10 py-2.5 bg-surface-2 border ${
                     errors.password ? 'border-danger focus:border-danger focus:ring-danger' : 'border-border-subtle focus:border-brand-primary focus:ring-brand-primary'
-                  } rounded-xl text-white placeholder-text-tertiary focus:outline-none focus-visible:ring-2 transition-[colors,box-shadow] text-xs sm:text-sm`}
+                  } rounded-xl text-white placeholder-text-tertiary focus:outline-none focus-visible:ring-2 transition-[border-color,background-color,box-shadow] text-xs sm:text-sm`}
                   placeholder="Mật khẩu (tối thiểu 8 ký tự, gồm chữ và số)"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  aria-pressed={showPassword}
+                  className="absolute inset-y-0 right-0 px-3.5 min-w-11 min-h-11 flex items-center justify-center text-text-tertiary hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary rounded-xl"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+                </button>
               </div>
               {errors.password && (
                 <p id="register-password-error" role="alert" className="text-[11px] text-danger pl-1 animate-slide-up">{errors.password.message}</p>
@@ -231,17 +242,26 @@ export default function RegisterPage() {
                   <Lock className="h-4 w-4 text-text-tertiary group-focus-within:text-brand-primary transition-colors" aria-hidden="true" />
                 </div>
                 <input
-                  type="password"
+                  type={showConfirmPassword ? 'text' : 'password'}
                   id="register-confirm-password"
                   {...register('confirmPassword')}
                   autoComplete="new-password"
                   aria-invalid={errors.confirmPassword ? 'true' : 'false'}
                   aria-describedby={errors.confirmPassword ? 'register-confirm-password-error' : undefined}
-                  className={`block w-full pl-10 pr-3.5 py-2.5 bg-surface-2 border ${
+                  className={`block w-full pl-10 pr-10 py-2.5 bg-surface-2 border ${
                     errors.confirmPassword ? 'border-danger focus:border-danger focus:ring-danger' : 'border-border-subtle focus:border-brand-primary focus:ring-brand-primary'
-                  } rounded-xl text-white placeholder-text-tertiary focus:outline-none focus-visible:ring-2 transition-[colors,box-shadow] text-xs sm:text-sm`}
+                  } rounded-xl text-white placeholder-text-tertiary focus:outline-none focus-visible:ring-2 transition-[border-color,background-color,box-shadow] text-xs sm:text-sm`}
                   placeholder="Xác nhận lại mật khẩu"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  aria-label={showConfirmPassword ? 'Ẩn xác nhận mật khẩu' : 'Hiện xác nhận mật khẩu'}
+                  aria-pressed={showConfirmPassword}
+                  className="absolute inset-y-0 right-0 px-3.5 min-w-11 min-h-11 flex items-center justify-center text-text-tertiary hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary rounded-xl"
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
+                </button>
               </div>
               {errors.confirmPassword && (
                 <p id="register-confirm-password-error" role="alert" className="text-[11px] text-danger pl-1 animate-slide-up">{errors.confirmPassword.message}</p>
@@ -252,7 +272,7 @@ export default function RegisterPage() {
               type="submit"
               disabled={isSubmitting}
               aria-busy={isSubmitting}
-              className="group w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold text-black bg-white hover:bg-gray-100 transition-[colors,transform,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-70 disabled:cursor-not-allowed active:scale-[0.98] mt-4 shadow-lg"
+              className="group w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold text-white bg-brand-primary hover:bg-brand-primary/90 shadow-brand-glow cursor-pointer transition-[background-color,transform,box-shadow] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-70 disabled:cursor-not-allowed active:scale-[0.98] mt-4"
             >
               {isSubmitting ? (
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />

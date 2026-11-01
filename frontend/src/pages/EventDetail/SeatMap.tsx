@@ -80,7 +80,8 @@ export const SeatMap: React.FC<SeatMapProps> = React.memo(({ seats, selectedSeat
       </div>
 
       {/* Seat Matrix Grid */}
-      <div role="region" aria-label="Sơ đồ ghế ngồi" tabIndex={0} className="flex flex-col gap-3 sm:gap-3.5 items-center flex-1 justify-center relative z-10 overflow-x-auto pb-3 max-md:hide-scrollbar focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-primary">
+      <div role="region" aria-label="Sơ đồ ghế ngồi" tabIndex={0} className="w-full flex-1 justify-center relative z-10 overflow-x-auto pb-3 max-md:hide-scrollbar focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-primary">
+        <div className="min-w-max mx-auto px-4 flex flex-col gap-3 sm:gap-3.5 items-center">
         {sortedRowKeys.map(rowName => {
           const rowSeats = rows[rowName] || [];
           const isVipRow = rowSeats.some(s => s.tier === 1);
@@ -93,7 +94,7 @@ export const SeatMap: React.FC<SeatMapProps> = React.memo(({ seats, selectedSeat
               </div>
               
               <div className="flex gap-1.5 sm:gap-2 md:gap-2.5">
-                {[...rowSeats].sort((a, b) => a.number - b.number).map((seat, index) => {
+                {[...rowSeats].sort((a, b) => a.number - b.number).map((seat) => {
                   const isSelected = selectedSeat?.id === seat.id;
                   const isLockedByMe = Boolean(seat.isLockedByCurrentUser || seat.isLockedByMe);
                   const isClickable = seat.status === 0 || isLockedByMe;
@@ -115,8 +116,7 @@ export const SeatMap: React.FC<SeatMapProps> = React.memo(({ seats, selectedSeat
                       disabled={!isClickable}
                       aria-pressed={isSelected}
                       aria-label={`Hàng ${seat.row}, ghế ${seat.number}, hạng ${tierInfo.name}, ${statusLabel}, giá ${formatVND(seat.price)}`}
-                      className={`w-11 h-11 sm:w-10 sm:h-10 md:w-9 md:h-9 rounded-lg border-2 flex items-center justify-center text-xs font-bold transition-[opacity,background-color,border-color] duration-150 ease-out relative group/seat focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-1 ${getSeatColor(seat, isSelected)}`}
-                      style={{ animationDelay: `${(sortedRowKeys.indexOf(rowName) * 0.04) + (index * 0.015)}s` }}
+                      className={`w-11 h-11 sm:w-10 sm:h-10 md:w-9 md:h-9 rounded-lg border-2 flex items-center justify-center text-xs font-bold transition-[opacity,background-color,border-color,transform] duration-150 ease-out active:scale-95 relative group/seat focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-1 ${getSeatColor(seat, isSelected)}`}
                     >
                       {/* Subtle status indicator for color-blind accessibility */}
                       {isSelected && (
@@ -134,7 +134,7 @@ export const SeatMap: React.FC<SeatMapProps> = React.memo(({ seats, selectedSeat
                       {!isSelected && seat.status === 0 && tierInfo.isVip && (
                         <Crown className="w-2 h-2 text-amber-400 absolute -top-0.5 -right-0.5" aria-hidden="true" />
                       )}
-                      <span>{seat.number}</span>
+                      <span className="tabular-nums">{seat.number}</span>
                     </button>
                   );
                 })}
@@ -148,6 +148,7 @@ export const SeatMap: React.FC<SeatMapProps> = React.memo(({ seats, selectedSeat
             </div>
           );
         })}
+        </div>
       </div>
 
       {/* Enhanced Seat Legend */}

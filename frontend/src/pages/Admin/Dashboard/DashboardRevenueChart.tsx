@@ -28,13 +28,13 @@ export function DashboardRevenueChart({ dailyStats }: DashboardRevenueChartProps
         <div className="flex items-center gap-4 text-xs">
           <div className="text-right">
             <span className="text-text-secondary block">Tổng 7 ngày:</span>
-            <span className="font-bold text-emerald-400 font-display text-sm">
+            <span className="font-bold text-emerald-400 font-display text-sm tabular-nums">
               {currencyFormatter.format(total7DayRevenue)}
             </span>
           </div>
           <div className="text-right border-l border-border-subtle pl-4">
             <span className="text-text-secondary block">Vé bán:</span>
-            <span className="font-bold text-brand-primary font-display text-sm">
+            <span className="font-bold text-brand-primary font-display text-sm tabular-nums">
               {numberFormatter.format(total7DayTickets)} vé
             </span>
           </div>
@@ -82,17 +82,17 @@ export function DashboardRevenueChart({ dailyStats }: DashboardRevenueChartProps
         <details className="rounded-lg border border-border-subtle bg-surface-1 px-4 py-3 text-sm text-text-secondary">
           <summary className="cursor-pointer font-semibold text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary">Xem dữ liệu chi tiết</summary>
           <div role="region" aria-label="Bảng dữ liệu chi tiết doanh thu 7 ngày" tabIndex={0} className="mt-3 overflow-x-auto focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-primary">
-            <table aria-label="Chi tiết doanh thu 7 ngày gần nhất" className="w-full text-left">
+            <table aria-label="Chi tiết doanh thu 7 ngày gần nhất" className="w-full text-left text-xs divide-y divide-border-subtle">
               <caption>Chi tiết doanh thu 7 ngày gần nhất</caption>
               <thead>
-                <tr><th scope="col">Ngày</th><th scope="col">Doanh thu</th><th scope="col">Vé bán</th></tr>
+                <tr className="text-text-secondary"><th scope="col" className="py-2 pr-3 font-semibold">Ngày</th><th scope="col" className="py-2 px-3 text-right font-semibold">Doanh thu</th><th scope="col" className="py-2 pl-3 text-right font-semibold">Vé bán</th></tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-border-subtle/50 text-text-primary">
                 {dailyStats.map(item => (
-                  <tr key={`accessible-${item.date}`}>
-                    <td>{item.date}</td>
-                    <td>{currencyFormatter.format(item.revenue)}</td>
-                    <td>{numberFormatter.format(item.ticketsSold)}</td>
+                  <tr key={`accessible-${item.date}`} className="hover:bg-surface-2/40 transition-colors">
+                    <td className="py-2 pr-3 font-mono text-text-secondary">{item.date}</td>
+                    <td className="py-2 px-3 text-right font-medium text-emerald-400 tabular-nums">{currencyFormatter.format(item.revenue)}</td>
+                    <td className="py-2 pl-3 text-right font-medium text-brand-primary tabular-nums">{numberFormatter.format(item.ticketsSold)}</td>
                   </tr>
                 ))}
               </tbody>

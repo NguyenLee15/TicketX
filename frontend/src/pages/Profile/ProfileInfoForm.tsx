@@ -43,11 +43,11 @@ export function ProfileInfoForm({
                   alt="Ảnh đại diện" 
                   width="80" 
                   height="80" 
-                  className="relative w-20 h-20 rounded-full object-cover border-2 border-surface-2 shadow-xl group-hover:scale-105 transition-transform" 
+                  className="relative w-20 h-20 rounded-full object-cover border-2 border-surface-2 shadow-xl ring-2 ring-border-subtle group-hover:ring-brand-primary/60 transition-[box-shadow]" 
                   fallbackClassName="relative flex h-20 w-20 items-center justify-center rounded-full border-2 border-surface-2 bg-surface-3 text-text-secondary" 
                 />
               ) : (
-                <div className="relative w-20 h-20 rounded-full bg-surface-3 flex items-center justify-center border-2 border-surface-2 shadow-xl group-hover:scale-105 transition-transform">
+                <div className="relative w-20 h-20 rounded-full bg-surface-3 flex items-center justify-center border-2 border-surface-2 shadow-xl ring-2 ring-border-subtle group-hover:ring-brand-primary/60 transition-[box-shadow]">
                   <User className="w-8 h-8 text-text-secondary" aria-hidden="true" />
                 </div>
               )}
@@ -68,7 +68,7 @@ export function ProfileInfoForm({
                   placeholder="https://example.com/avatar.jpg"
                   className={`block w-full pl-10 pr-3 py-2 text-xs sm:text-sm border ${
                     errors.avatarUrl ? 'border-danger' : 'border-border-subtle'
-                  } rounded-xl bg-surface-1 text-white placeholder-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary transition-[colors,box-shadow]`}
+                  } rounded-xl bg-surface-1 text-white placeholder-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary transition-[border-color,background-color,box-shadow]`}
                 />
               </div>
               {errors.avatarUrl && (
@@ -94,7 +94,7 @@ export function ProfileInfoForm({
                   placeholder="Nguyễn Văn An"
                   className={`block w-full pl-10 pr-3 py-2 text-xs sm:text-sm border ${
                     errors.name ? 'border-danger' : 'border-border-subtle'
-                  } rounded-xl bg-surface-2/50 text-white placeholder-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary transition-[colors,box-shadow] hover:bg-surface-2`}
+                  } rounded-xl bg-surface-2/50 text-white placeholder-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary transition-[border-color,background-color,box-shadow] hover:bg-surface-2`}
                 />
               </div>
               {errors.name && (
@@ -138,8 +138,8 @@ export function ProfileInfoForm({
                   {...register('phone')}
                   placeholder="0901234567"
                   className={`block w-full pl-10 pr-3 py-2 text-xs sm:text-sm border ${
-                    errors.phone ? 'border-danger' : 'border-border-subtle'
-                  } rounded-xl bg-surface-2/50 text-white placeholder-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary transition-[colors,box-shadow] hover:bg-surface-2`}
+                    errors.phone ? 'border-danger font-mono tabular-nums' : 'border-border-subtle font-mono tabular-nums'
+                  } rounded-xl bg-surface-2/50 text-white placeholder-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary transition-[border-color,background-color,box-shadow] hover:bg-surface-2`}
                 />
               </div>
               {errors.phone && (
@@ -153,7 +153,7 @@ export function ProfileInfoForm({
               type="submit" 
               disabled={isSubmitting}
               aria-busy={isSubmitting}
-              className="w-full sm:w-auto min-h-11 px-6 py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white font-bold rounded-xl transition-[opacity,transform,box-shadow] shadow-md shadow-brand-glow inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm disabled:opacity-50 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+              className="w-full sm:w-auto min-h-11 px-6 py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white font-bold rounded-xl transition-[opacity,transform,box-shadow] shadow-md shadow-brand-glow inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm disabled:opacity-50 active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
             >
               {isSubmitting ? (
                 <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />

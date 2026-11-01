@@ -99,7 +99,7 @@ export const CheckoutVietQrView: React.FC<CheckoutVietQrViewProps> = React.memo(
               <div className="flex justify-between items-center p-2 rounded-xl bg-surface-3/60 border border-border-subtle">
                 <span className="text-text-secondary">Số tài khoản:</span>
                 <div className="flex items-center gap-1.5">
-                  <span className="font-mono font-bold text-white">{paymentData?.accountNumber}</span>
+                  <span className="font-mono font-bold text-white tabular-nums">{paymentData?.accountNumber}</span>
                   <button
                     type="button"
                     onClick={() => paymentData?.accountNumber && copyToClipboard(paymentData.accountNumber, 'Số tài khoản')}
@@ -123,7 +123,7 @@ export const CheckoutVietQrView: React.FC<CheckoutVietQrViewProps> = React.memo(
             <div className="flex justify-between items-center p-2 rounded-xl bg-brand-primary/10 border border-brand-primary/30">
               <span className="text-brand-primary font-semibold">Nội dung CK:</span>
               <div className="flex items-center gap-1.5">
-                <span className="font-mono font-black text-brand-primary">{transferContent}</span>
+                <span className="font-mono font-black text-brand-primary tabular-nums">{transferContent}</span>
                 <button
                   type="button"
                   onClick={() => copyToClipboard(transferContent, 'Nội dung chuyển khoản')}
@@ -150,7 +150,7 @@ export const CheckoutVietQrView: React.FC<CheckoutVietQrViewProps> = React.memo(
           }}
           disabled={redirecting}
           aria-busy={redirecting}
-          className="w-full py-3.5 bg-brand-primary hover:bg-brand-primary/90 disabled:opacity-50 text-white font-bold rounded-lg transition-[background-color,transform] flex items-center justify-center gap-2 group text-sm active:scale-98 focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer disabled:cursor-not-allowed shadow-lg shadow-brand-glow"
+          className="w-full py-3.5 bg-brand-primary hover:bg-brand-primary/90 disabled:opacity-50 text-white font-bold rounded-lg transition-[background-color,transform] flex items-center justify-center gap-2 group text-sm active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer disabled:cursor-not-allowed shadow-lg shadow-brand-glow"
         >
           <span>Chuyển Đến Cổng Thanh Toán PayOS</span>
           <ExternalLink className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />

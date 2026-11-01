@@ -94,8 +94,8 @@ export default function AdminDashboardPage() {
       <div role="status" aria-busy="true" aria-label="Đang tải dữ liệu bảng điều khiển" className="space-y-6 pb-8 animate-pulse max-w-7xl mx-auto">
         <span className="sr-only">Đang tải dữ liệu bảng điều khiển...</span>
         <div className="h-24 bg-surface-2/40 rounded-2xl border border-border-subtle" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {[...Array(6)].map((_, i) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {[...Array(8)].map((_, i) => (
             <div key={`dash-skel-${i}`} className="h-32 bg-surface-2/40 rounded-2xl border border-border-subtle" />
           ))}
         </div>
@@ -122,7 +122,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="space-y-6 pb-8 text-text-primary animate-in fade-in duration-500 max-w-7xl mx-auto">
+    <div className="space-y-6 pb-8 text-text-primary animate-fade-in max-w-7xl mx-auto">
       {/* Header Banner */}
       <div className="surface-panel flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-5 sm:p-6">
         <div>

@@ -23,7 +23,7 @@ export function EventCard({ event, featured = false }: EventCardProps) {
               <p className="line-clamp-3 text-base leading-relaxed text-text-secondary">{event.description}</p>
               <EventMeta event={event} />
             </div>
-            <Link to={`/events/${event.id}`} aria-label={`Xem sự kiện ${event.title}`} className="inline-flex min-h-11 w-fit items-center gap-2 rounded-lg bg-brand-primary px-5 text-sm font-bold text-white transition-colors hover:bg-brand-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary">Xem sự kiện <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+            <Link to={`/events/${event.id}`} aria-label={`Xem sự kiện ${event.title}`} className="inline-flex min-h-11 w-fit items-center gap-2 rounded-lg bg-brand-primary px-5 text-sm font-bold text-white transition-[background-color,transform] hover:bg-brand-primary/90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary">Xem sự kiện <ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
           </div>
         </div>
       </article>
@@ -43,7 +43,7 @@ export function EventCard({ event, featured = false }: EventCardProps) {
           <p className="line-clamp-2 text-sm leading-relaxed text-text-secondary">{event.description}</p>
         </div>
         <div className="mt-auto flex items-end justify-between gap-3 border-t border-border-subtle pt-4">
-          <div><span className="block text-xs text-text-tertiary">Từ</span><span className="text-lg font-bold text-text-primary">{formatCurrency(getEventDisplayPrice(event))}</span></div>
+          <div><span className="block text-xs text-text-tertiary">Từ</span><span className="text-lg font-bold text-text-primary tabular-nums">{formatCurrency(getEventDisplayPrice(event))}</span></div>
           <span className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border-subtle px-3 text-sm font-bold text-text-primary group-hover:border-brand-primary group-hover:text-brand-primary">
             {event.availableSeatsCount === 0 ? 'Xem chi tiết' : 'Chọn chỗ'} <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </span>
@@ -68,7 +68,7 @@ function EventMeta({ event }: { event: Event }) {
       {typeof event.availableSeatsCount === 'number' && (
         <span className={`inline-flex items-center gap-1.5 ${isSoldOut ? 'text-danger font-semibold' : 'text-success'}`}>
           <Users className="h-4 w-4" aria-hidden="true" />
-          {isSoldOut ? 'Hết chỗ' : `Còn ${event.availableSeatsCount} chỗ`}
+          {isSoldOut ? 'Hết chỗ' : <span>Còn <span className="tabular-nums font-semibold">{event.availableSeatsCount}</span> chỗ</span>}
         </span>
       )}
     </div>

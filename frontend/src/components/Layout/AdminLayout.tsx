@@ -39,7 +39,7 @@ export default function AdminLayout() {
   const portalTitle = currentRole === 'Staff' ? 'Soát Vé TickeX' : 'Quản Trị TickeX';
 
   return (
-    <div className="min-h-screen bg-surface-0 flex flex-col md:flex-row text-text-primary relative overflow-hidden">
+    <div className="min-h-dvh bg-surface-0 flex flex-col md:flex-row text-text-primary relative overflow-hidden">
       <a href="#admin-main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-white focus:text-black focus:rounded-lg">Bỏ qua đến nội dung chính</a>
       {/* Mobile Top App Bar (< md) */}
       <header className="md:hidden h-16 bg-surface-1 border-b border-border-subtle px-4 flex items-center justify-between shrink-0 sticky top-0 z-40">
@@ -69,7 +69,7 @@ export default function AdminLayout() {
         <button
           type="button"
           aria-label="Đóng menu quản trị"
-          className="fixed inset-0 z-50 bg-surface-1/85 md:hidden animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 bg-surface-1/85 md:hidden animate-fade-in"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
@@ -180,13 +180,13 @@ export default function AdminLayout() {
               <Link
                 key={item.name}
                 to={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary group ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary group ${
                   isActive 
                     ? 'bg-surface-2 text-white border border-border-focus shadow-sm font-bold' 
                     : 'text-text-secondary hover:text-white hover:bg-surface-2/50 border border-transparent'
                 }`}
               >
-                <item.icon className={`w-4 h-4 transition-transform ${isActive ? 'text-brand-primary' : 'group-hover:scale-110'}`} aria-hidden="true" />
+                <item.icon className={`w-4 h-4 transition-colors ${isActive ? 'text-brand-primary' : 'text-text-tertiary group-hover:text-white'}`} aria-hidden="true" />
                 {item.name}
               </Link>
             );

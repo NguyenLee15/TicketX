@@ -22,7 +22,7 @@ export function EventStatusBadge({ status, isDeleted = false }: EventStatusBadge
     return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-primary/15 text-brand-primary border border-brand-primary/30 whitespace-nowrap">Bản nháp</span>;
   }
   if (normalizedStatus === 'completed' || normalizedStatus === '2') {
-    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-500/15 text-purple-400 border border-purple-500/30 whitespace-nowrap">Đã kết thúc</span>;
+    return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-secondary/15 text-brand-secondary border border-brand-secondary/30 whitespace-nowrap">Đã kết thúc</span>;
   }
   return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-danger/15 text-danger border border-danger/30 whitespace-nowrap">Đã hủy</span>;
 }

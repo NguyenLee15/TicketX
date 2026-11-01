@@ -157,7 +157,7 @@ export default function EventDetailPage() {
     if (seat.status !== 0 && !isLockedByMe) return; // Allow available seats or seats locked by current user
     if (isHydrating) return;
     if (!isAuthenticated()) {
-      toast('Vui lòng đăng nhập để chọn ghế và đặt vé.', { icon: '🔐' });
+      toast.error('Vui lòng đăng nhập để chọn ghế và đặt vé.');
       navigate('/login', { state: { from: location } });
       return;
     }

@@ -112,14 +112,14 @@ export default function EventModal({ isOpen, onClose, onSubmit, event, isLoading
 
   return (
     <div 
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-surface-1/95 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-surface-1/95 animate-backdrop-in"
       role="dialog"
       aria-modal="true"
       aria-labelledby="event-modal-title"
     >
       <div 
         ref={modalRef}
-        className="surface-panel w-full max-w-2xl max-h-[90vh] overflow-y-auto overscroll-contain p-6 sm:p-7 shadow-2xl relative animate-in zoom-in-95 duration-300 z-10"
+        className="surface-panel w-full max-w-2xl max-h-[90vh] overflow-y-auto overscroll-contain p-6 sm:p-7 shadow-2xl relative animate-modal-pop z-10"
       >
         <button 
           type="button"
@@ -315,7 +315,7 @@ export default function EventModal({ isOpen, onClose, onSubmit, event, isLoading
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="min-h-11 inline-flex items-center justify-center px-4 py-2 bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-white font-bold rounded-xl transition-colors border border-border-subtle text-xs sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-40"
+              className="min-h-11 inline-flex items-center justify-center px-4 py-2 bg-surface-2 hover:bg-surface-3 active:scale-[0.98] text-text-secondary hover:text-white font-bold rounded-xl transition-[background-color,transform] cursor-pointer border border-border-subtle text-xs sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-40"
             >
               Hủy
             </button>
@@ -323,7 +323,7 @@ export default function EventModal({ isOpen, onClose, onSubmit, event, isLoading
               type="submit"
               disabled={isLoading || isCancelled}
               aria-busy={isLoading}
-              className="min-h-11 inline-flex items-center justify-center px-5 py-2 bg-brand-primary hover:bg-brand-primary/90 text-white font-bold rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary shadow-md shadow-brand-glow gap-1.5 text-xs sm:text-sm active:scale-95 disabled:opacity-50"
+              className="min-h-11 inline-flex items-center justify-center px-5 py-2 bg-brand-primary hover:bg-brand-primary/90 text-white font-bold rounded-xl transition-[background-color,transform] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary shadow-md shadow-brand-glow gap-1.5 text-xs sm:text-sm active:scale-[0.98] disabled:opacity-50"
             >
               {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />}
               {event ? 'Lưu Thay Đổi' : 'Tạo Sự Kiện & Khởi Tạo Ghế'}
