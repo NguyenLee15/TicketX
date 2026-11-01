@@ -301,7 +301,7 @@ public class AdminController : ControllerBase
         return Ok(new { success = true, code = "OK", message = result.Message, data = (object?)null });
     }
 
-    private static string MapErrorCodeToTitle(string errorCode) => errorCode switch
+    private static string MapErrorCodeToTitle(string? errorCode) => errorCode switch
     {
         "USER_CONCURRENCY_CONFLICT" => "User Concurrency Conflict",
         "USER_NOT_FOUND" => "User Not Found",

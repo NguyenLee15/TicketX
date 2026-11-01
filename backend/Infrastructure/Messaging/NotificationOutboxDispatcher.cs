@@ -24,7 +24,7 @@ public sealed class NotificationOutboxDispatcher : BackgroundService
     }
     private async Task DispatchBatchAsync(CancellationToken cancellationToken)
     {
-        using var scope = _scopeFactory.CreateScope();
+        await using var scope = _scopeFactory.CreateAsyncScope();
         var context = scope.ServiceProvider.GetRequiredService<IApplicationDbContext>();
         var publisher = scope.ServiceProvider.GetRequiredService<IMessagePublisher>();
 

@@ -33,10 +33,12 @@ public record UpdateEventCommand(
 public class UpdateEventCommandHandler : IRequestHandler<UpdateEventCommand, AdminOperationResult>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICustomerEventCatalogCache? _catalogCache;
 
-    public UpdateEventCommandHandler(IApplicationDbContext context)
+    public UpdateEventCommandHandler(IApplicationDbContext context, ICustomerEventCatalogCache? catalogCache = null)
     {
         _context = context;
+        _catalogCache = catalogCache;
     }
 
     public async Task<AdminOperationResult> Handle(UpdateEventCommand request, CancellationToken cancellationToken)
@@ -179,6 +181,12 @@ public class UpdateEventCommandHandler : IRequestHandler<UpdateEventCommand, Adm
             return AdminOperationResult.Conflict(
                 "Sự kiện vừa được cập nhật bởi quản trị viên khác. Vui lòng tải lại dữ liệu mới nhất.",
                 "EVENT_CONCURRENCY_CONFLICT");
+        }
+
+        if (_catalogCache != null)
+        {
+            try { await _catalogCache.InvalidateAsync(cancellationToken); }
+            catch { /* non-critical cache invalidation */ }
         }
 
         return AdminOperationResult.Ok("Cập nhật sự kiện thành công.");

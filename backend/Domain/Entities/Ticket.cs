@@ -63,12 +63,14 @@ public class Ticket : BaseEntity
     {
         QrCodeSignature = qrCodeSignature;
         UpdatedAt = DateTime.UtcNow;
+        Version = Guid.NewGuid().ToByteArray();
     }
 
     public void RegenerateOrderCode()
     {
         OrderCode = GenerateOrderCode();
         UpdatedAt = DateTime.UtcNow;
+        Version = Guid.NewGuid().ToByteArray();
     }
 
     public void CheckIn(Guid? staffUserId = null)

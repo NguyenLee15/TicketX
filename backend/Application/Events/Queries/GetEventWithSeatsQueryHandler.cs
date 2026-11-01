@@ -55,8 +55,6 @@ public class GetEventWithSeatsQueryHandler : IRequestHandler<GetEventWithSeatsQu
         var seatRows = await _context.Seats
             .AsNoTracking()
             .Where(s => s.EventId == e.Id)
-            .OrderBy(s => s.Row)
-            .ThenBy(s => s.Number)
             .Select(s => new
             {
                 s.Id,
@@ -73,7 +71,8 @@ public class GetEventWithSeatsQueryHandler : IRequestHandler<GetEventWithSeatsQu
             .ToListAsync(cancellationToken);
 
         var seats = seatRows
-            .OrderBy(s => s.Row)
+            .OrderBy(s => s.Row.Length)
+            .ThenBy(s => s.Row, StringComparer.Ordinal)
             .ThenBy(s => s.Number)
             .Select(s => 
             {

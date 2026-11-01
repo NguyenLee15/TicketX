@@ -32,19 +32,19 @@ public class PaymentTransaction : BaseEntity
         ProviderTransactionId = providerTxId;
         RawWebhookPayload = rawPayload;
         ProcessedAt = DateTime.UtcNow;
-        UpdatedAt = DateTime.UtcNow;
+        Touch();
     }
 
     public void SetCheckoutUrl(string checkoutUrl)
     {
         CheckoutUrl = checkoutUrl;
-        UpdatedAt = DateTime.UtcNow;
+        Touch();
     }
 
     public void SetWebhookPayloadHash(string payloadHash)
     {
         WebhookPayloadHash = payloadHash.Length <= 64 ? payloadHash : payloadHash[..64];
-        UpdatedAt = DateTime.UtcNow;
+        Touch();
     }
 
     public void MarkFailed(string reason, string rawPayload = "")
@@ -52,7 +52,7 @@ public class PaymentTransaction : BaseEntity
         Status = "Failed";
         RawWebhookPayload = $"{reason} | {rawPayload}";
         ProcessedAt = DateTime.UtcNow;
-        UpdatedAt = DateTime.UtcNow;
+        Touch();
     }
 
     public void ResetPending()
@@ -60,7 +60,7 @@ public class PaymentTransaction : BaseEntity
         Status = "Pending";
         CheckoutUrl = string.Empty;
         ProcessedAt = DateTime.UtcNow;
-        UpdatedAt = DateTime.UtcNow;
+        Touch();
     }
 
     public void MarkRefundInitiated(string rawPayload = "")
@@ -68,7 +68,7 @@ public class PaymentTransaction : BaseEntity
         Status = "RefundInitiated";
         RawWebhookPayload = rawPayload;
         ProcessedAt = DateTime.UtcNow;
-        UpdatedAt = DateTime.UtcNow;
+        Touch();
     }
 
     public void MarkRefunded(string refundTxId = "", string rawPayload = "")
@@ -79,7 +79,7 @@ public class PaymentTransaction : BaseEntity
         if (!string.IsNullOrEmpty(rawPayload))
             RawWebhookPayload = rawPayload;
         ProcessedAt = DateTime.UtcNow;
-        UpdatedAt = DateTime.UtcNow;
+        Touch();
     }
 
     public void MarkRefundFailed(string reason, string rawPayload = "")
@@ -87,7 +87,7 @@ public class PaymentTransaction : BaseEntity
         Status = "RefundFailed";
         RawWebhookPayload = $"{reason} | {rawPayload}";
         ProcessedAt = DateTime.UtcNow;
-        UpdatedAt = DateTime.UtcNow;
+        Touch();
     }
 
     public void MarkOrphaned(string reason, string providerTxId, string rawPayload = "")
@@ -96,6 +96,12 @@ public class PaymentTransaction : BaseEntity
         ProviderTransactionId = providerTxId;
         RawWebhookPayload = $"{reason} | {rawPayload}";
         ProcessedAt = DateTime.UtcNow;
+        Touch();
+    }
+
+    private void Touch()
+    {
         UpdatedAt = DateTime.UtcNow;
+        Version = Guid.NewGuid().ToByteArray();
     }
 }

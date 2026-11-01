@@ -18,6 +18,7 @@ public class RabbitMQPublisher : IMessagePublisher, IAsyncDisposable
     private readonly string? _uri;
 
     private IConnection? _connection;
+    private readonly HashSet<string> _declaredQueues = [];
     private readonly SemaphoreSlim _connectionLock = new(1, 1);
 
     public RabbitMQPublisher(IConfiguration configuration)
@@ -50,6 +51,10 @@ public class RabbitMQPublisher : IMessagePublisher, IAsyncDisposable
             if (_connection != null)
             {
                 await _connection.DisposeAsync();
+                lock (_declaredQueues)
+                {
+                    _declaredQueues.Clear();
+                }
             }
 
             ConnectionFactory factory;
@@ -84,18 +89,35 @@ public class RabbitMQPublisher : IMessagePublisher, IAsyncDisposable
         var connection = await GetConnectionAsync(cancellationToken);
         await using var channel = await connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
-        await channel.QueueDeclareAsync(queue: _queueName,
-                             durable: true,
-                             exclusive: false,
-                             autoDelete: false,
-                             arguments: null,
-                             cancellationToken: cancellationToken);
+        bool needsDeclare;
+        lock (_declaredQueues)
+        {
+            needsDeclare = _declaredQueues.Add(_queueName);
+        }
+
+        if (needsDeclare)
+        {
+            await channel.QueueDeclareAsync(queue: _queueName,
+                                 durable: true,
+                                 exclusive: false,
+                                 autoDelete: false,
+                                 arguments: null,
+                                 cancellationToken: cancellationToken);
+        }
 
         var json = JsonSerializer.Serialize(message);
         var body = Encoding.UTF8.GetBytes(json);
 
+        var properties = new BasicProperties
+        {
+            DeliveryMode = DeliveryModes.Persistent,
+            ContentType = "application/json"
+        };
+
         await channel.BasicPublishAsync(exchange: string.Empty,
                              routingKey: _queueName,
+                             mandatory: false,
+                             basicProperties: properties,
                              body: body,
                              cancellationToken: cancellationToken);
     }

@@ -29,10 +29,12 @@ public record CreateEventCommand(
 public class CreateEventCommandHandler : IRequestHandler<CreateEventCommand, Guid>
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICustomerEventCatalogCache? _catalogCache;
 
-    public CreateEventCommandHandler(IApplicationDbContext context)
+    public CreateEventCommandHandler(IApplicationDbContext context, ICustomerEventCatalogCache? catalogCache = null)
     {
         _context = context;
+        _catalogCache = catalogCache;
     }
 
     public async Task<Guid> Handle(CreateEventCommand request, CancellationToken cancellationToken)
@@ -72,6 +74,12 @@ public class CreateEventCommandHandler : IRequestHandler<CreateEventCommand, Gui
         _context.AuditLogs.Add(audit);
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        if (_catalogCache != null)
+        {
+            try { await _catalogCache.InvalidateAsync(cancellationToken); }
+            catch { /* non-critical cache invalidation */ }
+        }
 
         return newEvent.Id;
     }

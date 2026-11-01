@@ -145,7 +145,8 @@ public sealed class RefundPayoutWorker(
 
                 if (catalogCache != null)
                 {
-                    try { await catalogCache.InvalidateAsync(CancellationToken.None); } catch { }
+                    try { await catalogCache.InvalidateAsync(CancellationToken.None); }
+                    catch (Exception ex) { logger.LogDebug(ex, "Failed to invalidate catalog cache after refund."); }
                 }
 
                 if (seatNotifications != null)
@@ -162,7 +163,10 @@ public sealed class RefundPayoutWorker(
                                 Convert.ToBase64String(seat.Version),
                                 null);
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            logger.LogDebug(ex, "Failed to send seat status notification for seat {SeatId} after refund.", seat.Id);
+                        }
                     }
                 }
             }

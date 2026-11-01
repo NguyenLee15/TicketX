@@ -34,10 +34,11 @@ public sealed class IdempotencyRecord
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
 
-public sealed class IdempotencyFilter : IAsyncActionFilter
+public sealed class IdempotencyFilter : IAsyncActionFilter, IAsyncResourceFilter
 {
     public const string HeaderName = "Idempotency-Key";
     public const string ReplayHeaderName = "Idempotency-Replay";
+    private static readonly JsonSerializerOptions WebJsonOptions = new(JsonSerializerDefaults.Web);
     private readonly IIdempotencyStore _store;
     private readonly ILogger<IdempotencyFilter> _logger;
     private readonly int _ttlSeconds;
@@ -51,6 +52,15 @@ public sealed class IdempotencyFilter : IAsyncActionFilter
         _ttlSeconds = ttlSeconds > 0 ? ttlSeconds : 86400;
         _required = required;
         _failClosed = failClosed;
+    }
+
+    public async Task OnResourceExecutionAsync(ResourceExecutingContext context, ResourceExecutionDelegate next)
+    {
+        if (context.HttpContext.Request.ContentLength is null or > 0)
+        {
+            context.HttpContext.Request.EnableBuffering();
+        }
+        await next();
     }
 
     private static bool IsValidUuidV4(string input, out Guid guid)
@@ -90,7 +100,7 @@ public sealed class IdempotencyFilter : IAsyncActionFilter
         var bodyHash = await ComputeBodyHashAsync(http.Request);
         var fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes($"{userId}:{method}:{path}:{http.Request.QueryString}:{bodyHash}")));
         var key = $"tickex:idempotency:{userId}:{method}:{path}:{keyGuid:D}";
-        var sentinel = JsonSerializer.Serialize(new IdempotencyRecord { Status = "Processing", Fingerprint = fingerprint });
+        var sentinel = JsonSerializer.Serialize(new IdempotencyRecord { Status = "Processing", Fingerprint = fingerprint }, WebJsonOptions);
         IdempotencyClaim claim;
         try { claim = await _store.TryClaimAsync(key, sentinel, TimeSpan.FromSeconds(_ttlSeconds), http.RequestAborted); }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -104,7 +114,7 @@ public sealed class IdempotencyFilter : IAsyncActionFilter
         if (!claim.Acquired)
         {
             var existingJson = claim.ExistingRecord?.Split('\n', 2).ElementAtOrDefault(1);
-            var existing = existingJson is null ? null : JsonSerializer.Deserialize<IdempotencyRecord>(existingJson);
+            var existing = existingJson is null ? null : JsonSerializer.Deserialize<IdempotencyRecord>(existingJson, WebJsonOptions);
             if (existing is not null && !string.Equals(existing.Fingerprint, fingerprint, StringComparison.OrdinalIgnoreCase))
                 context.Result = Error(http, 422, "IDEMPOTENCY_PAYLOAD_MISMATCH", "Idempotency Key Payload Mismatch", "Khóa Idempotency-Key này đã được sử dụng cho một yêu cầu khác với nội dung khác.");
             else if (existing?.Status == "Completed")
@@ -143,7 +153,7 @@ public sealed class IdempotencyFilter : IAsyncActionFilter
             ObjectResult result when (result.StatusCode ?? 200) is >= 200 and < 300 => new IdempotencyRecord
             {
                 Status = "Completed", Fingerprint = fingerprint, StatusCode = result.StatusCode ?? 200,
-                ContentType = "application/json", Body = JsonSerializer.Serialize(result.Value)
+                ContentType = "application/json", Body = JsonSerializer.Serialize(result.Value, WebJsonOptions)
             },
             StatusCodeResult result when result.StatusCode is >= 200 and < 300 => new IdempotencyRecord
             {
@@ -157,7 +167,7 @@ public sealed class IdempotencyFilter : IAsyncActionFilter
         try
         {
             if (completed is null) await _store.ReleaseAsync(key, claim.OwnerToken, CancellationToken.None);
-            else await _store.CompleteAsync(key, claim.OwnerToken, JsonSerializer.Serialize(completed), TimeSpan.FromSeconds(_ttlSeconds), CancellationToken.None);
+            else await _store.CompleteAsync(key, claim.OwnerToken, JsonSerializer.Serialize(completed, WebJsonOptions), TimeSpan.FromSeconds(_ttlSeconds), CancellationToken.None);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -169,10 +179,16 @@ public sealed class IdempotencyFilter : IAsyncActionFilter
     {
         if (request.ContentLength == 0) return string.Empty;
         request.EnableBuffering();
-        request.Body.Position = 0;
+        if (request.Body.CanSeek)
+        {
+            request.Body.Position = 0;
+        }
         using var reader = new StreamReader(request.Body, Encoding.UTF8, false, leaveOpen: true);
         var bodyText = await reader.ReadToEndAsync();
-        request.Body.Position = 0;
+        if (request.Body.CanSeek)
+        {
+            request.Body.Position = 0;
+        }
         return string.IsNullOrWhiteSpace(bodyText) ? string.Empty : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(bodyText)));
     }
 

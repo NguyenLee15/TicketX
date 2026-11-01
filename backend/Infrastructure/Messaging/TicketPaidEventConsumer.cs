@@ -118,7 +118,7 @@ public class TicketPaidEventConsumer : BackgroundService
 
                 _logger.LogInformation("Received TicketPaidEvent for Ticket {TicketId}, User {UserId}. Generating QR Code and Email...", ticketEvent.TicketId, ticketEvent.UserId);
 
-                using var scope = _scopeFactory.CreateScope();
+                await using var scope = _scopeFactory.CreateAsyncScope();
                 await ProcessEventWithIdempotencyAsync(ticketEvent, scope.ServiceProvider, _logger, stoppingToken);
 
                 await _channel.BasicAckAsync(deliveryTag: ea.DeliveryTag, multiple: false, cancellationToken: stoppingToken);
@@ -213,7 +213,7 @@ public class TicketPaidEventConsumer : BackgroundService
             : new Dictionary<string, object?>();
 
         headers["x-death-reason"] = reason;
-        headers["x-exception-message"] = exceptionMessage;
+        headers["x-exception-message"] = exceptionMessage.Length > 512 ? exceptionMessage[..512] : exceptionMessage;
         headers["x-dead-letter-timestamp"] = DateTime.UtcNow.ToString("O");
         props.Headers = headers;
 
@@ -338,9 +338,9 @@ public class TicketPaidEventConsumer : BackgroundService
                 {
                     await idempotencyStore.ReleaseAsync(idempotencyKey, claim.OwnerToken, cancellationToken);
                 }
-                catch
+                catch (Exception releaseEx)
                 {
-                    // Non-fatal cleanup suppression
+                    logger.LogDebug(releaseEx, "Non-fatal failure releasing idempotency claim {Key}", idempotencyKey);
                 }
             }
             throw;

@@ -133,8 +133,8 @@ public sealed class DashboardReadModelAdapter : IDashboardReadModel
         var isSqlite = (_context as DbContext)?.Database.ProviderName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) == true;
         if (isSqlite)
         {
-            var list = await query.Where(p => p.HasValue).Select(p => p!.Value).ToListAsync(cancellationToken);
-            return list.Sum();
+            var sumDouble = await query.Where(p => p.HasValue).SumAsync(p => (double?)p, cancellationToken);
+            return sumDouble.HasValue ? Math.Round((decimal)sumDouble.Value, 2, MidpointRounding.AwayFromZero) : 0m;
         }
 
         return await query.SumAsync(cancellationToken) ?? 0m;

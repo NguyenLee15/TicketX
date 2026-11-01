@@ -23,17 +23,20 @@ public class CancelEventCommandHandler : IRequestHandler<CancelEventCommand, Adm
     private readonly IRefundRequestPort _refundRequestPort;
     private readonly IDistributedLockService? _lockService;
     private readonly ISeatNotificationService? _seatNotificationService;
+    private readonly ICustomerEventCatalogCache? _catalogCache;
 
     public CancelEventCommandHandler(
         IApplicationDbContext context, 
         IRefundRequestPort refundRequestPort, 
         IDistributedLockService? lockService = null,
-        ISeatNotificationService? seatNotificationService = null)
+        ISeatNotificationService? seatNotificationService = null,
+        ICustomerEventCatalogCache? catalogCache = null)
     {
         _context = context;
         _refundRequestPort = refundRequestPort;
         _lockService = lockService;
         _seatNotificationService = seatNotificationService;
+        _catalogCache = catalogCache;
     }
 
     public async Task<AdminOperationResult> Handle(CancelEventCommand request, CancellationToken cancellationToken)
@@ -212,6 +215,12 @@ public class CancelEventCommandHandler : IRequestHandler<CancelEventCommand, Adm
                     // Non-fatal post-commit notification failure
                 }
             }
+        }
+
+        if (_catalogCache != null)
+        {
+            try { await _catalogCache.InvalidateAsync(cancellationToken); }
+            catch { /* non-critical cache invalidation */ }
         }
 
             return AdminOperationResult.Ok($"Hủy sự kiện thành công. Đã tạo yêu cầu hoàn tiền cho {refundedCount} vé và giải phóng {releasedSeatCount} ghế chưa bán.");

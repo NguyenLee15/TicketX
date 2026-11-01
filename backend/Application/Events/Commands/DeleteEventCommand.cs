@@ -19,11 +19,13 @@ public class DeleteEventCommandHandler : IRequestHandler<DeleteEventCommand, Adm
 {
     private readonly IApplicationDbContext _context;
     private readonly IDistributedLockService? _lockService;
+    private readonly ICustomerEventCatalogCache? _catalogCache;
 
-    public DeleteEventCommandHandler(IApplicationDbContext context, IDistributedLockService? lockService = null)
+    public DeleteEventCommandHandler(IApplicationDbContext context, IDistributedLockService? lockService = null, ICustomerEventCatalogCache? catalogCache = null)
     {
         _context = context;
         _lockService = lockService;
+        _catalogCache = catalogCache;
     }
 
     public async Task<AdminOperationResult> Handle(DeleteEventCommand request, CancellationToken cancellationToken)
@@ -107,6 +109,12 @@ public class DeleteEventCommandHandler : IRequestHandler<DeleteEventCommand, Adm
                 return AdminOperationResult.Conflict(
                     "Sự kiện vừa được cập nhật bởi quản trị viên khác. Vui lòng tải lại dữ liệu mới nhất.",
                     "EVENT_CONCURRENCY_CONFLICT");
+            }
+
+            if (_catalogCache != null)
+            {
+                try { await _catalogCache.InvalidateAsync(cancellationToken); }
+                catch { /* non-critical cache invalidation */ }
             }
 
             return AdminOperationResult.Ok("Xóa sự kiện thành công.");

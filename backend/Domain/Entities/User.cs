@@ -92,11 +92,15 @@ public class User : BaseEntity
         {
             LockoutEnd = DateTime.UtcNow.AddMinutes(lockoutMinutes);
         }
+        UpdatedAt = DateTime.UtcNow;
+        Version = Guid.NewGuid().ToByteArray();
     }
 
     public void ResetFailedLogin()
     {
         AccessFailedCount = 0;
         LockoutEnd = null;
+        UpdatedAt = DateTime.UtcNow;
+        Version = Guid.NewGuid().ToByteArray();
     }
 }
