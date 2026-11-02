@@ -62,7 +62,7 @@ export function DiscoveryHero({
             </div>
             <div className="flex items-center gap-3">
               <label htmlFor="event-sort" className="text-sm text-text-secondary">Sắp xếp sự kiện</label>
-              <select id="event-sort" value={sortBy} onChange={(event) => onSortChange(event.target.value)} className="min-h-11 flex-1 rounded-lg border border-border-subtle bg-surface-1 px-3 text-sm text-text-primary focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/30">
+              <select id="event-sort" value={sortBy} onChange={(event) => onSortChange(event.target.value)} className="select-field min-h-11 flex-1 rounded-lg border border-border-subtle bg-surface-1 px-3 text-sm text-text-primary focus:border-brand-primary focus:outline-none focus:ring-2 focus:ring-brand-primary/30 cursor-pointer">
                 <option value="date_asc">Ngày gần nhất</option>
                 <option value="date_desc">Ngày xa nhất</option>
                 <option value="price_asc">Giá thấp đến cao</option>

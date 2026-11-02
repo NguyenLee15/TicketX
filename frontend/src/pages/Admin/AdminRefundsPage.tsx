@@ -66,9 +66,15 @@ export default function AdminRefundsPage() {
 
   if (refundsQuery.isLoading) {
     return (
-      <div role="status" className="p-8 text-text-secondary flex items-center justify-center min-h-[40vh]" aria-busy="true">
-        <Loader2 className="mr-2 inline h-5 w-5 animate-spin text-brand-primary" aria-hidden="true" />
-        <span>Đang tải yêu cầu hoàn tiền...</span>
+      <div role="status" aria-busy="true" aria-label="Đang tải yêu cầu hoàn tiền" className="space-y-6 p-4 sm:p-6 max-w-7xl mx-auto animate-pulse">
+        <span className="sr-only">Đang tải yêu cầu hoàn tiền...</span>
+        <div className="h-24 bg-surface-2/40 rounded-2xl border border-border-subtle" />
+        <div className="rounded-2xl border border-border-subtle bg-surface-1 p-4 space-y-4">
+          <div className="h-10 bg-surface-2/60 rounded-xl" />
+          {[...Array(5)].map((_, i) => (
+            <div key={`refund-skel-${i}`} className="h-16 bg-surface-2/30 rounded-xl border border-border-subtle/50" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -118,10 +124,10 @@ export default function AdminRefundsPage() {
           <thead className="border-b border-border-subtle bg-surface-2/40 text-[11px] font-bold uppercase tracking-wider text-text-secondary">
             <tr>
               <th scope="col" className="p-3.5">Yêu cầu / Vé</th>
-              <th scope="col" className="p-3.5">Số tiền</th>
+              <th scope="col" className="p-3.5 text-right">Số tiền</th>
               <th scope="col" className="p-3.5">Trạng thái</th>
               <th scope="col" className="p-3.5">PayOS</th>
-              <th scope="col" className="p-3.5">Lần thử</th>
+              <th scope="col" className="p-3.5 text-right">Lần thử</th>
               <th scope="col" className="p-3.5">Thao tác</th>
             </tr>
           </thead>
@@ -132,7 +138,7 @@ export default function AdminRefundsPage() {
                   <div className="font-mono font-bold text-white text-xs">{refund.id.slice(0, 8)}</div>
                   <div className="text-xs text-text-secondary font-mono">Vé #{refund.ticketId.slice(0, 8)}</div>
                 </td>
-                <td className="whitespace-nowrap p-3.5 tabular-nums font-mono font-bold text-white text-sm">
+                <td className="whitespace-nowrap p-3.5 text-right tabular-nums font-mono font-bold text-white text-sm">
                   {money.format(refund.amount)}
                 </td>
                 <td className="p-3.5">
@@ -152,7 +158,7 @@ export default function AdminRefundsPage() {
                     <p className="mt-0.5 max-w-40 truncate text-[11px] text-text-secondary font-mono">{refund.providerReference}</p>
                   )}
                 </td>
-                <td className="p-3.5 tabular-nums font-mono text-xs text-text-secondary">{refund.attempts}</td>
+                <td className="p-3.5 text-right tabular-nums font-mono text-xs text-text-secondary">{refund.attempts}</td>
                 <td className="p-3.5 whitespace-nowrap">
                   {refund.status === 'NeedsReview' && (
                     <button 

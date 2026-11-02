@@ -37,7 +37,7 @@ export const ScanResultDisplay: React.FC<ScanResultDisplayProps> = ({ scanResult
     >
       <h2 className="sr-only">Kết quả kiểm tra vé</h2>
       {scanResult ? (
-        <div className="space-y-3.5 animate-in zoom-in-95 duration-300">
+        <div className="space-y-3.5 animate-modal-pop">
           {scanResult.status === 'valid' && (
             <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center space-y-1.5">
               <CheckCircle2 className="w-10 h-10 text-success mx-auto" aria-hidden="true" />
@@ -83,20 +83,20 @@ export const ScanResultDisplay: React.FC<ScanResultDisplayProps> = ({ scanResult
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-text-secondary">Vị Trí Ghế:</span>
-                <span className="font-bold text-brand-primary text-sm">
+                <span className="font-bold text-brand-primary text-sm tabular-nums">
                   Hàng {scanResult.ticket.row} - Ghế {scanResult.ticket.number}
                 </span>
               </div>
               {scanResult.ticket.orderCode ? (
                 <div className="flex justify-between items-center">
                   <span className="text-text-secondary">Mã Đơn Hàng:</span>
-                  <span className="font-mono text-text-tertiary">#{scanResult.ticket.orderCode}</span>
+                  <span className="font-mono text-text-tertiary tabular-nums">#{scanResult.ticket.orderCode}</span>
                 </div>
               ) : null}
               {scanResult.ticket.checkedInAt && (
                 <div className="flex justify-between items-center pt-1.5 border-t border-border-subtle text-text-tertiary text-[11px]">
                   <span>Thời Gian Soát:</span>
-                  <span className="font-mono text-text-secondary">{formatDate(scanResult.ticket.checkedInAt)}</span>
+                  <span className="font-mono text-text-secondary tabular-nums">{formatDate(scanResult.ticket.checkedInAt)}</span>
                 </div>
               )}
             </div>

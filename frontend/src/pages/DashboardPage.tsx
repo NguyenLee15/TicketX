@@ -87,7 +87,7 @@ export default function DashboardPage() {
             <p className="text-sm font-semibold uppercase tracking-[0.15em] text-brand-primary">Lịch sự kiện</p>
             <h2 id="catalog-title" className="mt-1 text-2xl font-display font-bold text-text-primary sm:text-3xl">Khám phá chương trình</h2>
           </div>
-          <p className="text-sm text-text-secondary" aria-live="polite">{events.length} / {totalCount} sự kiện</p>
+          <p className="text-sm text-text-secondary tabular-nums" aria-live="polite">{events.length} / {totalCount} sự kiện</p>
         </div>
 
         {loading ? (
@@ -130,11 +130,11 @@ export default function DashboardPage() {
               aria-label="Trang trước"
               onClick={() => updateFilters({ page: Math.max(1, page - 1) })}
               disabled={page === 1}
-              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border-subtle bg-surface-2 disabled:opacity-40 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border-subtle bg-surface-2 transition-[background-color,transform] hover:bg-surface-3 active:scale-[0.96] disabled:opacity-40 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
             >
               <ChevronLeft className="h-4 w-4" aria-hidden="true" />
             </button>
-            <span className="px-3 text-sm text-text-secondary">
+            <span className="px-3 text-sm text-text-secondary tabular-nums">
               Trang {page} / {totalPages}
             </span>
             <button
@@ -142,7 +142,7 @@ export default function DashboardPage() {
               aria-label="Trang sau"
               onClick={() => updateFilters({ page: Math.min(totalPages, page + 1) })}
               disabled={page >= totalPages}
-              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border-subtle bg-surface-2 disabled:opacity-40 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border-subtle bg-surface-2 transition-[background-color,transform] hover:bg-surface-3 active:scale-[0.96] disabled:opacity-40 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
             >
               <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </button>

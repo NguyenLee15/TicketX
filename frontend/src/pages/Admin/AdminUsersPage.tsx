@@ -200,7 +200,7 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-8 animate-in fade-in duration-500">
+    <div className="space-y-6 max-w-7xl mx-auto pb-8 animate-fade-in">
       {/* Top Header */}
       <div className="surface-panel flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6">
         <div>

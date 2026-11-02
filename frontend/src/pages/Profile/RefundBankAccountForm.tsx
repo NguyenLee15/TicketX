@@ -85,7 +85,7 @@ export function RefundBankAccountForm({ bankBin, accountName, maskedAccount, onS
           </button>
           {maskedAccount && (
             isConfirmingDelete ? (
-              <div className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-1">
+              <div className="inline-flex flex-wrap min-h-11 items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-1.5">
                 <span id="refund-confirm-delete-text" className="text-xs font-medium text-danger">Xác nhận xóa tài khoản?</span>
                 <button
                   type="button"
@@ -96,7 +96,7 @@ export function RefundBankAccountForm({ bankBin, accountName, maskedAccount, onS
                     setIsConfirmingDelete(false);
                     void onDelete();
                   }}
-                  className="min-h-9 inline-flex items-center justify-center rounded bg-danger px-3 py-1 text-xs font-semibold text-white hover:bg-danger/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger disabled:opacity-60"
+                  className="min-h-11 inline-flex items-center justify-center rounded-lg bg-danger px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-danger/90 active:scale-[0.98] transition-[background-color,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger disabled:opacity-60 cursor-pointer"
                 >
                   Xác nhận
                 </button>
@@ -105,7 +105,7 @@ export function RefundBankAccountForm({ bankBin, accountName, maskedAccount, onS
                   disabled={isSubmitting}
                   aria-describedby="refund-confirm-delete-text"
                   onClick={() => setIsConfirmingDelete(false)}
-                  className="min-h-9 inline-flex items-center justify-center rounded border border-border-subtle bg-surface-2 px-3 py-1 text-xs font-medium text-text-secondary hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+                  className="min-h-11 inline-flex items-center justify-center rounded-lg border border-border-subtle bg-surface-2 px-3.5 py-1.5 text-xs font-medium text-text-secondary hover:text-white active:scale-[0.98] transition-[color,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer"
                 >
                   Hủy
                 </button>

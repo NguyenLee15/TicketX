@@ -183,7 +183,7 @@ export default function EventModal({ isOpen, onClose, onSubmit, event, isLoading
                   aria-label="Thể loại sự kiện"
                   aria-invalid={Boolean(errors.category)}
                   aria-describedby={errors.category ? 'event-category-error' : undefined}
-                  className="w-full bg-surface-2 border border-border-subtle rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary/50 transition-colors cursor-pointer"
+                  className="select-field min-h-11 w-full bg-surface-2 border border-border-subtle rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary/50 transition-colors cursor-pointer"
                 >
                   {CATEGORIES.map(cat => (
                     <option key={cat} value={cat} className="bg-surface-1 text-white">{cat}</option>
@@ -201,7 +201,7 @@ export default function EventModal({ isOpen, onClose, onSubmit, event, isLoading
                   aria-label="Trạng thái sự kiện"
                   aria-invalid={Boolean(errors.status)}
                   aria-describedby={errors.status ? 'event-status-error' : undefined}
-                  className="w-full bg-surface-2 border border-border-subtle rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary/50 transition-colors cursor-pointer disabled:opacity-50"
+                  className="select-field min-h-11 w-full bg-surface-2 border border-border-subtle rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary/50 transition-colors cursor-pointer disabled:opacity-50"
                 >
                   <option value="Published" className="bg-surface-1 text-white">Đang mở bán (Published)</option>
                   <option value="Draft" disabled={hasTicketHistory && (event?.status === 1 || event?.status === ('Published' as unknown as number))} className="bg-surface-1 text-white">Bản nháp (Draft)</option>

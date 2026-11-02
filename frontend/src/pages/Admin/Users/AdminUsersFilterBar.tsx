@@ -30,7 +30,7 @@ export const AdminUsersFilterBar: React.FC<AdminUsersFilterBarProps> = ({
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Tìm theo tên hoặc email..."
           aria-label="Tìm người dùng theo tên hoặc email"
-          className="w-full bg-surface-2 border border-border-subtle rounded-xl pl-9 pr-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary/50"
+          className="w-full bg-surface-2 border border-border-subtle rounded-xl pl-9 pr-3 py-2 min-h-11 text-xs sm:text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary/50"
         />
       </div>
 
@@ -40,7 +40,7 @@ export const AdminUsersFilterBar: React.FC<AdminUsersFilterBarProps> = ({
           value={roleFilter}
           onChange={(e) => onRoleChange(e.target.value)}
           aria-label="Lọc theo vai trò"
-          className="bg-surface-2 border border-border-subtle rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary cursor-pointer flex-1 sm:flex-initial"
+          className="select-field min-h-11 bg-surface-2 border border-border-subtle rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary cursor-pointer flex-1 sm:flex-initial"
         >
           <option value="">Tất cả vai trò</option>
           <option value="Admin">Quản trị viên (Admin)</option>
@@ -53,7 +53,7 @@ export const AdminUsersFilterBar: React.FC<AdminUsersFilterBarProps> = ({
           value={blockFilter}
           onChange={(e) => onBlockChange(e.target.value)}
           aria-label="Lọc theo trạng thái tài khoản"
-          className="bg-surface-2 border border-border-subtle rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary cursor-pointer flex-1 sm:flex-initial"
+          className="select-field min-h-11 bg-surface-2 border border-border-subtle rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary cursor-pointer flex-1 sm:flex-initial"
         >
           <option value="">Tất cả trạng thái</option>
           <option value="active">Đang hoạt động</option>

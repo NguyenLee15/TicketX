@@ -29,7 +29,7 @@ export const RecentScansList: React.FC<RecentScansListProps> = ({ recentScans })
               {item.status === 'invalid' && <XCircle className="w-4 h-4 text-red-400 shrink-0" aria-hidden="true" />}
               <div className="truncate">
                 <p className="font-bold text-white truncate">{item.ticket?.attendeeName || (item.status === 'conflict' ? 'Xung đột trạm quét' : 'Từ chối vào cổng')}</p>
-                <p className="text-[10px] text-text-secondary truncate">
+                <p className="text-[10px] text-text-secondary truncate tabular-nums">
                   {item.ticket ? `Hàng ${item.ticket.row} - Ghế ${item.ticket.number}` : item.message}
                 </p>
               </div>

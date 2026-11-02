@@ -28,7 +28,7 @@ export function DashboardTopEvents({ topEvents }: DashboardTopEventsProps) {
                       {evt.category}
                     </span>
                   </div>
-                  <div className="text-right shrink-0 whitespace-nowrap">
+                  <div className="text-right shrink-0 whitespace-nowrap tabular-nums">
                     <span className="font-display font-black text-white text-xs sm:text-sm block">
                       {currencyFormatter.format(evt.revenue)}
                     </span>

@@ -248,11 +248,11 @@ export default function MyTicketsPage() {
 
   if (loadError) {
     return (
-      <div className="max-w-4xl mx-auto flex min-h-[40vh] flex-col items-center justify-center gap-4 text-center" role="alert">
+      <div className="surface-panel max-w-4xl mx-auto flex min-h-[40vh] flex-col items-center justify-center gap-4 p-8 text-center mt-6" role="alert">
         <XCircle className="w-10 h-10 text-danger" aria-hidden="true" />
         <h1 className="text-xl font-bold text-white">Không thể tải danh sách vé</h1>
         <p className="text-sm text-text-secondary">Kiểm tra kết nối và thử lại.</p>
-        <button type="button" aria-label="Thử lại tải danh sách vé" onClick={() => void refetchTickets()} className="min-h-11 inline-flex items-center justify-center rounded-xl bg-brand-primary px-5 py-2.5 text-sm font-bold text-white focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer">
+        <button type="button" aria-label="Thử lại tải danh sách vé" onClick={() => void refetchTickets()} className="min-h-11 inline-flex items-center justify-center rounded-xl bg-brand-primary hover:bg-brand-primary/90 active:scale-[0.98] transition-[background-color,transform] px-5 py-2.5 text-sm font-bold text-white focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer">
           Thử lại
         </button>
       </div>
@@ -260,7 +260,7 @@ export default function MyTicketsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500 pb-12 relative text-text-primary">
+    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in pb-12 relative text-text-primary">
       {/* Header Banner */}
       <div className="surface-panel flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 shadow-xl">
         <div>

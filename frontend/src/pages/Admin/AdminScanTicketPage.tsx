@@ -148,7 +148,7 @@ export default function AdminScanTicketPage() {
   }, []);
 
   return (
-    <div className="space-y-6 pb-8 animate-in fade-in duration-500 text-text-primary max-w-7xl mx-auto">
+    <div className="space-y-6 pb-8 animate-fade-in text-text-primary max-w-7xl mx-auto">
       {/* Header Banner */}
       <div className="surface-panel flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 p-5 sm:p-6">
         <div>

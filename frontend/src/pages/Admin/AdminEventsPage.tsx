@@ -261,7 +261,7 @@ export default function AdminEventsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-8 animate-in fade-in duration-500">
+    <div className="space-y-6 max-w-7xl mx-auto pb-8 animate-fade-in">
       <AdminEventsHeader onCreate={handleOpenCreateModal} />
 
       {/* Filter & Search Bar */}

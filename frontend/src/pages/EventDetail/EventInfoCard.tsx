@@ -41,10 +41,10 @@ export const EventInfoCard: React.FC<EventInfoCardProps> = ({ event }) => {
             </div>
             <div>
               <p className="text-[10px] text-text-tertiary font-bold uppercase tracking-wider">Thời Gian</p>
-              <p className="font-bold text-white text-xs sm:text-sm">
+              <p className="font-bold text-white text-xs sm:text-sm tabular-nums">
                 {formatDate(event.date, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
               </p>
-              <p className="text-[11px] text-brand-secondary font-semibold">
+              <p className="text-[11px] text-brand-secondary font-semibold tabular-nums">
                 {formatDate(event.date, { hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
@@ -56,7 +56,7 @@ export const EventInfoCard: React.FC<EventInfoCardProps> = ({ event }) => {
             </div>
             <div>
               <p className="text-[10px] text-text-tertiary font-bold uppercase tracking-wider">Địa Điểm</p>
-              <p className="font-bold text-white text-xs sm:text-sm">{event.venueName || event.location}</p>
+              <p className="font-bold text-white text-xs sm:text-sm tabular-nums">{event.venueName || event.location}</p>
               {event.venueName && <p className="text-[11px] text-text-secondary">{event.location}</p>}
             </div>
           </div>

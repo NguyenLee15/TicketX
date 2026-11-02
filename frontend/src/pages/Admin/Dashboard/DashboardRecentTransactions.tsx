@@ -22,15 +22,15 @@ export function DashboardRecentTransactions({ recentTransactions }: DashboardRec
             <div key={tx.ticketId} role="article" aria-label={`Giao dịch đơn hàng #${tx.orderCode}`} className="p-3 rounded-xl bg-surface-2/40 border border-border-subtle flex items-center justify-between text-xs gap-3">
               <div className="space-y-0.5 min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-brand-primary text-[11px] whitespace-nowrap">#{tx.orderCode}</span>
+                  <span className="font-mono font-bold text-brand-primary text-[11px] whitespace-nowrap tabular-nums">#{tx.orderCode}</span>
                   <span className="font-bold text-white truncate">{tx.userName}</span>
                 </div>
                 <p className="text-[11px] text-text-secondary line-clamp-1">{tx.eventTitle}</p>
-                <p className="text-[10px] text-text-tertiary whitespace-nowrap">{dateTimeFormatter.format(new Date(tx.createdAt))}</p>
+                <p className="text-[10px] text-text-tertiary whitespace-nowrap tabular-nums">{dateTimeFormatter.format(new Date(tx.createdAt))}</p>
               </div>
 
               <div className="text-right space-y-1 shrink-0 whitespace-nowrap">
-                <span className="font-display font-black text-white text-xs sm:text-sm block">
+                <span className="font-display font-black text-white text-xs sm:text-sm block tabular-nums">
                   {currencyFormatter.format(tx.amount)}
                 </span>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full inline-block whitespace-nowrap ${

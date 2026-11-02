@@ -26,9 +26,9 @@ export const SeatLegend: React.FC = () => {
         <div className="w-3 h-3 rounded-t bg-brand-primary border border-brand-primary shadow-sm shadow-brand-glow shrink-0" aria-hidden="true" />
         <span className="text-white font-bold">Đang chọn</span>
       </div>
-      <div className="flex items-center gap-1.5 bg-surface-2/60 px-2.5 py-1 rounded-lg border border-border-subtle whitespace-nowrap shrink-0">
+      <div className="flex items-center gap-1.5 bg-surface-2/60 px-2.5 py-1.5 rounded-lg border border-border-subtle whitespace-nowrap shrink-0">
         <div className="w-3 h-3 rounded-t bg-warning/20 border border-warning/50 shrink-0" aria-hidden="true" />
-        <span className="text-text-secondary font-medium">Đang giữ chỗ (5p)</span>
+        <span className="text-text-secondary font-medium tabular-nums">Đang giữ chỗ (5p)</span>
       </div>
       <div className="flex items-center gap-1.5 bg-surface-2/60 px-2.5 py-1 rounded-lg border border-border-subtle whitespace-nowrap shrink-0">
         <div className="w-3 h-3 rounded-t bg-danger/20 border border-danger/50 shrink-0" aria-hidden="true" />

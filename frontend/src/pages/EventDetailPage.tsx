@@ -289,12 +289,12 @@ export default function EventDetailPage() {
   }
 
   return (
-    <div className="animate-in fade-in duration-500 pb-12 relative text-text-primary max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="animate-fade-in pb-12 relative text-text-primary max-w-7xl mx-auto">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <Link 
           to="/" 
           aria-label="Quay lại danh sách sự kiện"
-          className="inline-flex min-h-11 items-center px-3.5 rounded-xl bg-surface-2 border border-border-subtle text-text-secondary hover:text-white hover:bg-surface-3 transition-colors text-xs sm:text-sm font-medium focus-visible:ring-2 focus-visible:ring-brand-primary"
+          className="inline-flex min-h-11 items-center px-3.5 rounded-xl bg-surface-2 border border-border-subtle text-text-secondary hover:text-white hover:bg-surface-3 active:scale-[0.98] transition-[background-color,color,transform] text-xs sm:text-sm font-medium focus-visible:ring-2 focus-visible:ring-brand-primary"
         >
           <ArrowLeft className="w-4 h-4 mr-1.5" aria-hidden="true" />
           <span>Quay lại danh sách</span>

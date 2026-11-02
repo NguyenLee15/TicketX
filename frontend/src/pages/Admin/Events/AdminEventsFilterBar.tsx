@@ -30,7 +30,7 @@ export const AdminEventsFilterBar: React.FC<AdminEventsFilterBarProps> = ({
           value={searchQuery}
           onChange={e => onSearchChange(e.target.value)}
           aria-label="Tìm kiếm sự kiện"
-          className="w-full bg-transparent pl-10 pr-4 py-2 text-xs sm:text-sm text-white placeholder-text-tertiary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+          className="w-full bg-transparent pl-10 pr-4 py-2 min-h-11 text-xs sm:text-sm text-white placeholder-text-tertiary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
         />
       </div>
 
@@ -39,7 +39,7 @@ export const AdminEventsFilterBar: React.FC<AdminEventsFilterBarProps> = ({
           value={categoryFilter}
           onChange={e => onCategoryChange(e.target.value)}
           aria-label="Lọc theo thể loại"
-          className="bg-surface-2 border border-border-subtle rounded-xl px-3 py-2 text-xs sm:text-sm text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary cursor-pointer whitespace-nowrap flex-1 sm:flex-initial"
+          className="select-field min-h-11 bg-surface-2 border border-border-subtle rounded-xl px-3 py-2 text-xs sm:text-sm text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary cursor-pointer whitespace-nowrap flex-1 sm:flex-initial"
         >
           <option value="All">Tất cả thể loại</option>
           <option value="Concert">Nhạc hội (Concert)</option>
@@ -53,7 +53,7 @@ export const AdminEventsFilterBar: React.FC<AdminEventsFilterBarProps> = ({
           value={statusFilter}
           onChange={e => onStatusChange(e.target.value)}
           aria-label="Lọc theo trạng thái"
-          className="bg-surface-2 border border-border-subtle rounded-xl px-3 py-2 text-xs sm:text-sm text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary cursor-pointer whitespace-nowrap flex-1 sm:flex-initial"
+          className="select-field min-h-11 bg-surface-2 border border-border-subtle rounded-xl px-3 py-2 text-xs sm:text-sm text-text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary cursor-pointer whitespace-nowrap flex-1 sm:flex-initial"
         >
           <option value="All">Tất cả trạng thái</option>
           <option value="1">Đang mở bán (Published)</option>

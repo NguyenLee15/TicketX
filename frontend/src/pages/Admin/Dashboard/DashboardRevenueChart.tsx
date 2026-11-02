@@ -55,7 +55,7 @@ export function DashboardRevenueChart({ dailyStats }: DashboardRevenueChartProps
 
               return (
                 <div key={item.date} className="flex flex-col items-center h-full justify-end group relative">
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-12 z-20 pointer-events-none bg-surface-1 border border-border-subtle shadow-xl px-2.5 py-1.5 rounded-lg text-center whitespace-nowrap">
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-12 z-20 pointer-events-none bg-surface-1 border border-border-subtle shadow-xl px-2.5 py-1.5 rounded-lg text-center whitespace-nowrap tabular-nums">
                     <p className="text-[11px] font-bold text-white">{currencyFormatter.format(item.revenue)}</p>
                     <p className="text-[10px] text-text-secondary">{numberFormatter.format(item.ticketsSold)} vé ({item.date})</p>
                   </div>
@@ -67,7 +67,7 @@ export function DashboardRevenueChart({ dailyStats }: DashboardRevenueChartProps
                     />
                   </div>
 
-                  <div className="text-center mt-2">
+                  <div className="text-center mt-2 tabular-nums">
                     <span className="text-[11px] font-bold text-white block">{formattedDate}</span>
                     <span className="text-[10px] text-text-tertiary block">{dayName}</span>
                   </div>

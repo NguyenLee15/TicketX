@@ -94,7 +94,7 @@ export function DashboardKpiGrid({ stats }: DashboardKpiGridProps) {
       {statCards.map((stat) => (
         <div 
           key={stat.title}
-          className="surface-panel p-5 sm:p-6 relative overflow-hidden group hover:-translate-y-0.5 transition-transform duration-200"
+          className="surface-panel p-5 sm:p-6 relative overflow-hidden group hover:border-border-default transition-colors duration-200"
         >
           <div className="flex justify-between items-start mb-3 relative z-10 gap-2">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${stat.border} ${stat.bg} shrink-0`}>

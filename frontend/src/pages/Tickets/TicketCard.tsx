@@ -88,12 +88,12 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
     }
     if (s === 'refundpending') {
       return (
-        <>
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-warning/15 text-warning border border-warning/30 uppercase tracking-wider whitespace-nowrap shrink-0">
-          <Clock className="w-3.5 h-3.5" aria-hidden="true" /> Đang Hoàn Tiền
-        </span>
-        <Link to="/profile?refundBankAccount=1" aria-label={`Kiểm tra tài khoản nhận tiền hoàn vé cho sự kiện ${ticket.eventTitle}`} className="ml-2 text-xs font-semibold text-brand-primary underline underline-offset-4">Kiểm tra tài khoản nhận tiền</Link>
-        </>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-warning/15 text-warning border border-warning/30 uppercase tracking-wider whitespace-nowrap shrink-0">
+            <Clock className="w-3.5 h-3.5" aria-hidden="true" /> Đang Hoàn Tiền
+          </span>
+          <Link to="/profile?refundBankAccount=1" aria-label={`Kiểm tra tài khoản nhận tiền hoàn vé cho sự kiện ${ticket.eventTitle}`} className="text-xs font-semibold text-brand-primary underline underline-offset-4 hover:text-brand-secondary transition-colors">Kiểm tra tài khoản nhận tiền</Link>
+        </div>
       );
     }
     if (s === 'cancelled') {
@@ -118,7 +118,7 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
       {/* Left: Concert Pass Information */}
       <div className="p-5 sm:p-6 flex-1 border-b md:border-b-0 md:border-r border-border-subtle border-dashed relative z-10 flex flex-col justify-between space-y-4">
         <div className="space-y-3">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             {getStatusBadge(ticket.status)}
 
             {isVip && (
@@ -133,7 +133,7 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
           </h2>
           
           <div className="flex flex-wrap items-center gap-2 text-text-secondary text-xs">
-            <div className="flex items-center bg-surface-2/60 px-2.5 py-1 rounded-lg border border-border-subtle whitespace-nowrap">
+            <div className="flex items-center bg-surface-2/60 px-2.5 py-1 rounded-lg border border-border-subtle whitespace-nowrap tabular-nums">
               <Calendar className="w-3.5 h-3.5 mr-1.5 text-brand-secondary shrink-0" aria-hidden="true" />
               <span className="font-semibold text-white">
                 {formatDate(ticket.eventDate, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -173,12 +173,12 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
         {/* Pending Actions (Resume Checkout / Release Hold) */}
         {ticket.status.toLowerCase() === 'pending' && (
           <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 border-t border-border-subtle/60 text-xs">
-            <div className="text-warning flex items-center gap-1.5 text-[11px] whitespace-nowrap">
-              <Clock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+            <div className="text-warning flex items-start sm:items-center gap-1.5 text-[11px] leading-snug">
+              <Clock className="w-3.5 h-3.5 shrink-0 mt-0.5 sm:mt-0" aria-hidden="true" />
               <span>Chưa hoàn tất thanh toán. Ghế đang được giữ tạm thời.</span>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               {onResumePayment && (
                 <button
                   type="button"
@@ -221,7 +221,7 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
         {/* Refund Notice / Button */}
         {ticket.status.toLowerCase() === 'paid' && (
           <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 border-t border-border-subtle/60 text-xs">
-            <div className="text-text-tertiary flex items-center gap-1.5 text-[11px] whitespace-nowrap">
+            <div className="text-text-tertiary flex items-center gap-1.5 text-[11px] tabular-nums">
               <Clock className="w-3.5 h-3.5 text-warning shrink-0" aria-hidden="true" />
               <span>Hạn hoàn vé: Trước giờ diễn {ticket.refundCutoffHours}h</span>
             </div>

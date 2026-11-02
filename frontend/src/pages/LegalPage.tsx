@@ -11,6 +11,6 @@ export default function LegalPage() {
       <section><h2 className="text-xl font-bold text-white">Thanh Toán & Hoàn Vé</h2><p className="mt-2">Thanh toán và hoàn vé tuân theo trạng thái từ nhà cung cấp thanh toán, thời hạn hoàn vé của từng sự kiện và quy định pháp luật áp dụng.</p></section>
       <section><h2 className="text-xl font-bold text-white">Liên Hệ</h2><p className="mt-2">Gửi yêu cầu đến <a className="text-brand-primary underline underline-offset-4" href="mailto:support@tickex.vn" aria-label="Gửi email hỗ trợ khách hàng tới support@tickex.vn">support@tickex.vn</a>.</p></section>
     </div>
-    <Link to="/" aria-label="Về trang chủ TickeX" className="mt-8 inline-flex rounded-xl bg-surface-2 px-4 py-2 text-white hover:bg-surface-3 focus-visible:ring-2 focus-visible:ring-brand-primary transition-colors">Về Trang Chủ</Link>
+    <Link to="/" aria-label="Về trang chủ TickeX" className="mt-8 inline-flex min-h-11 items-center rounded-xl bg-surface-2 border border-border-subtle px-5 py-2.5 text-sm font-semibold text-white hover:bg-surface-3 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary transition-[background-color,transform]">Về Trang Chủ</Link>
   </article>;
 }
