@@ -31,7 +31,7 @@ public sealed class RefreshToken : BaseEntity
 
     public void Revoke(string? replacedByTokenHash = null)
     {
-        RevokedAtUtc ??= DateTime.UtcNow;
+        RevokedAtUtc = DateTime.UtcNow;
         ReplacedByTokenHash = replacedByTokenHash;
         UpdatedAt = DateTime.UtcNow;
     }

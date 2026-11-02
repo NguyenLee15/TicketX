@@ -26,7 +26,7 @@ public sealed class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCom
             await _tokens.RevokeAllForUserAsync(current.UserId, cancellationToken);
             return Invalid();
         }
-        var user = await _db.Users.FirstOrDefaultAsync(x => x.Id == current.UserId, cancellationToken);
+        var user = await _db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == current.UserId, cancellationToken);
         if (user is null || user.IsBlocked || user.IsLockedOut() || current.SecurityStamp != user.SecurityStamp) return Invalid();
 
         var replacementRaw = RefreshTokenCrypto.Generate();

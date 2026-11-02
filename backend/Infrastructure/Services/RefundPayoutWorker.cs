@@ -60,6 +60,14 @@ public sealed class RefundPayoutWorker(
         if (claimed != 1) return true;
 
         var refund = await db.RefundRequests.SingleAsync(x => x.Id == candidateId.Value && x.LeaseOwner == _workerId, cancellationToken);
+
+        if (refund.Amount <= 0m || refund.Amount != decimal.Truncate(refund.Amount))
+        {
+            refund.MarkNeedsReview("Refund amount is not an integer VND amount.", "INVALID_AMOUNT");
+            await db.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+
         var ticket = await db.Tickets.SingleAsync(x => x.Id == refund.TicketId, cancellationToken);
         var payment = await db.PaymentTransactions.SingleOrDefaultAsync(x => x.TicketId == refund.TicketId, cancellationToken);
         var provider = scope.ServiceProvider.GetRequiredService<IPayOSPayoutService>();
@@ -67,13 +75,6 @@ public sealed class RefundPayoutWorker(
         var destination = protector.Unprotect(refund.EncryptedDestinationSnapshot!);
         var stableReference = $"refund-{refund.Id:N}-{refund.ProviderRetryGeneration}";
         var providerIdempotencyKey = $"{refund.Id:N}-{refund.ProviderRetryGeneration}";
-
-        if (refund.Amount != decimal.Truncate(refund.Amount))
-        {
-            refund.MarkNeedsReview("Refund amount is not an integer VND amount.", "INVALID_AMOUNT");
-            await db.SaveChangesAsync(cancellationToken);
-            return true;
-        }
 
         try
         {

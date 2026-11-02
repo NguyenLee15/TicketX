@@ -16,6 +16,7 @@ public partial class ProcessPaymentCommandHandler
     {
         var data = request.PaymentData;
         var initialTicket = await _context.Tickets
+            .AsNoTracking()
             .FirstOrDefaultAsync(t => t.OrderCode == data.OrderCode, cancellationToken);
 
         if (initialTicket == null)

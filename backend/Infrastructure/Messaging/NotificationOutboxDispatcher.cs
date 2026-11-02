@@ -59,6 +59,7 @@ public sealed class NotificationOutboxDispatcher : BackgroundService
 
         // Fetch only records securely leased by this instance
         var claimedItems = await context.NotificationOutbox
+            .AsNoTracking()
             .Where(x => candidateIds.Contains(x.Id) && x.Status == "Processing" && x.LastError == leaseToken)
             .ToListAsync(cancellationToken);
 
@@ -74,7 +75,22 @@ public sealed class NotificationOutboxDispatcher : BackgroundService
                 _logger.LogWarning(ex, "Retrying notification outbox item {OutboxId}", item.Id);
                 item.MarkFailed($"PublishFailed: {ex.GetType().Name}", TimeSpan.FromMinutes(1));
             }
+
+            var updatedCount = await context.NotificationOutbox
+                .Where(x => x.Id == item.Id && x.Status == "Processing" && x.LastError == leaseToken)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(b => b.Status, item.Status)
+                    .SetProperty(b => b.AttemptCount, item.AttemptCount)
+                    .SetProperty(b => b.NextAttemptAt, item.NextAttemptAt)
+                    .SetProperty(b => b.ProcessedAt, item.ProcessedAt)
+                    .SetProperty(b => b.LastError, item.LastError)
+                    .SetProperty(b => b.UpdatedAt, item.UpdatedAt),
+                    cancellationToken);
+
+            if (updatedCount == 0)
+            {
+                _logger.LogWarning("Outbox item {OutboxId} lease expired or was reclaimed before status update could be committed", item.Id);
+            }
         }
-        await context.SaveChangesAsync(cancellationToken);
     }
 }

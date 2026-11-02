@@ -29,25 +29,60 @@ public sealed class DashboardReadModelAdapter : IDashboardReadModel
         var totalEvents = await _context.Events.CountAsync(e => !e.IsDeleted, cancellationToken);
         var paidStates = new[] { TicketStatus.Paid, TicketStatus.Used };
 
-        var totalTicketsSold = await operationalTickets.CountAsync(t => paidStates.Contains(t.Status), cancellationToken);
-        var totalRevenue = await SumAmountAsync(
-            operationalTickets
-                .Where(t => t.PaidAt.HasValue && (paidStates.Contains(t.Status) || t.Status == TicketStatus.RefundPending || t.Status == TicketStatus.Cancelled))
-                .Select(t => (decimal?)t.Price),
-            cancellationToken);
-        var totalRefunded = await SumAmountAsync(
-            operationalTickets
-                .Where(t => t.Status == TicketStatus.Cancelled && t.RefundAmount.HasValue)
-                .Select(t => t.RefundAmount),
-            cancellationToken);
-        var totalRefundPending = await SumAmountAsync(
-            operationalTickets
-                .Where(t => t.Status == TicketStatus.RefundPending)
-                .Select(t => (decimal?)t.Price),
-            cancellationToken);
-        var totalCheckedIn = await operationalTickets.CountAsync(t => t.Status == TicketStatus.Used, cancellationToken);
-
         var isSqlite = (_context as DbContext)?.Database.ProviderName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) == true;
+
+        int totalTicketsSold;
+        decimal totalRevenue;
+        decimal totalRefunded;
+        decimal totalRefundPending;
+        int totalCheckedIn;
+
+        if (isSqlite)
+        {
+            var kpi = await operationalTickets
+                .GroupBy(_ => 1)
+                .Select(g => new
+                {
+                    Sold = g.Count(t => paidStates.Contains(t.Status)),
+                    Rev = g.Where(t => t.PaidAt.HasValue && (paidStates.Contains(t.Status) || t.Status == TicketStatus.RefundPending || t.Status == TicketStatus.Cancelled))
+                           .Sum(t => (double?)t.Price) ?? 0,
+                    Refunded = g.Where(t => t.Status == TicketStatus.Cancelled && t.RefundAmount.HasValue)
+                                .Sum(t => (double?)t.RefundAmount) ?? 0,
+                    Pending = g.Where(t => t.Status == TicketStatus.RefundPending)
+                               .Sum(t => (double?)t.Price) ?? 0,
+                    CheckedIn = g.Count(t => t.Status == TicketStatus.Used)
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            totalTicketsSold = kpi?.Sold ?? 0;
+            totalRevenue = kpi != null ? Math.Round((decimal)kpi.Rev, 2, MidpointRounding.AwayFromZero) : 0m;
+            totalRefunded = kpi != null ? Math.Round((decimal)kpi.Refunded, 2, MidpointRounding.AwayFromZero) : 0m;
+            totalRefundPending = kpi != null ? Math.Round((decimal)kpi.Pending, 2, MidpointRounding.AwayFromZero) : 0m;
+            totalCheckedIn = kpi?.CheckedIn ?? 0;
+        }
+        else
+        {
+            var kpi = await operationalTickets
+                .GroupBy(_ => 1)
+                .Select(g => new
+                {
+                    Sold = g.Count(t => paidStates.Contains(t.Status)),
+                    Rev = g.Where(t => t.PaidAt.HasValue && (paidStates.Contains(t.Status) || t.Status == TicketStatus.RefundPending || t.Status == TicketStatus.Cancelled))
+                           .Sum(t => (decimal?)t.Price) ?? 0m,
+                    Refunded = g.Where(t => t.Status == TicketStatus.Cancelled && t.RefundAmount.HasValue)
+                                .Sum(t => t.RefundAmount) ?? 0m,
+                    Pending = g.Where(t => t.Status == TicketStatus.RefundPending)
+                               .Sum(t => (decimal?)t.Price) ?? 0m,
+                    CheckedIn = g.Count(t => t.Status == TicketStatus.Used)
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            totalTicketsSold = kpi?.Sold ?? 0;
+            totalRevenue = kpi?.Rev ?? 0m;
+            totalRefunded = kpi?.Refunded ?? 0m;
+            totalRefundPending = kpi?.Pending ?? 0m;
+            totalCheckedIn = kpi?.CheckedIn ?? 0;
+        }
         List<TopEventAggregate> topAggregates;
         if (isSqlite)
         {
@@ -126,18 +161,6 @@ public sealed class DashboardReadModelAdapter : IDashboardReadModel
         return new DashboardStatsResult(totalUsers, totalEvents, totalTicketsSold, totalRevenue, totalRefunded,
             totalCheckedIn, topEvents, recentTransactions, dailyStats, totalRefundPending,
             totalRevenue - totalRefunded - totalRefundPending);
-    }
-
-    private async Task<decimal> SumAmountAsync(IQueryable<decimal?> query, CancellationToken cancellationToken)
-    {
-        var isSqlite = (_context as DbContext)?.Database.ProviderName?.Contains("Sqlite", StringComparison.OrdinalIgnoreCase) == true;
-        if (isSqlite)
-        {
-            var sumDouble = await query.Where(p => p.HasValue).SumAsync(p => (double?)p, cancellationToken);
-            return sumDouble.HasValue ? Math.Round((decimal)sumDouble.Value, 2, MidpointRounding.AwayFromZero) : 0m;
-        }
-
-        return await query.SumAsync(cancellationToken) ?? 0m;
     }
 
     private sealed record TopEventAggregate(Guid EventId, int TicketsSold, decimal Revenue);

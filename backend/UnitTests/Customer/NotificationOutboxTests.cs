@@ -64,6 +64,54 @@ public sealed class NotificationOutboxTests : IDisposable
     }
 
     [Fact]
+    public void OutboxItem_MarkFailed_ReachingMaxAttempts_TransitionsToDeadLettered()
+    {
+        var item = new TickeX.Domain.Entities.NotificationOutboxItem(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        for (int i = 0; i < TickeX.Domain.Entities.NotificationOutboxItem.MaxAttempts - 1; i++)
+        {
+            item.MarkProcessing(TimeSpan.FromMinutes(2));
+            item.MarkFailed("Transient error", TimeSpan.FromMinutes(1));
+            item.Status.Should().Be("Pending");
+        }
+
+        item.MarkProcessing(TimeSpan.FromMinutes(2));
+        item.MarkFailed("Terminal serialization error", TimeSpan.FromMinutes(1));
+
+        item.Status.Should().Be("DeadLettered");
+        item.AttemptCount.Should().Be(TickeX.Domain.Entities.NotificationOutboxItem.MaxAttempts);
+        item.NextAttemptAt.Should().Be(DateTime.MaxValue);
+        item.LastError.Should().Be("Terminal serialization error");
+    }
+
+    [Fact]
+    public async Task LeaseOwnership_WhenLeaseTokenExpiredOrOwnedByOtherWorker_ExecuteUpdateGuardsState()
+    {
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlite(_connection).Options;
+        await using var context = new ApplicationDbContext(options);
+        await context.Database.EnsureCreatedAsync();
+
+        var item = new TickeX.Domain.Entities.NotificationOutboxItem(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        item.MarkProcessing(TimeSpan.FromMinutes(2), "lease:worker-A");
+        context.NotificationOutbox.Add(item);
+        await context.SaveChangesAsync();
+
+        // Worker B tries to commit a transition using its own token "lease:worker-B"
+        var updatedRows = await context.NotificationOutbox
+            .Where(x => x.Id == item.Id && x.Status == "Processing" && x.LastError == "lease:worker-B")
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(b => b.Status, "Completed")
+                .SetProperty(b => b.ProcessedAt, DateTime.UtcNow)
+                .SetProperty(b => b.LastError, (string?)null));
+
+        updatedRows.Should().Be(0);
+
+        // Verify the database still retains worker-A's ownership
+        var persisted = await context.NotificationOutbox.AsNoTracking().SingleAsync(x => x.Id == item.Id);
+        persisted.Status.Should().Be("Processing");
+        persisted.LastError.Should().Be("lease:worker-A");
+    }
+
+    [Fact]
     public async Task AtomicClaim_WhenConcurrentReplicasClaimPendingItems_OnlyOneInstanceClaimsEachItem()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlite(_connection).Options;

@@ -2,6 +2,8 @@ namespace TickeX.Domain.Entities;
 
 public sealed class NotificationOutboxItem : BaseEntity
 {
+    public const int MaxAttempts = 10;
+
     public Guid TicketId { get; private set; }
     public Guid UserId { get; private set; }
     public Guid EventId { get; private set; }
@@ -24,5 +26,21 @@ public sealed class NotificationOutboxItem : BaseEntity
         UpdatedAt = DateTime.UtcNow;
     }
     public void MarkCompleted() { Status = "Completed"; ProcessedAt = DateTime.UtcNow; NextAttemptAt = null; LastError = null; UpdatedAt = DateTime.UtcNow; }
-    public void MarkFailed(string error, TimeSpan retryAfter) { Status = "Pending"; AttemptCount++; LastError = error; NextAttemptAt = DateTime.UtcNow.Add(retryAfter); UpdatedAt = DateTime.UtcNow; }
+    public void MarkFailed(string error, TimeSpan retryAfter)
+    {
+        AttemptCount++;
+        LastError = error;
+        UpdatedAt = DateTime.UtcNow;
+
+        if (AttemptCount >= MaxAttempts)
+        {
+            Status = "DeadLettered";
+            NextAttemptAt = DateTime.MaxValue;
+        }
+        else
+        {
+            Status = "Pending";
+            NextAttemptAt = DateTime.UtcNow.Add(retryAfter);
+        }
+    }
 }

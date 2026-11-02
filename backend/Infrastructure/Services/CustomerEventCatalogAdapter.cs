@@ -69,8 +69,16 @@ public sealed class CustomerEventCatalogAdapter : ICustomerEventCatalog
         List<TickeX.Domain.Entities.Event> rows;
         if (string.IsNullOrWhiteSpace(request.Cursor))
         {
-            totalCount = await query.CountAsync(cancellationToken);
-            rows = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+            if (page == 1)
+            {
+                rows = await query.Take(pageSize).ToListAsync(cancellationToken);
+                totalCount = rows.Count < pageSize ? rows.Count : await query.CountAsync(cancellationToken);
+            }
+            else
+            {
+                totalCount = await query.CountAsync(cancellationToken);
+                rows = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+            }
         }
         else
         {
@@ -93,42 +101,38 @@ public sealed class CustomerEventCatalogAdapter : ICustomerEventCatalog
         var eventIds = rows.Select(e => e.Id).ToArray();
         var lockExpiry = now.Subtract(_holdDuration);
 
-        var availableSeats = eventIds.Length == 0
-            ? new Dictionary<Guid, int>()
-            : await _context.Seats
-                .AsNoTracking()
-                .Where(s => eventIds.Contains(s.EventId)
-                    && (s.Status == SeatStatus.Available || (s.Status == SeatStatus.Locked && s.LockedAt <= lockExpiry)))
-                .GroupBy(s => s.EventId)
-                .Select(g => new { EventId = g.Key, Count = g.Count() })
-                .ToDictionaryAsync(x => x.EventId, x => x.Count, cancellationToken);
-
-        var seatPrices = eventIds.Length == 0
-            ? new Dictionary<Guid, (decimal MinPrice, decimal MaxPrice)>()
+        var seatStats = eventIds.Length == 0
+            ? new Dictionary<Guid, (int AvailableCount, decimal MinPrice, decimal MaxPrice)>()
             : await _context.Seats
                 .AsNoTracking()
                 .Where(s => eventIds.Contains(s.EventId))
                 .GroupBy(s => s.EventId)
-                .Select(g => new { EventId = g.Key, MinPrice = g.Min(s => (double)s.Price), MaxPrice = g.Max(s => (double)s.Price) })
-                .ToDictionaryAsync(x => x.EventId, x => (MinPrice: (decimal)x.MinPrice, MaxPrice: (decimal)x.MaxPrice), cancellationToken);
+                .Select(g => new
+                {
+                    EventId = g.Key,
+                    AvailableCount = g.Count(s => s.Status == SeatStatus.Available || (s.Status == SeatStatus.Locked && s.LockedAt <= lockExpiry)),
+                    MinPrice = (decimal)g.Min(s => (double)s.Price),
+                    MaxPrice = (decimal)g.Max(s => (double)s.Price)
+                })
+                .ToDictionaryAsync(x => x.EventId, x => (x.AvailableCount, x.MinPrice, x.MaxPrice), cancellationToken);
 
         var items = rows
             .Select(e =>
             {
-                var hasSeatPrices = seatPrices.TryGetValue(e.Id, out var prices);
+                var hasStats = seatStats.TryGetValue(e.Id, out var stats);
                 return new EventDto(
                     e.Id, e.Title, e.Description, e.Date, e.EndDate, e.Location, e.VenueName,
                     e.Category, e.ImageUrl, e.BannerUrl, e.OrganizerName, e.TotalSeats,
-                    availableSeats.GetValueOrDefault(e.Id), e.BasePrice,
-                    hasSeatPrices ? prices.MinPrice : e.BasePrice,
-                    hasSeatPrices ? prices.MaxPrice : e.BasePrice,
+                    hasStats ? stats.AvailableCount : 0, e.BasePrice,
+                    hasStats ? stats.MinPrice : e.BasePrice,
+                    hasStats ? stats.MaxPrice : e.BasePrice,
                     e.Status, e.RefundCutoffHours, false, false, null);
             })
             .ToList();
 
         var last = rows.LastOrDefault();
         var nextCursor = hasMore && last is not null
-            ? EncodeCursor(sortBy, last, seatPrices.TryGetValue(last.Id, out var lastPrices) ? lastPrices.MinPrice : last.BasePrice)
+            ? EncodeCursor(sortBy, last, seatStats.TryGetValue(last.Id, out var lastStats) ? lastStats.MinPrice : last.BasePrice)
             : null;
         var result = string.IsNullOrWhiteSpace(request.Cursor)
             ? new PagedResult<EventDto>(items, totalCount, page, pageSize, nextCursor, hasMore, "offset")

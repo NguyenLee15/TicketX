@@ -49,7 +49,7 @@ public sealed class ReservationOperations : IReservationOperations
         await using (limitLease)
         {
             var holdThreshold = _time.UtcNow.AddMinutes(-_options.HoldMinutes);
-            var pendingCount = await _context.Tickets.CountAsync(
+            var pendingCount = await _context.Tickets.AsNoTracking().CountAsync(
                 t => t.UserId == userId && t.EventId == eventId && t.Status == TicketStatus.Pending && t.CreatedAt > holdThreshold,
                 cancellationToken);
             if (pendingCount >= _options.MaximumPendingSeatsPerEvent)
