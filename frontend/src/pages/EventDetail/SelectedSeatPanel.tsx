@@ -49,17 +49,25 @@ export const SelectedSeatPanel: React.FC<SelectedSeatPanelProps> = ({
 
           {/* Lock Countdown Timer Display */}
           {lockTimeLeft !== null && (
-            <div className="p-3 bg-surface-2 rounded-xl border border-warning/40 flex items-center justify-between">
+            <div className={`p-3 bg-surface-2 rounded-xl border flex items-center justify-between transition-colors ${
+              lockTimeLeft <= 60 ? 'border-danger/60 shadow-md shadow-danger/10 animate-pulse' : 'border-warning/40'
+            }`}>
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-warning/20 border border-warning/30 flex items-center justify-center text-warning">
+                <div className={`w-8 h-8 rounded-lg border flex items-center justify-center transition-colors ${
+                  lockTimeLeft <= 60 ? 'bg-danger/20 border-danger/30 text-danger' : 'bg-warning/20 border-warning/30 text-warning'
+                }`}>
                   <Clock className="w-4 h-4" aria-hidden="true" />
                 </div>
                 <div>
                   <p className="text-[9px] font-bold text-text-secondary uppercase">Thời gian giữ chỗ</p>
-                  <p className="text-[11px] text-warning font-bold">Đang khóa độc quyền</p>
+                  <p className={`text-[11px] font-bold transition-colors ${lockTimeLeft <= 60 ? 'text-danger' : 'text-warning'}`}>
+                    {lockTimeLeft <= 60 ? 'Sắp hết thời gian' : 'Đang khóa độc quyền'}
+                  </p>
                 </div>
               </div>
-              <span role="timer" aria-label={`Thời gian giữ chỗ còn ${formatTimer(lockTimeLeft)}`} className="text-xl font-mono font-black text-warning bg-warning/10 px-2.5 py-0.5 rounded-lg border border-warning/20 tabular-nums">
+              <span role="timer" aria-label={`Thời gian giữ chỗ còn ${formatTimer(lockTimeLeft)}`} className={`text-xl font-mono font-black px-2.5 py-0.5 rounded-lg border tabular-nums transition-colors ${
+                lockTimeLeft <= 60 ? 'text-danger bg-danger/10 border-danger/30' : 'text-warning bg-warning/10 border-warning/20'
+              }`}>
                 {formatTimer(lockTimeLeft)}
               </span>
               <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">

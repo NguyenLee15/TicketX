@@ -32,7 +32,7 @@ export function DiscoveryHero({
     <section className="border-b border-border-subtle pb-10 sm:pb-12">
       <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
         <div className="max-w-2xl space-y-4">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand-primary">TickeX / Sự kiện</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand-primary-light">TickeX / Sự kiện</p>
           <h1 className="max-w-xl text-4xl font-display font-bold leading-tight tracking-tight text-text-primary sm:text-5xl">
             Những cuộc hẹn đáng để bạn có mặt.
           </h1>
@@ -82,7 +82,7 @@ export function DiscoveryHero({
               type="button"
               aria-pressed={active}
               onClick={() => onCategoryChange(id)}
-              className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg border px-4 text-sm font-semibold transition-[background-color,border-color,color,transform] active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${active ? 'border-brand-primary bg-brand-primary text-white' : 'border-border-subtle bg-surface-2 text-text-secondary hover:border-brand-primary/60 hover:text-text-primary'}`}
+              className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg border px-4 text-sm font-semibold transition-[background-color,border-color,color,box-shadow,transform] active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${active ? 'border-brand-primary bg-brand-primary text-white shadow-md shadow-brand-glow' : 'border-border-subtle bg-surface-2 text-text-secondary hover:border-brand-primary/60 hover:text-text-primary hover:bg-surface-3'}`}
             >
               <Icon className="h-4 w-4" aria-hidden="true" />
               {label}

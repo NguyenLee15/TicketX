@@ -122,7 +122,7 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
             {getStatusBadge(ticket.status)}
 
             {isVip && (
-              <span className="inline-flex items-center gap-1 text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 whitespace-nowrap shrink-0">
+              <span className="inline-flex items-center gap-1 text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-sm shadow-amber-500/20 whitespace-nowrap shrink-0">
                 <Crown className="w-3 h-3" aria-hidden="true" /> HẠNG VIP
               </span>
             )}
@@ -253,6 +253,11 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
       
       {/* Right: Live QR Code & Download Box */}
       <div className="p-5 sm:p-6 flex flex-col items-center justify-center md:w-72 bg-surface-2 relative z-10 space-y-3 shrink-0">
+        {/* Ticket Perforation Notches */}
+        <span className="hidden md:block absolute -top-3.5 -left-3.5 w-7 h-7 rounded-full bg-surface-1 border border-border-subtle shadow-inner z-20" aria-hidden="true" />
+        <span className="hidden md:block absolute -bottom-3.5 -left-3.5 w-7 h-7 rounded-full bg-surface-1 border border-border-subtle shadow-inner z-20" aria-hidden="true" />
+        <span className="md:hidden absolute -top-3.5 -left-3.5 w-7 h-7 rounded-full bg-surface-1 border border-border-subtle shadow-inner z-20" aria-hidden="true" />
+        <span className="md:hidden absolute -top-3.5 -right-3.5 w-7 h-7 rounded-full bg-surface-1 border border-border-subtle shadow-inner z-20" aria-hidden="true" />
         {canShowQr ? (
           <div className="bg-white p-3 rounded-xl shadow-lg ring-1 ring-border-subtle relative" role="img" aria-label={`Mã QR vé điện tử ${ticket.eventTitle}`}>
             <QRCodeSVG id={`qr-svg-${ticket.id}`} value={ticket.qrCodeSignature} size={135} level="H" aria-hidden="true" />

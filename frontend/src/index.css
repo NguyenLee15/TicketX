@@ -229,4 +229,14 @@
     background-color: var(--color-surface-1);
     background-image: none;
   }
+
+  .stage-spotlight-arch {
+    position: relative;
+    background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(186, 79, 45, 0.22) 0%, rgba(217, 162, 108, 0.08) 50%, transparent 85%);
+  }
+
+  .stage-glow-bar {
+    background: linear-gradient(90deg, transparent 0%, var(--color-brand-primary-light) 30%, var(--color-brand-secondary) 50%, var(--color-brand-primary-light) 70%, transparent 100%);
+    box-shadow: 0 0 16px 2px var(--color-brand-glow), 0 2px 8px rgba(186, 79, 45, 0.35);
+  }
 }

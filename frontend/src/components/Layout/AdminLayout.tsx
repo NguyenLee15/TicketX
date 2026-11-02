@@ -69,13 +69,13 @@ export default function AdminLayout() {
         <button
           type="button"
           aria-label="Đóng menu quản trị"
-          className="fixed inset-0 z-50 bg-surface-1/85 md:hidden animate-fade-in"
+          className="fixed inset-0 z-50 bg-surface-1/75 backdrop-blur-sm md:hidden animate-fade-in"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
 
       {/* Mobile Slide-over Drawer (< md) */}
-      <div id="admin-mobile-navigation" ref={mobileDrawerRef} role="dialog" aria-modal="true" aria-hidden={!isMobileMenuOpen} inert={!isMobileMenuOpen || undefined} aria-label="Thanh điều hướng quản trị di động" className={`fixed top-0 left-0 bottom-0 w-72 bg-surface-1 border-r border-border-subtle z-50 flex flex-col md:hidden transition-transform duration-300 ease-in-out motion-reduce:transition-none shadow-2xl ${
+      <div id="admin-mobile-navigation" ref={mobileDrawerRef} role="dialog" aria-modal="true" aria-hidden={!isMobileMenuOpen} inert={!isMobileMenuOpen || undefined} aria-label="Thanh điều hướng quản trị di động" className={`fixed top-0 left-0 bottom-0 w-72 bg-surface-1 border-r border-border-subtle z-50 flex flex-col md:hidden transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none shadow-2xl ${
         isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="h-16 flex items-center justify-between px-5 border-b border-border-subtle shrink-0">

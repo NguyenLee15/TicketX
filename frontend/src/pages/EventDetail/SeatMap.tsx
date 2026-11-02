@@ -67,11 +67,19 @@ export const SeatMap: React.FC<SeatMapProps> = React.memo(({ seats, selectedSeat
     <div className="surface-panel p-5 sm:p-7 md:p-8 shadow-xl relative overflow-hidden min-h-[480px] lg:min-h-[540px] flex flex-col justify-between">
       <h2 className="sr-only">Sơ đồ chọn ghế</h2>
       {/* Curved Stage Header */}
-      <div className="mb-8 text-center relative z-10">
-        <div className="w-3/5 max-w-md mx-auto h-1 bg-brand-primary rounded-full mb-3" />
-        <p className="text-xs font-bold text-brand-primary uppercase tracking-[0.2em]">
-          Sân khấu trung tâm
-        </p>
+      <div className="mb-8 text-center relative z-10 pt-2">
+        <div className="w-3/4 max-w-lg mx-auto relative flex flex-col items-center">
+          {/* Spotlight Cone Glow */}
+          <div className="absolute -top-4 inset-x-0 h-16 stage-spotlight-arch pointer-events-none rounded-t-full opacity-70" aria-hidden="true" />
+          {/* Curved Stage Arc */}
+          <div className="w-full h-2 rounded-full stage-glow-bar relative z-10 mb-3" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-surface-3/80 border border-brand-primary/30 shadow-sm relative z-10">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse" aria-hidden="true" />
+            <p className="text-xs font-bold text-brand-primary-light uppercase tracking-[0.2em]">
+              Sân khấu trung tâm
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Mobile Scroll Hint */}

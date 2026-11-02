@@ -56,8 +56,18 @@ export const AdminEventsTable: React.FC<AdminEventsTableProps> = ({
             <tbody className="divide-y divide-border-subtle text-xs sm:text-sm">
               {events.length === 0 ? (
                 <tr>
-                  <td colSpan={6} role="status" className="px-6 py-12 text-center text-text-secondary text-xs sm:text-sm">
-                    Không tìm thấy sự kiện nào phù hợp với bộ lọc.
+                  <td colSpan={6} role="status" className="px-6 py-16 text-center text-text-secondary text-xs sm:text-sm">
+                    <div className="flex flex-col items-center justify-center max-w-sm mx-auto space-y-3">
+                      <div className="w-12 h-12 rounded-2xl bg-surface-2 border border-border-subtle flex items-center justify-center text-text-tertiary shadow-inner">
+                        <CalendarIcon className="w-6 h-6 text-brand-primary/60" aria-hidden="true" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="font-bold text-white text-sm">Chưa có sự kiện phù hợp</p>
+                        <p className="text-xs text-text-secondary">
+                          Không tìm thấy sự kiện nào phù hợp với bộ lọc.
+                        </p>
+                      </div>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -172,7 +182,13 @@ export const AdminEventsTable: React.FC<AdminEventsTableProps> = ({
         })}
 
         {events.length === 0 && (
-          <p role="status" className="p-8 text-center text-text-secondary text-xs">Không tìm thấy sự kiện nào.</p>
+          <div role="status" className="surface-panel p-8 text-center text-text-secondary text-xs flex flex-col items-center justify-center space-y-2.5">
+            <div className="w-10 h-10 rounded-xl bg-surface-2 border border-border-subtle flex items-center justify-center text-text-tertiary">
+              <CalendarIcon className="w-5 h-5 text-brand-primary/60" aria-hidden="true" />
+            </div>
+            <p className="font-bold text-white text-sm">Chưa có sự kiện phù hợp</p>
+            <p className="text-xs text-text-secondary">Không tìm thấy sự kiện nào.</p>
+          </div>
         )}
       </div>
 

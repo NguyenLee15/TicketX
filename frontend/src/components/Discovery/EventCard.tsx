@@ -18,7 +18,7 @@ export function EventCard({ event, featured = false }: EventCardProps) {
           </div>
           <div className="flex flex-col justify-between gap-6 p-6 sm:p-8">
             <div className="space-y-3">
-              <p className="text-sm font-semibold uppercase tracking-[0.15em] text-brand-primary">Đề xuất cho bạn</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.15em] text-brand-primary-light">Đề xuất cho bạn</p>
               <h2 className="text-2xl font-display font-bold leading-tight text-text-primary sm:text-3xl">{event.title}</h2>
               <p className="line-clamp-3 text-base leading-relaxed text-text-secondary">{event.description}</p>
               <EventMeta event={event} />
@@ -31,9 +31,9 @@ export function EventCard({ event, featured = false }: EventCardProps) {
   }
 
   return (
-    <Link to={`/events/${event.id}`} aria-label={`${event.availableSeatsCount === 0 ? 'Xem chi tiết' : 'Chọn chỗ'} sự kiện ${event.title}`} className="group surface-raised flex h-full flex-col overflow-hidden transition-[border-color,transform] duration-200 hover:-translate-y-1 hover:border-brand-primary/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary">
+    <Link to={`/events/${event.id}`} aria-label={`${event.availableSeatsCount === 0 ? 'Xem chi tiết' : 'Chọn chỗ'} sự kiện ${event.title}`} className="group surface-raised flex h-full flex-col overflow-hidden transition-[border-color,box-shadow,transform] duration-200 hover:border-brand-primary-light/60 hover:shadow-xl hover:shadow-brand-glow/25 active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary">
       <div className="relative aspect-[16/10] overflow-hidden bg-surface-0">
-        <ResilientImage src={event.imageUrl} alt={`Hình ảnh sự kiện ${event.title}`} width="640" height="400" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]" fallbackClassName="flex h-full w-full items-center justify-center bg-surface-3 text-text-tertiary" />
+        <ResilientImage src={event.imageUrl} alt={`Hình ảnh sự kiện ${event.title}`} width="640" height="400" className="h-full w-full object-cover transition-transform duration-300 will-change-transform group-hover:scale-[1.015]" fallbackClassName="flex h-full w-full items-center justify-center bg-surface-3 text-text-tertiary" />
         <span className="absolute left-3 top-3 rounded-md bg-surface-0/85 px-2.5 py-1 text-xs font-semibold text-text-primary">{event.category}</span>
       </div>
       <div className="flex flex-1 flex-col gap-4 p-5">
