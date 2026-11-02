@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TickeX.Application.Interfaces;
 
 namespace TickeX.Application.Admin.Commands;
@@ -12,7 +13,8 @@ public sealed class RetryRefundRequestCommandHandler(
     IRefundBankAccountProtector protector,
     IDistributedLockService locks,
     ISeatNotificationService? seatNotifications = null,
-    ICustomerEventCatalogCache? catalogCache = null) : IRequestHandler<RetryRefundRequestCommand, string>
+    ICustomerEventCatalogCache? catalogCache = null,
+    ILogger<RetryRefundRequestCommandHandler>? logger = null) : IRequestHandler<RetryRefundRequestCommand, string>
 {
     public async Task<string> Handle(RetryRefundRequestCommand request, CancellationToken cancellationToken)
     {
@@ -60,7 +62,10 @@ public sealed class RetryRefundRequestCommandHandler(
                         || !remote.MatchesDestination(protector.Unprotect(refund.EncryptedDestinationSnapshot)))
                         return "REFUND_DESTINATION_REVIEW_REQUIRED";
                     var ticket = await context.Tickets.SingleAsync(x => x.Id == refund.TicketId, cancellationToken);
-                    var payment = await context.PaymentTransactions.SingleOrDefaultAsync(x => x.TicketId == refund.TicketId, cancellationToken);
+                    var payment = await context.PaymentTransactions
+                        .Where(x => x.TicketId == refund.TicketId)
+                        .OrderByDescending(x => x.CreatedAt)
+                        .FirstOrDefaultAsync(cancellationToken);
                     if (ticket.Status == TickeX.Domain.Enums.TicketStatus.RefundPending) ticket.CompleteRefund(refund.Amount);
                     payment?.MarkRefunded(remote.PayoutId ?? refund.ProviderReference ?? stableReference, "PayOS payout reconciled as SUCCEEDED");
                     refund.MarkCompleted(remote.PayoutId ?? refund.ProviderReference ?? stableReference);
@@ -85,7 +90,11 @@ public sealed class RetryRefundRequestCommandHandler(
 
                     if (catalogCache != null)
                     {
-                        try { await catalogCache.InvalidateAsync(CancellationToken.None); } catch { }
+                        try { await catalogCache.InvalidateAsync(CancellationToken.None); }
+                        catch (Exception ex)
+                        {
+                            logger?.LogWarning(ex, "Failed to invalidate customer event catalog cache during refund retry reconciliation for refund {RefundRequestId}", request.RefundRequestId);
+                        }
                     }
 
                     if (seatNotifications != null && seat != null && seatReleased)
@@ -99,7 +108,10 @@ public sealed class RetryRefundRequestCommandHandler(
                                 Convert.ToBase64String(seat.Version),
                                 null);
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            logger?.LogWarning(ex, "Failed to notify seat status change for event {EventId} seat {SeatId} during refund retry reconciliation", ticket.EventId, seat.Id);
+                        }
                     }
 
                     return "REFUND_COMPLETED";

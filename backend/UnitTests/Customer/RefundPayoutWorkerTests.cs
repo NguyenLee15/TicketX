@@ -221,6 +221,99 @@ public sealed class RefundPayoutWorkerTests
         catalogCache.Verify(x => x.InvalidateAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    [Fact]
+    public async Task RetryRefundRequest_WhenTicketHasMultiplePaymentTransactions_PicksLatestWithoutThrowing()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlite(connection).Options;
+        Guid refundId;
+        Guid ticketId;
+        await using (var seed = new ApplicationDbContext(options))
+        {
+            await seed.Database.EnsureCreatedAsync();
+            (refundId, ticketId) = await SeedRefundAsync(seed);
+
+            // Add an older second payment transaction for the same ticket (e.g. an earlier attempt)
+            var olderPayment = new PaymentTransaction(88888888, ticketId, 150000m);
+            olderPayment.MarkFailed("Expired before completion");
+            seed.PaymentTransactions.Add(olderPayment);
+
+            var refund = await seed.RefundRequests.SingleAsync(x => x.Id == refundId);
+            refund.MarkNeedsReview("Manual check", "PROCESSING");
+            await seed.SaveChangesAsync();
+        }
+
+        var payout = new FakePayoutService
+        {
+            Find = (_, _) => Task.FromResult(new PayOSPayoutResult("payout-multi-tx", "SUCCEEDED", null, "970415", "123456789", "TEST ACCOUNT"))
+        };
+        var protector = new Mock<IRefundBankAccountProtector>();
+        protector.Setup(x => x.Unprotect("encrypted-destination"))
+            .Returns(new RefundBankAccountDetails("970415", "TEST ACCOUNT", "123456789"));
+        var locks = new Mock<IDistributedLockService>();
+        var lease = new Mock<IDistributedLockLease>();
+        lease.SetupGet(x => x.IsValid).Returns(true);
+        locks.Setup(x => x.AcquireLockAsync(It.IsAny<string>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(lease.Object);
+
+        await using var db = new ApplicationDbContext(options);
+        var handler = new TickeX.Application.Admin.Commands.RetryRefundRequestCommandHandler(
+            db, payout, protector.Object, locks.Object);
+
+        var outcome = await handler.Handle(new TickeX.Application.Admin.Commands.RetryRefundRequestCommand(refundId), CancellationToken.None);
+
+        outcome.Should().Be("REFUND_COMPLETED");
+        var latestPayment = await db.PaymentTransactions.AsNoTracking().OrderByDescending(p => p.CreatedAt).FirstAsync(p => p.TicketId == ticketId);
+        latestPayment.Status.Should().Be("Refunded");
+    }
+
+    [Fact]
+    public async Task RefundPayoutWorker_WhenTicketHasMultiplePaymentTransactions_ReconcilesWithoutThrowing()
+    {
+        await using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlite(connection).Options;
+        Guid refundId;
+        Guid ticketId;
+        await using (var seed = new ApplicationDbContext(options))
+        {
+            await seed.Database.EnsureCreatedAsync();
+            (refundId, ticketId) = await SeedRefundAsync(seed);
+
+            // Add an older second payment transaction for the same ticket
+            var olderPayment = new PaymentTransaction(77777777, ticketId, 150000m);
+            olderPayment.MarkFailed("Earlier failed attempt");
+            seed.PaymentTransactions.Add(olderPayment);
+
+            await seed.SaveChangesAsync();
+        }
+
+        var payout = new FakePayoutService
+        {
+            Create = (refId, _, _, _, _) => Task.FromResult(new PayOSPayoutResult($"payout-{refId}", "SUCCEEDED", null, "970415", "123456789", "TEST ACCOUNT"))
+        };
+        var services = CreateWorkerServices(options, payout);
+        await using var provider = services.BuildServiceProvider();
+
+        var worker = new RefundPayoutWorker(provider.GetRequiredService<IServiceScopeFactory>(), NullLogger<RefundPayoutWorker>.Instance);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        await worker.StartAsync(cts.Token);
+
+        await WaitUntilAsync(async () =>
+        {
+            await using var query = new ApplicationDbContext(options);
+            var item = await query.RefundRequests.AsNoTracking().SingleOrDefaultAsync(x => x.Id == refundId, cts.Token);
+            return item?.Status == "Completed";
+        }, TimeSpan.FromSeconds(4));
+
+        await worker.StopAsync(CancellationToken.None);
+
+        await using var final = new ApplicationDbContext(options);
+        var latestPayment = await final.PaymentTransactions.AsNoTracking().OrderByDescending(p => p.CreatedAt).FirstAsync(p => p.TicketId == ticketId);
+        latestPayment.Status.Should().Be("Refunded");
+    }
+
     private static ServiceCollection CreateWorkerServices(
         DbContextOptions<ApplicationDbContext> options,
         FakePayoutService payout,
