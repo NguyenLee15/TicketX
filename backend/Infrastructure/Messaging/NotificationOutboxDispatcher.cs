@@ -14,12 +14,15 @@ public sealed class NotificationOutboxDispatcher : BackgroundService
     public NotificationOutboxDispatcher(IServiceScopeFactory scopeFactory, ILogger<NotificationOutboxDispatcher> logger) => (_scopeFactory, _logger) = (scopeFactory, logger);
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
-        while (await timer.WaitForNextTickAsync(stoppingToken))
+        while (!stoppingToken.IsCancellationRequested)
         {
             try { await DispatchBatchAsync(stoppingToken); }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
             catch (Exception ex) { _logger.LogError(ex, "Notification outbox dispatch failed"); }
+
+            var jitterMs = Random.Shared.Next(4500, 5500);
+            try { await Task.Delay(jitterMs, stoppingToken); }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
         }
     }
     private async Task DispatchBatchAsync(CancellationToken cancellationToken)
@@ -63,17 +66,26 @@ public sealed class NotificationOutboxDispatcher : BackgroundService
             .Where(x => candidateIds.Contains(x.Id) && x.Status == "Processing" && x.LastError == leaseToken)
             .ToListAsync(cancellationToken);
 
+        var brokerFailed = false;
         foreach (var item in claimedItems)
         {
-            try
+            if (brokerFailed)
             {
-                await publisher.PublishAsync(new TicketPaidEvent(item.TicketId, item.UserId, item.EventId), cancellationToken);
-                item.MarkCompleted();
+                item.MarkFailed("BrokerTransportError:CascadingSkip", TimeSpan.FromSeconds(15));
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogWarning(ex, "Retrying notification outbox item {OutboxId}", item.Id);
-                item.MarkFailed($"PublishFailed: {ex.GetType().Name}", TimeSpan.FromMinutes(1));
+                try
+                {
+                    await publisher.PublishAsync(new TicketPaidEvent(item.TicketId, item.UserId, item.EventId), cancellationToken);
+                    item.MarkCompleted();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Retrying notification outbox item {OutboxId}", item.Id);
+                    item.MarkFailed($"PublishFailed: {ex.GetType().Name}", TimeSpan.FromMinutes(1));
+                    brokerFailed = true;
+                }
             }
 
             var updatedCount = await context.NotificationOutbox

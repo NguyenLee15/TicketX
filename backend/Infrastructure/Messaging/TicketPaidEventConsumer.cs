@@ -104,13 +104,11 @@ public class TicketPaidEventConsumer : BackgroundService
         var consumer = new AsyncEventingBasicConsumer(_channel);
         consumer.ReceivedAsync += async (model, ea) =>
         {
-            var body = ea.Body.ToArray();
-            var message = Encoding.UTF8.GetString(body);
             var retryCount = GetRetryCount(ea.BasicProperties);
 
             try
             {
-                var ticketEvent = JsonSerializer.Deserialize<TicketPaidEvent>(message);
+                var ticketEvent = JsonSerializer.Deserialize<TicketPaidEvent>(ea.Body.Span);
                 if (ticketEvent == null)
                 {
                     throw new JsonException("Deserialized TicketPaidEvent payload was null.");

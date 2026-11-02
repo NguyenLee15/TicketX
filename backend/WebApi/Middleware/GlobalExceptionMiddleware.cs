@@ -60,7 +60,7 @@ public class GlobalExceptionMiddleware
                 }
             };
 
-            await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+            await context.Response.WriteAsJsonAsync(response, options: (JsonSerializerOptions?)null, contentType: "application/problem+json");
         }
         catch (ArgumentException ex)
         {
@@ -93,7 +93,11 @@ public class GlobalExceptionMiddleware
                 }
             };
 
-            await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+            await context.Response.WriteAsJsonAsync(response, options: (JsonSerializerOptions?)null, contentType: "application/problem+json");
+        }
+        catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+        {
+            _logger.LogDebug("Client disconnected or request was cancelled at {Path} (TraceId: {TraceId})", context.Request.Path, context.TraceIdentifier);
         }
         catch (Exception ex)
         {
@@ -127,7 +131,7 @@ public class GlobalExceptionMiddleware
                 }
             };
 
-            await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+            await context.Response.WriteAsJsonAsync(response, options: (JsonSerializerOptions?)null, contentType: "application/problem+json");
         }
     }
 }

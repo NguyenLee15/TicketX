@@ -69,8 +69,6 @@ public sealed class RefundPayoutWorker(
             return true;
         }
 
-        var ticket = await db.Tickets.SingleAsync(x => x.Id == refund.TicketId, cancellationToken);
-        var payment = await db.PaymentTransactions.SingleOrDefaultAsync(x => x.TicketId == refund.TicketId, cancellationToken);
         var provider = scope.ServiceProvider.GetRequiredService<IPayOSPayoutService>();
         var protector = scope.ServiceProvider.GetRequiredService<IRefundBankAccountProtector>();
         var destination = protector.Unprotect(refund.EncryptedDestinationSnapshot!);
@@ -105,6 +103,8 @@ public sealed class RefundPayoutWorker(
             else if (result.State == "SUCCEEDED")
             {
                 refund.MarkCompleted(result.PayoutId ?? refund.ProviderReference ?? stableReference);
+                var ticket = await db.Tickets.SingleAsync(x => x.Id == refund.TicketId, cancellationToken);
+                var payment = await db.PaymentTransactions.SingleOrDefaultAsync(x => x.TicketId == refund.TicketId, cancellationToken);
                 ticket.CompleteRefund(refund.Amount);
                 payment?.MarkRefunded(result.PayoutId ?? stableReference, "PayOS payout confirmed SUCCEEDED");
 
@@ -137,6 +137,7 @@ public sealed class RefundPayoutWorker(
             else
             {
                 refund.MarkNeedsReview(result.Error ?? $"PayOS payout ended in state {result.State}.", result.State);
+                var payment = await db.PaymentTransactions.SingleOrDefaultAsync(x => x.TicketId == refund.TicketId, cancellationToken);
                 payment?.MarkRefundFailed(result.Error ?? $"Payout state: {result.State}");
             }
             if (!await ExtendLeaseIfOwnedAsync(db, refund.Id, cancellationToken)) return true;
@@ -158,7 +159,7 @@ public sealed class RefundPayoutWorker(
                     try
                     {
                         await seatNotifications.NotifySeatStatusChanged(
-                            ticket.EventId,
+                            refund.EventId,
                             releasedSeat.Id,
                             releasedSeat.Status.ToString(),
                             Convert.ToBase64String(releasedSeat.Version),
