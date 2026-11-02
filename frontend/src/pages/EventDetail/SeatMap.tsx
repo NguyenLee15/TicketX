@@ -27,7 +27,7 @@ export const SeatMap: React.FC<SeatMapProps> = React.memo(({ seats, selectedSeat
 
   const getSeatColor = (seat: Seat, isSelected: boolean) => {
     if (isSelected) {
-      return 'bg-brand-primary border-brand-primary text-white scale-105 z-20 ring-2 ring-brand-accent/60';
+      return 'bg-brand-primary border-brand-primary text-white z-20 ring-2 ring-brand-accent/80 shadow-md shadow-brand-glow';
     }
     const isLockedByMe = seat.isLockedByCurrentUser || seat.isLockedByMe;
     if (isLockedByMe) {
@@ -116,7 +116,7 @@ export const SeatMap: React.FC<SeatMapProps> = React.memo(({ seats, selectedSeat
                       disabled={!isClickable}
                       aria-pressed={isSelected}
                       aria-label={`Hàng ${seat.row}, ghế ${seat.number}, hạng ${tierInfo.name}, ${statusLabel}, giá ${formatVND(seat.price)}`}
-                      className={`w-11 h-11 sm:w-10 sm:h-10 md:w-9 md:h-9 rounded-lg border-2 flex items-center justify-center text-xs font-bold transition-[opacity,background-color,border-color,transform] duration-150 ease-out active:scale-95 relative group/seat focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-1 ${getSeatColor(seat, isSelected)}`}
+                      className={`w-11 h-11 rounded-lg border-2 flex items-center justify-center text-xs font-bold transition-[opacity,background-color,border-color,transform] duration-150 ease-out active:scale-95 relative group/seat focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-1 ${getSeatColor(seat, isSelected)}`}
                     >
                       {/* Subtle status indicator for color-blind accessibility */}
                       {isSelected && (

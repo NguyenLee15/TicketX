@@ -126,21 +126,21 @@ export default function StandardLayout() {
           </header>
           {mobileOpen && (
             <nav ref={mobileNavRef} aria-label="Menu điều hướng di động" className="md:hidden mt-2 surface-raised p-3 flex flex-col gap-1 pointer-events-auto overscroll-contain animate-modal-pop">
-              <Link onClick={() => setMobileOpen(false)} to="/" className="p-3 rounded-xl hover:bg-surface-2 flex items-center gap-2">
+              <Link onClick={() => setMobileOpen(false)} to="/" className="min-h-11 p-3 rounded-xl hover:bg-surface-2 flex items-center gap-2 transition-[background-color,transform] active:scale-[0.98]">
                 <Calendar className="w-4 h-4" aria-hidden="true" /> Sự kiện
               </Link>
               {isAuth && (
-                <Link onClick={() => setMobileOpen(false)} to="/my-tickets" className="p-3 rounded-xl hover:bg-surface-2 flex items-center gap-2">
+                <Link onClick={() => setMobileOpen(false)} to="/my-tickets" className="min-h-11 p-3 rounded-xl hover:bg-surface-2 flex items-center gap-2 transition-[background-color,transform] active:scale-[0.98]">
                   <Ticket className="w-4 h-4" aria-hidden="true" /> Vé của tôi
                 </Link>
               )}
               {isAuth && (
-                <Link onClick={() => setMobileOpen(false)} to="/profile" className="p-3 rounded-xl hover:bg-surface-2">
+                <Link onClick={() => setMobileOpen(false)} to="/profile" className="min-h-11 p-3 rounded-xl hover:bg-surface-2 flex items-center transition-[background-color,transform] active:scale-[0.98]">
                   Hồ sơ
                 </Link>
               )}
               {isAdmin() && (
-                <Link onClick={() => setMobileOpen(false)} to="/admin" className="p-3 rounded-xl hover:bg-surface-2 flex items-center gap-2 text-brand-primary font-semibold">
+                <Link onClick={() => setMobileOpen(false)} to="/admin" className="min-h-11 p-3 rounded-xl hover:bg-surface-2 flex items-center gap-2 text-brand-primary font-semibold transition-[background-color,transform] active:scale-[0.98]">
                   <ShieldCheck className="w-4 h-4" aria-hidden="true" /> Quản trị
                 </Link>
               )}
@@ -151,16 +151,16 @@ export default function StandardLayout() {
                     setMobileOpen(false);
                     void handleLogout();
                   }}
-                  className="p-3 rounded-xl hover:bg-danger/10 text-danger flex items-center gap-2 text-left font-semibold cursor-pointer"
+                  className="min-h-11 p-3 rounded-xl hover:bg-danger/10 text-danger flex items-center gap-2 text-left font-semibold cursor-pointer transition-[background-color,transform] active:scale-[0.98]"
                 >
                   <LogOut className="w-4 h-4" aria-hidden="true" /> Đăng xuất
                 </button>
               ) : (
                 <div className="pt-2 border-t border-border-subtle flex flex-col gap-2">
-                  <Link onClick={() => setMobileOpen(false)} to="/login" className="p-3 rounded-xl hover:bg-surface-2 text-center text-sm font-medium">
+                  <Link onClick={() => setMobileOpen(false)} to="/login" className="min-h-11 p-3 rounded-xl hover:bg-surface-2 flex items-center justify-center text-center text-sm font-medium transition-[background-color,transform] active:scale-[0.98]">
                     Đăng nhập
                   </Link>
-                  <Link onClick={() => setMobileOpen(false)} to="/register" className="p-3 rounded-xl bg-brand-primary text-white text-center text-sm font-bold">
+                  <Link onClick={() => setMobileOpen(false)} to="/register" className="min-h-11 p-3 rounded-xl bg-brand-primary text-white flex items-center justify-center text-center text-sm font-bold transition-[background-color,transform] active:scale-[0.98] shadow-sm shadow-brand-glow">
                     Đăng ký
                   </Link>
                 </div>

@@ -183,14 +183,14 @@ export const AdminEventsTable: React.FC<AdminEventsTableProps> = ({
             type="button"
             onClick={() => onPageChange(Math.max(1, page - 1))}
             disabled={page <= 1}
-            className="p-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 active:scale-[0.98] text-white border border-border-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-[background-color,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer"
+            className="min-h-11 min-w-11 inline-flex items-center justify-center p-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 active:scale-[0.98] text-white border border-border-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-[background-color,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer"
             title="Trang trước"
             aria-label="Trang trước"
           >
             <ChevronLeft className="w-4 h-4" aria-hidden="true" />
           </button>
           
-          <span className="px-3 py-1 rounded-xl bg-surface-2 border border-border-subtle text-white font-mono">
+          <span className="min-h-11 px-3.5 inline-flex items-center justify-center rounded-xl bg-surface-2 border border-border-subtle text-white font-mono tabular-nums text-xs">
             {page}
           </span>
 
@@ -198,7 +198,7 @@ export const AdminEventsTable: React.FC<AdminEventsTableProps> = ({
             type="button"
             onClick={() => onPageChange(Math.min(totalPages, page + 1))}
             disabled={page >= totalPages}
-            className="p-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 active:scale-[0.98] text-white border border-border-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-[background-color,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer"
+            className="min-h-11 min-w-11 inline-flex items-center justify-center p-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 active:scale-[0.98] text-white border border-border-subtle disabled:opacity-40 disabled:cursor-not-allowed transition-[background-color,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer"
             title="Trang sau"
             aria-label="Trang sau"
           >

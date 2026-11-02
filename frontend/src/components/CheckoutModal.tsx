@@ -268,7 +268,7 @@ export default function CheckoutModal({
                   onClick={handleSimulatePayment}
                   disabled={isSimulating}
                   aria-busy={isSimulating}
-                  className="w-full py-2 bg-warning/10 hover:bg-warning/20 border border-warning/30 text-warning text-xs font-bold rounded-lg transition-[background-color,transform] active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 inline-flex items-center justify-center gap-1.5"
+                  className="w-full min-h-11 py-2.5 bg-warning/10 hover:bg-warning/20 border border-warning/30 text-warning text-xs font-bold rounded-xl transition-[background-color,transform] active:scale-[0.98] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 inline-flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning"
                 >
                   {isSimulating ? 'Đang xác nhận thanh toán…' : (
                     <>
@@ -284,7 +284,7 @@ export default function CheckoutModal({
                 onClick={() => setShowCloseConfirm(true)}
                 disabled={releasing}
                 aria-busy={releasing}
-                className="w-full py-2.5 bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-white text-xs font-semibold rounded-xl transition-[background-color,transform] active:scale-[0.98] border border-border-subtle cursor-pointer"
+                className="w-full min-h-11 py-2.5 bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-white text-xs font-semibold rounded-xl transition-[background-color,transform] active:scale-[0.98] border border-border-subtle cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
               >
                 {releasing ? 'Đang trả ghế…' : 'Trả Ghế & Quay Lại'}
               </button>

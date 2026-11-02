@@ -38,7 +38,7 @@ export const SelectedSeatPanel: React.FC<SelectedSeatPanelProps> = ({
             <div className="relative z-10">
               <p className="text-[10px] text-text-tertiary font-bold uppercase tracking-wider mb-0.5">Vị trí ghế</p>
               <p className="text-xl font-black text-white font-display tracking-tight">
-                Hàng {selectedSeat.row} <span className="text-brand-primary">-</span> Ghế {selectedSeat.number}
+                Hàng {selectedSeat.row} <span className="text-brand-primary">-</span> Ghế <span className="tabular-nums">{selectedSeat.number}</span>
               </p>
             </div>
             <div className="text-right relative z-10">

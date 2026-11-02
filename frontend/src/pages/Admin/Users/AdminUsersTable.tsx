@@ -132,7 +132,7 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
                           aria-label={`Phân quyền cho người dùng ${user.name}`}
                           disabled={isSelf || isSubmitting}
                           onChange={(e) => onRequestChangeRole(user, e.target.value)}
-                          className="bg-surface-1 border border-border-subtle hover:border-brand-primary rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary transition-colors cursor-pointer font-semibold whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="select-field min-h-11 bg-surface-1 border border-border-subtle hover:border-brand-primary rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary transition-colors cursor-pointer font-semibold whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           <option value="Customer">Khách hàng (Customer)</option>
                           <option value="Staff">Nhân viên soát vé (Staff)</option>
@@ -144,7 +144,7 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
                           onClick={() => onRequestToggleBlock(user, !user.isBlocked)}
                           disabled={isSelf || isSubmitting}
                           aria-label={user.isBlocked ? `Mở khóa tài khoản ${user.name}` : `Khóa tài khoản ${user.name}`}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary border whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed ${
+                          className={`min-h-11 px-3.5 py-2 inline-flex items-center justify-center rounded-xl text-xs font-bold transition-[background-color,transform] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary border whitespace-nowrap cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
                             user.isBlocked 
                               ? 'bg-success/15 hover:bg-success text-success hover:text-white border-success/30' 
                               : 'bg-danger/15 hover:bg-danger text-danger hover:text-white border-danger/30'
@@ -207,7 +207,7 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
                   aria-label={`Phân quyền cho người dùng ${user.name}`}
                   disabled={isSelf || isSubmitting}
                   onChange={(e) => onRequestChangeRole(user, e.target.value)}
-                  className="min-h-11 bg-surface-2 border border-border-subtle rounded-xl px-3 py-2 text-xs text-white flex-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-40"
+                  className="select-field min-h-11 bg-surface-2 border border-border-subtle rounded-xl px-3 py-2 text-xs text-white flex-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-40 cursor-pointer"
                 >
                   <option value="Customer">Khách hàng</option>
                   <option value="Staff">Soát vé (Staff)</option>
@@ -219,7 +219,7 @@ export const AdminUsersTable: React.FC<AdminUsersTableProps> = ({
                   onClick={() => onRequestToggleBlock(user, !user.isBlocked)}
                   disabled={isSelf || isSubmitting}
                   aria-label={user.isBlocked ? `Mở khóa tài khoản ${user.name}` : `Khóa tài khoản ${user.name}`}
-                  className={`min-h-11 px-3.5 py-2 inline-flex items-center justify-center rounded-xl text-xs font-bold border shrink-0 disabled:opacity-40 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${
+                  className={`min-h-11 px-3.5 py-2 inline-flex items-center justify-center rounded-xl text-xs font-bold border shrink-0 disabled:opacity-40 cursor-pointer transition-[background-color,transform] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${
                     user.isBlocked 
                       ? 'bg-success/15 text-success border-success/30' 
                       : 'bg-danger/15 text-danger border-danger/30'

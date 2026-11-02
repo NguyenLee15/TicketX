@@ -161,7 +161,7 @@ export default function RegisterPage() {
                   autoComplete="name"
                   aria-invalid={errors.name ? 'true' : 'false'}
                   aria-describedby={errors.name ? 'register-name-error' : undefined}
-                  className={`block w-full pl-10 pr-3.5 py-2.5 bg-surface-2 border ${
+                  className={`block w-full min-h-11 pl-10 pr-3.5 py-2.5 bg-surface-2 border ${
                     errors.name ? 'border-danger focus:border-danger focus:ring-danger' : 'border-border-subtle focus:border-brand-primary focus:ring-brand-primary'
                   } rounded-xl text-white placeholder-text-tertiary focus:outline-none focus-visible:ring-2 transition-[border-color,background-color,box-shadow] text-xs sm:text-sm`}
                   placeholder="Họ và tên (VD: Nguyễn Văn An)"
@@ -187,7 +187,7 @@ export default function RegisterPage() {
                   autoComplete="email"
                   aria-invalid={errors.email ? 'true' : 'false'}
                   aria-describedby={errors.email ? 'register-email-error' : undefined}
-                  className={`block w-full pl-10 pr-3.5 py-2.5 bg-surface-2 border ${
+                  className={`block w-full min-h-11 pl-10 pr-3.5 py-2.5 bg-surface-2 border ${
                     errors.email ? 'border-danger focus:border-danger focus:ring-danger' : 'border-border-subtle focus:border-brand-primary focus:ring-brand-primary'
                   } rounded-xl text-white placeholder-text-tertiary focus:outline-none focus-visible:ring-2 transition-[border-color,background-color,box-shadow] text-xs sm:text-sm`}
                   placeholder="Địa chỉ email (VD: an.nguyen@example.com)"
@@ -213,7 +213,7 @@ export default function RegisterPage() {
                   autoComplete="new-password"
                   aria-invalid={errors.password ? 'true' : 'false'}
                   aria-describedby={errors.password ? 'register-password-error' : undefined}
-                  className={`block w-full pl-10 pr-10 py-2.5 bg-surface-2 border ${
+                  className={`block w-full min-h-11 pl-10 pr-10 py-2.5 bg-surface-2 border ${
                     errors.password ? 'border-danger focus:border-danger focus:ring-danger' : 'border-border-subtle focus:border-brand-primary focus:ring-brand-primary'
                   } rounded-xl text-white placeholder-text-tertiary focus:outline-none focus-visible:ring-2 transition-[border-color,background-color,box-shadow] text-xs sm:text-sm`}
                   placeholder="Mật khẩu (tối thiểu 8 ký tự, gồm chữ và số)"
@@ -248,7 +248,7 @@ export default function RegisterPage() {
                   autoComplete="new-password"
                   aria-invalid={errors.confirmPassword ? 'true' : 'false'}
                   aria-describedby={errors.confirmPassword ? 'register-confirm-password-error' : undefined}
-                  className={`block w-full pl-10 pr-10 py-2.5 bg-surface-2 border ${
+                  className={`block w-full min-h-11 pl-10 pr-10 py-2.5 bg-surface-2 border ${
                     errors.confirmPassword ? 'border-danger focus:border-danger focus:ring-danger' : 'border-border-subtle focus:border-brand-primary focus:ring-brand-primary'
                   } rounded-xl text-white placeholder-text-tertiary focus:outline-none focus-visible:ring-2 transition-[border-color,background-color,box-shadow] text-xs sm:text-sm`}
                   placeholder="Xác nhận lại mật khẩu"

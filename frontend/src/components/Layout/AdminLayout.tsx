@@ -105,7 +105,7 @@ export default function AdminLayout() {
                 key={item.name}
                 to={item.href}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${
+                className={`min-h-11 flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${
                   isActive 
                     ? 'bg-brand-primary/15 text-brand-primary border border-brand-primary/30 font-bold' 
                     : 'text-text-secondary hover:text-white hover:bg-surface-2 border border-transparent'
@@ -149,7 +149,7 @@ export default function AdminLayout() {
               type="button"
               onClick={() => { setIsMobileMenuOpen(false); void handleLogout(); }}
               aria-label="Đăng xuất"
-              className="text-text-tertiary hover:text-danger transition-colors p-1.5 rounded-lg hover:bg-danger/10"
+              className="min-h-11 min-w-11 inline-flex items-center justify-center text-text-tertiary hover:text-danger transition-colors p-1.5 rounded-xl hover:bg-danger/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger cursor-pointer"
               title="Đăng xuất"
             >
               <LogOut className="w-4 h-4" aria-hidden="true" />

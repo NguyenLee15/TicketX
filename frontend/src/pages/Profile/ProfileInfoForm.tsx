@@ -66,7 +66,7 @@ export function ProfileInfoForm({
                   aria-describedby={errors.avatarUrl ? 'profile-avatar-url-error' : undefined}
                   {...register('avatarUrl')}
                   placeholder="https://example.com/avatar.jpg"
-                  className={`block w-full pl-10 pr-3 py-2 text-xs sm:text-sm border ${
+                  className={`block w-full min-h-11 pl-10 pr-3.5 py-2.5 text-xs sm:text-sm border ${
                     errors.avatarUrl ? 'border-danger' : 'border-border-subtle'
                   } rounded-xl bg-surface-1 text-white placeholder-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary transition-[border-color,background-color,box-shadow]`}
                 />
@@ -92,7 +92,7 @@ export function ProfileInfoForm({
                   aria-describedby={errors.name ? 'profile-name-error' : undefined}
                   {...register('name')}
                   placeholder="Nguyễn Văn An"
-                  className={`block w-full pl-10 pr-3 py-2 text-xs sm:text-sm border ${
+                  className={`block w-full min-h-11 pl-10 pr-3.5 py-2.5 text-xs sm:text-sm border ${
                     errors.name ? 'border-danger' : 'border-border-subtle'
                   } rounded-xl bg-surface-2/50 text-white placeholder-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary transition-[border-color,background-color,box-shadow] hover:bg-surface-2`}
                 />
@@ -118,7 +118,7 @@ export function ProfileInfoForm({
                   type="email" 
                   value={email}
                   disabled
-                  className="block w-full pl-10 pr-3 py-2 text-xs sm:text-sm border border-border-subtle rounded-xl bg-surface-1/50 text-text-secondary cursor-not-allowed"
+                  className="block w-full min-h-11 pl-10 pr-3.5 py-2.5 text-xs sm:text-sm border border-border-subtle rounded-xl bg-surface-1/50 text-text-secondary cursor-not-allowed"
                 />
               </div>
             </div>
@@ -137,7 +137,7 @@ export function ProfileInfoForm({
                   aria-describedby={errors.phone ? 'profile-phone-error' : undefined}
                   {...register('phone')}
                   placeholder="0901234567"
-                  className={`block w-full pl-10 pr-3 py-2 text-xs sm:text-sm border ${
+                  className={`block w-full min-h-11 pl-10 pr-3.5 py-2.5 text-xs sm:text-sm border ${
                     errors.phone ? 'border-danger font-mono tabular-nums' : 'border-border-subtle font-mono tabular-nums'
                   } rounded-xl bg-surface-2/50 text-white placeholder-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary transition-[border-color,background-color,box-shadow] hover:bg-surface-2`}
                 />

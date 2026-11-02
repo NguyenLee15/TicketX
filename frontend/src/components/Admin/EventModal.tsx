@@ -152,7 +152,7 @@ export default function EventModal({ isOpen, onClose, onSubmit, event, isLoading
                 {...register('title')}
                 aria-invalid={Boolean(errors.title)}
                 aria-describedby={errors.title ? 'event-title-error' : undefined}
-                className="w-full bg-surface-2 border border-border-subtle rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary/50 transition-colors"
+                className="min-h-11 w-full bg-surface-2 border border-border-subtle rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary/50 transition-colors"
                 placeholder="Ví dụ: Đại Nhạc Hội Mùa Hè 2026"
               />
               {errors.title && <p id="event-title-error" role="alert" className="text-danger text-xs mt-1">{errors.title.message}</p>}
@@ -227,7 +227,7 @@ export default function EventModal({ isOpen, onClose, onSubmit, event, isLoading
                   aria-label="Địa điểm hoặc khán đài"
                   aria-invalid={Boolean(errors.location)}
                   aria-describedby={errors.location ? 'event-location-error' : undefined}
-                  className="w-full bg-surface-2 border border-border-subtle rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary/50 transition-colors"
+                  className="min-h-11 w-full bg-surface-2 border border-border-subtle rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary/50 transition-colors"
                   placeholder="Ví dụ: Sân Vận Động Quốc Gia Mỹ Đình, Hà Nội"
                 />
                 {errors.location && <p id="event-location-error" role="alert" className="text-danger text-xs mt-1">{errors.location.message}</p>}
@@ -238,7 +238,7 @@ export default function EventModal({ isOpen, onClose, onSubmit, event, isLoading
                 <input 
                   id="event-venue"
                   {...register('venueName')}
-                  className="w-full bg-surface-2 border border-border-subtle rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary/50 transition-colors"
+                  className="min-h-11 w-full bg-surface-2 border border-border-subtle rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary/50 transition-colors"
                   placeholder="Ví dụ: Khán đài A - Tầng 2"
                 />
               </div>
@@ -256,7 +256,7 @@ export default function EventModal({ isOpen, onClose, onSubmit, event, isLoading
                   disabled={hasTicketHistory || isLoading}
                   aria-invalid={Boolean(errors.date)}
                   aria-describedby={errors.date ? 'event-date-error' : (hasTicketHistory ? 'event-history-lock' : undefined)}
-                  className="w-full bg-surface-2 border border-border-subtle rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary/50 transition-colors [color-scheme:dark] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="min-h-11 tabular-nums w-full bg-surface-2 border border-border-subtle rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary/50 transition-colors [color-scheme:dark] disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 {errors.date && <p id="event-date-error" role="alert" className="text-danger text-xs mt-1">{errors.date.message}</p>}
               </div>
@@ -272,7 +272,7 @@ export default function EventModal({ isOpen, onClose, onSubmit, event, isLoading
                   disabled={hasTicketHistory || isLoading}
                   aria-invalid={Boolean(errors.endDate)}
                   aria-describedby={errors.endDate ? 'event-end-date-error' : (hasTicketHistory ? 'event-history-lock' : undefined)}
-                  className="w-full bg-surface-2 border border-border-subtle rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary/50 transition-colors [color-scheme:dark] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="min-h-11 tabular-nums w-full bg-surface-2 border border-border-subtle rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary/50 transition-colors [color-scheme:dark] disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 {errors.endDate && <p id="event-end-date-error" role="alert" className="text-danger text-xs mt-1">{errors.endDate.message}</p>}
               </div>
@@ -304,7 +304,7 @@ export default function EventModal({ isOpen, onClose, onSubmit, event, isLoading
               disabled={hasTicketHistory || isLoading} 
               aria-invalid={Boolean(errors.basePrice)}
               aria-describedby={errors.basePrice ? 'event-base-price-error' : (hasTicketHistory ? 'event-history-lock' : undefined)}
-              className="w-full bg-surface-2 border border-border-subtle rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-50 disabled:cursor-not-allowed" 
+              className="min-h-11 tabular-nums w-full bg-surface-2 border border-border-subtle rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary disabled:opacity-50 disabled:cursor-not-allowed" 
             />
             {errors.basePrice && <p id="event-base-price-error" role="alert" className="text-danger text-xs">{errors.basePrice.message}</p>}
             <p className="text-[11px] text-text-secondary">Giá ghế được tạo tự động theo hạng: VIP 1,75×, Standard 1×, Economy 0,75×.</p>

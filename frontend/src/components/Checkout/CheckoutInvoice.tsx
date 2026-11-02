@@ -46,7 +46,7 @@ export const CheckoutInvoice: React.FC<CheckoutInvoiceProps> = React.memo(({
         <div className="min-w-0 flex-1">
           <h3 className="text-white font-display font-bold text-sm truncate">{event.title}</h3>
           <p className="text-text-secondary text-xs truncate mt-0.5">{event.venueName || event.location}</p>
-          <p className="text-text-tertiary text-[11px] mt-0.5">
+          <p className="text-text-tertiary text-[11px] mt-0.5 tabular-nums">
             {formatDate(event.date, { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
           </p>
         </div>
@@ -81,7 +81,7 @@ export const CheckoutInvoice: React.FC<CheckoutInvoiceProps> = React.memo(({
         <div className="flex justify-between items-center text-text-secondary">
           <span>Vị trí ghế:</span>
           <span className="font-bold text-white bg-surface-3 px-2 py-0.5 rounded-md border border-border-subtle">
-            Hàng {seat.row} - Ghế {seat.number} ({getTierName(seat.tier)})
+            Hàng {seat.row} - Ghế <span className="tabular-nums">{seat.number}</span> ({getTierName(seat.tier)})
           </span>
         </div>
 

@@ -88,7 +88,7 @@ export default function LoginForm({ serverError, onSubmit, onClearServerError }:
               aria-invalid={!!errors.email}
               aria-describedby={errors.email ? 'email-error' : undefined}
               {...register('email')}
-              className={`block w-full pl-10 pr-3.5 py-2.5 bg-surface-2 border ${
+              className={`block w-full min-h-11 pl-10 pr-3.5 py-2.5 bg-surface-2 border ${
                 errors.email ? 'border-danger focus:border-danger focus:ring-danger' : 'border-border-subtle focus:border-brand-primary focus:ring-brand-primary'
               } rounded-xl text-white placeholder-text-tertiary focus:outline-none focus-visible:ring-2 transition-[border-color,background-color,box-shadow] text-xs sm:text-sm`}
               placeholder="name@example.com"
@@ -116,7 +116,7 @@ export default function LoginForm({ serverError, onSubmit, onClearServerError }:
               aria-invalid={!!errors.password}
               aria-describedby={errors.password ? 'password-error' : undefined}
               {...register('password')}
-              className={`block w-full pl-10 pr-10 py-2.5 bg-surface-2 border ${
+              className={`block w-full min-h-11 pl-10 pr-10 py-2.5 bg-surface-2 border ${
                 errors.password ? 'border-danger focus:border-danger focus:ring-danger' : 'border-border-subtle focus:border-brand-primary focus:ring-brand-primary'
               } rounded-xl text-white placeholder-text-tertiary focus:outline-none focus-visible:ring-2 transition-[border-color,background-color,box-shadow] text-xs sm:text-sm`}
               placeholder="Mật khẩu của bạn"
@@ -126,7 +126,7 @@ export default function LoginForm({ serverError, onSubmit, onClearServerError }:
               onClick={() => setShowPassword((previous) => !previous)}
               aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
               aria-pressed={showPassword}
-              className="absolute inset-y-0 right-0 px-3.5 min-w-11 min-h-11 flex items-center justify-center text-text-tertiary hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary rounded-xl"
+              className="absolute inset-y-0 right-0 px-3.5 min-w-11 min-h-11 flex items-center justify-center text-text-tertiary hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary rounded-xl cursor-pointer"
             >
               {showPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
             </button>
@@ -152,18 +152,18 @@ export default function LoginForm({ serverError, onSubmit, onClearServerError }:
             <button
               type="button"
               onClick={() => fillDemoCredentials('admin@tickex.com')}
-              className="px-2.5 py-1.5 rounded-lg bg-surface-3 hover:bg-surface-4 text-[11px] font-medium text-white transition-colors text-left border border-border-subtle hover:border-brand-primary/50 group"
+              className="min-h-11 px-2.5 py-1.5 rounded-xl bg-surface-3 hover:bg-surface-4 text-[11px] font-medium text-white transition-colors text-left border border-border-subtle hover:border-brand-primary/50 group active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
             >
               <span className="text-brand-primary font-semibold block text-[11px]">Quản Trị Viên</span>
-              <span className="text-text-tertiary text-[10px] truncate block group-hover:text-text-secondary">admin@tickex.com</span>
+              <span className="text-text-tertiary text-[10px] truncate block group-hover:text-text-secondary font-mono">admin@tickex.com</span>
             </button>
             <button
               type="button"
               onClick={() => fillDemoCredentials('user@tickex.com')}
-              className="px-2.5 py-1.5 rounded-lg bg-surface-3 hover:bg-surface-4 text-[11px] font-medium text-white transition-colors text-left border border-border-subtle hover:border-brand-secondary/50 group"
+              className="min-h-11 px-2.5 py-1.5 rounded-xl bg-surface-3 hover:bg-surface-4 text-[11px] font-medium text-white transition-colors text-left border border-border-subtle hover:border-brand-secondary/50 group active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary"
             >
               <span className="text-brand-secondary font-semibold block text-[11px]">Khách Hàng</span>
-              <span className="text-text-tertiary text-[10px] truncate block group-hover:text-text-secondary">user@tickex.com</span>
+              <span className="text-text-tertiary text-[10px] truncate block group-hover:text-text-secondary font-mono">user@tickex.com</span>
             </button>
           </div>
         </div>

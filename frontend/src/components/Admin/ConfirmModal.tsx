@@ -37,7 +37,7 @@ export default function ConfirmModal({
 
   return (
     <div 
-      className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-surface-1/95 animate-backdrop-in"
+      className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-surface-1/95 backdrop-blur-sm animate-backdrop-in"
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-modal-title"

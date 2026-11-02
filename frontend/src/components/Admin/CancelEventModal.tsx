@@ -44,7 +44,7 @@ export default function CancelEventModal({
 
   return (
     <div 
-      className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-surface-1/95 animate-backdrop-in"
+      className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-surface-1/95 backdrop-blur-sm animate-backdrop-in"
       role="dialog"
       aria-modal="true"
       aria-labelledby="cancel-event-title"
@@ -72,7 +72,7 @@ export default function CancelEventModal({
           </div>
         </div>
 
-        <div className="p-3.5 bg-danger/10 border border-danger/20 rounded-xl text-xs text-danger-300 space-y-1">
+        <div className="p-3.5 bg-danger/10 border border-danger/20 rounded-xl text-xs text-danger space-y-1">
           <p className="font-bold text-danger">Cảnh báo tác động nghiệp vụ:</p>
           <ul className="list-disc list-inside space-y-0.5 text-[11px] text-text-secondary">
             <li>Sự kiện: <span className="text-white font-semibold">"{eventTitle}"</span></li>

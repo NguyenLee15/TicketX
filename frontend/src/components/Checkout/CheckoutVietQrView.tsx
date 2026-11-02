@@ -84,7 +84,7 @@ export const CheckoutVietQrView: React.FC<CheckoutVietQrViewProps> = React.memo(
               </div>
             )
           ) : (
-            <span className="text-xs text-slate-500 text-center">Thanh toán qua PayOS</span>
+            <span className="text-xs text-text-secondary text-center">Thanh toán qua PayOS</span>
           )}
         </div>
 
@@ -150,7 +150,7 @@ export const CheckoutVietQrView: React.FC<CheckoutVietQrViewProps> = React.memo(
           }}
           disabled={redirecting}
           aria-busy={redirecting}
-          className="w-full py-3.5 bg-brand-primary hover:bg-brand-primary/90 disabled:opacity-50 text-white font-bold rounded-lg transition-[background-color,transform] flex items-center justify-center gap-2 group text-sm active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer disabled:cursor-not-allowed shadow-lg shadow-brand-glow"
+          className="w-full min-h-11 py-3 bg-brand-primary hover:bg-brand-primary/90 disabled:opacity-50 text-white font-bold rounded-xl transition-[background-color,transform] flex items-center justify-center gap-2 group text-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer disabled:cursor-not-allowed shadow-lg shadow-brand-glow"
         >
           <span>Chuyển Đến Cổng Thanh Toán PayOS</span>
           <ExternalLink className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />

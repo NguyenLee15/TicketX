@@ -48,7 +48,7 @@ export function ChangePasswordForm({
                 aria-describedby={errors.currentPassword ? 'password-current-error' : undefined}
                 {...register('currentPassword')}
                 placeholder="••••••••"
-                className={`block w-full pl-10 pr-10 py-2 text-xs sm:text-sm border ${
+                className={`block w-full min-h-11 pl-10 pr-10 py-2.5 text-xs sm:text-sm border ${
                   errors.currentPassword ? 'border-danger' : 'border-border-subtle'
                 } rounded-xl bg-surface-2/50 text-white placeholder-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary transition-[border-color,background-color,box-shadow] hover:bg-surface-2`}
               />
@@ -81,7 +81,7 @@ export function ChangePasswordForm({
                 aria-describedby={errors.newPassword ? 'password-new-error' : undefined}
                 {...register('newPassword')}
                 placeholder="••••••••"
-                className={`block w-full pl-10 pr-10 py-2 text-xs sm:text-sm border ${
+                className={`block w-full min-h-11 pl-10 pr-10 py-2.5 text-xs sm:text-sm border ${
                   errors.newPassword ? 'border-danger' : 'border-border-subtle'
                 } rounded-xl bg-surface-2/50 text-white placeholder-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary transition-[border-color,background-color,box-shadow] hover:bg-surface-2`}
               />
@@ -114,7 +114,7 @@ export function ChangePasswordForm({
                 aria-describedby={errors.confirmPassword ? 'password-confirm-error' : undefined}
                 {...register('confirmPassword')}
                 placeholder="••••••••"
-                className={`block w-full pl-10 pr-10 py-2 text-xs sm:text-sm border ${
+                className={`block w-full min-h-11 pl-10 pr-10 py-2.5 text-xs sm:text-sm border ${
                   errors.confirmPassword ? 'border-danger' : 'border-border-subtle'
                 } rounded-xl bg-surface-2/50 text-white placeholder-text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary transition-[border-color,background-color,box-shadow] hover:bg-surface-2`}
               />

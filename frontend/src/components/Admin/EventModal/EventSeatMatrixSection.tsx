@@ -18,7 +18,7 @@ export function EventSeatMatrixSection({ event, totalMatrixSeats, register, erro
           <Grid3X3 className="w-4 h-4 text-brand-primary" aria-hidden="true" />
           <h3 className="text-xs font-bold text-white uppercase tracking-wider">Cấu hình Sơ Đồ Ma Trận Ghế</h3>
         </div>
-        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-brand-primary/15 text-brand-primary border border-brand-primary/30">
+        <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-brand-primary/15 text-brand-primary border border-brand-primary/30 tabular-nums">
           {event ? `${event.totalSeats} Ghế đã tạo` : `${totalMatrixSeats} Ghế dự kiến`}
         </span>
       </div>
@@ -44,7 +44,7 @@ export function EventSeatMatrixSection({ event, totalMatrixSeats, register, erro
               {...register('rowCount', { valueAsNumber: true })}
               aria-invalid={Boolean(errors.rowCount)}
               aria-describedby={errors.rowCount ? 'event-row-count-error' : undefined}
-              className="w-full bg-surface-2 border border-border-subtle rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary"
+              className="min-h-11 tabular-nums w-full bg-surface-2 border border-border-subtle rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary"
             />
             {errors.rowCount && <p id="event-row-count-error" role="alert" className="text-danger text-[10px] mt-0.5">{errors.rowCount.message}</p>}
           </div>
@@ -61,7 +61,7 @@ export function EventSeatMatrixSection({ event, totalMatrixSeats, register, erro
               {...register('seatsPerRow', { valueAsNumber: true })}
               aria-invalid={Boolean(errors.seatsPerRow)}
               aria-describedby={errors.seatsPerRow ? 'event-seats-per-row-error' : undefined}
-              className="w-full bg-surface-2 border border-border-subtle rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary"
+              className="min-h-11 tabular-nums w-full bg-surface-2 border border-border-subtle rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus:border-brand-primary"
             />
             {errors.seatsPerRow && <p id="event-seats-per-row-error" role="alert" className="text-danger text-[10px] mt-0.5">{errors.seatsPerRow.message}</p>}
           </div>
