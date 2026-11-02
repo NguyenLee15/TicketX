@@ -75,8 +75,8 @@ public class PayOSService : IPayOSService
             if (response.IsSuccessStatusCode)
             {
                 _resilience.RecordSuccess();
-                var responseString = await response.Content.ReadAsStringAsync(cancellationToken);
-                var jsonDoc = JsonDocument.Parse(responseString);
+                await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                using var jsonDoc = await JsonDocument.ParseAsync(responseStream, cancellationToken: cancellationToken);
                 var dataElement = jsonDoc.RootElement.GetProperty("data");
                 string checkoutUrl = dataElement.GetProperty("checkoutUrl").GetString() ?? "";
 
@@ -97,7 +97,6 @@ public class PayOSService : IPayOSService
                 };
             }
 
-            _ = await response.Content.ReadAsStringAsync(cancellationToken);
             _resilience.RecordFailure();
             _logger.LogWarning("PayOS payment-link request failed with HTTP status {StatusCode}.", (int)response.StatusCode);
             return null;
@@ -142,7 +141,8 @@ public class PayOSService : IPayOSService
                     return new PaymentLinkLookupResult(PaymentLinkLookupState.Unknown);
                 }
 
-                using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+                await using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                using var document = await JsonDocument.ParseAsync(responseStream, cancellationToken: cancellationToken);
                 if (!document.RootElement.TryGetProperty("data", out var data)
                     || !data.TryGetProperty("checkoutUrl", out var checkoutUrl))
                 {
@@ -188,7 +188,7 @@ public class PayOSService : IPayOSService
     {
         try
         {
-            var jsonDoc = JsonDocument.Parse(webhookBody);
+            using var jsonDoc = JsonDocument.Parse(webhookBody);
             
             // Extract signature from payload if not provided in header
             if (string.IsNullOrWhiteSpace(signature) && jsonDoc.RootElement.TryGetProperty("signature", out var sigProp))

@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using TickeX.Application.Interfaces;
+using TickeX.Domain.Entities;
 using TickeX.Domain.Enums;
 using TickeX.Infrastructure.Persistence;
 
@@ -79,6 +80,7 @@ public sealed class RefundPayoutWorker(
         try
         {
             PayOSPayoutResult result;
+            Seat? releasedSeat = null;
             if ((refund.ProviderStatus is "PROCESSING" or "PENDING") && refund.ProviderReference is not null)
             {
                 result = await provider.GetStatusAsync(refund.ProviderReference, cancellationToken);
@@ -117,6 +119,7 @@ public sealed class RefundPayoutWorker(
                     if (!hasOtherActiveTicket)
                     {
                         seat.Release();
+                        releasedSeat = seat;
                     }
                 }
             }
@@ -150,24 +153,20 @@ public sealed class RefundPayoutWorker(
                     catch (Exception ex) { logger.LogDebug(ex, "Failed to invalidate catalog cache after refund."); }
                 }
 
-                if (seatNotifications != null)
+                if (seatNotifications != null && releasedSeat != null && releasedSeat.Status == SeatStatus.Available)
                 {
-                    var seat = await db.Seats.AsNoTracking().FirstOrDefaultAsync(s => s.Id == ticket.SeatId, cancellationToken);
-                    if (seat != null && seat.Status == SeatStatus.Available)
+                    try
                     {
-                        try
-                        {
-                            await seatNotifications.NotifySeatStatusChanged(
-                                ticket.EventId,
-                                seat.Id,
-                                seat.Status.ToString(),
-                                Convert.ToBase64String(seat.Version),
-                                null);
-                        }
-                        catch (Exception ex)
-                        {
-                            logger.LogDebug(ex, "Failed to send seat status notification for seat {SeatId} after refund.", seat.Id);
-                        }
+                        await seatNotifications.NotifySeatStatusChanged(
+                            ticket.EventId,
+                            releasedSeat.Id,
+                            releasedSeat.Status.ToString(),
+                            Convert.ToBase64String(releasedSeat.Version),
+                            null);
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogDebug(ex, "Failed to send seat status notification for seat {SeatId} after refund.", releasedSeat.Id);
                     }
                 }
             }

@@ -66,18 +66,26 @@ public sealed class CustomerEventCatalogAdapter : ICustomerEventCatalog
         var page = Math.Clamp(request.Page > 0 ? request.Page : 1, 1, 10000);
         var pageSize = Math.Clamp(request.Limit ?? request.PageSize, 1, 50);
         int? totalCount = null;
-        List<TickeX.Domain.Entities.Event> rows;
+        List<EventCatalogRow> rows;
+
+        var projectionQuery = query.Select(e => new EventCatalogRow(
+            e.Id, e.Title, e.Description, e.Date, e.EndDate, e.Location, e.VenueName,
+            e.Category, e.ImageUrl, e.BannerUrl, e.OrganizerName, e.TotalSeats,
+            e.BasePrice, e.Status, e.RefundCutoffHours));
+
         if (string.IsNullOrWhiteSpace(request.Cursor))
         {
             if (page == 1)
             {
-                rows = await query.Take(pageSize).ToListAsync(cancellationToken);
+                rows = await projectionQuery.Take(pageSize).ToListAsync(cancellationToken);
                 totalCount = rows.Count < pageSize ? rows.Count : await query.CountAsync(cancellationToken);
             }
             else
             {
-                totalCount = await query.CountAsync(cancellationToken);
-                rows = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+                rows = await projectionQuery.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+                totalCount = rows.Count > 0 && rows.Count < pageSize
+                    ? ((page - 1) * pageSize) + rows.Count
+                    : await query.CountAsync(cancellationToken);
             }
         }
         else
@@ -90,7 +98,12 @@ public sealed class CustomerEventCatalogAdapter : ICustomerEventCatalog
                 "price_desc" => query.Where(e => (double)(e.Seats.Min(s => (double?)s.Price) ?? (double)e.BasePrice) < (double)cursor.Price || ((double)(e.Seats.Min(s => (double?)s.Price) ?? (double)e.BasePrice) == (double)cursor.Price && e.Id.CompareTo(cursor.Id) > 0)),
                 _ => query.Where(e => e.Date > cursor.Date || (e.Date == cursor.Date && e.Id.CompareTo(cursor.Id) > 0))
             };
-            rows = await query.Take(pageSize + 1).ToListAsync(cancellationToken);
+            rows = await query.Select(e => new EventCatalogRow(
+                e.Id, e.Title, e.Description, e.Date, e.EndDate, e.Location, e.VenueName,
+                e.Category, e.ImageUrl, e.BannerUrl, e.OrganizerName, e.TotalSeats,
+                e.BasePrice, e.Status, e.RefundCutoffHours))
+                .Take(pageSize + 1)
+                .ToListAsync(cancellationToken);
         }
 
         var hasMore = string.IsNullOrWhiteSpace(request.Cursor)
@@ -132,7 +145,7 @@ public sealed class CustomerEventCatalogAdapter : ICustomerEventCatalog
 
         var last = rows.LastOrDefault();
         var nextCursor = hasMore && last is not null
-            ? EncodeCursor(sortBy, last, seatStats.TryGetValue(last.Id, out var lastStats) ? lastStats.MinPrice : last.BasePrice)
+            ? EncodeCursor(sortBy, last.Date, last.Id, seatStats.TryGetValue(last.Id, out var lastStats) ? lastStats.MinPrice : last.BasePrice)
             : null;
         var result = string.IsNullOrWhiteSpace(request.Cursor)
             ? new PagedResult<EventDto>(items, totalCount, page, pageSize, nextCursor, hasMore, "offset")
@@ -141,9 +154,9 @@ public sealed class CustomerEventCatalogAdapter : ICustomerEventCatalog
         return result;
     }
 
-    private static string EncodeCursor(string sortBy, TickeX.Domain.Entities.Event eventItem, decimal effectivePrice)
+    private static string EncodeCursor(string sortBy, DateTime eventDate, Guid eventId, decimal effectivePrice)
     {
-        var value = new EventCursor(sortBy, eventItem.Date, effectivePrice, eventItem.Id);
+        var value = new EventCursor(sortBy, eventDate, effectivePrice, eventId);
         return Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(value)))
             .TrimEnd('=').Replace('+', '-').Replace('/', '_');
     }
@@ -170,4 +183,21 @@ public sealed class CustomerEventCatalogAdapter : ICustomerEventCatalog
     }
 
     private sealed record EventCursor(string SortBy, DateTime Date, decimal Price, Guid Id);
+
+    private sealed record EventCatalogRow(
+        Guid Id,
+        string Title,
+        string Description,
+        DateTime Date,
+        DateTime EndDate,
+        string Location,
+        string VenueName,
+        string Category,
+        string ImageUrl,
+        string BannerUrl,
+        string OrganizerName,
+        int TotalSeats,
+        decimal BasePrice,
+        EventStatus Status,
+        int RefundCutoffHours);
 }

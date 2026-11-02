@@ -111,11 +111,12 @@ public sealed class DashboardReadModelAdapter : IDashboardReadModel
         }
         var eventIds = topAggregates.Select(x => x.EventId).ToList();
         var eventDetails = await _context.Events.AsNoTracking().Where(e => eventIds.Contains(e.Id))
-            .Select(e => new { e.Id, e.Title, e.Category, e.TotalSeats }).ToListAsync(cancellationToken);
+            .Select(e => new { e.Id, e.Title, e.Category, e.TotalSeats })
+            .ToDictionaryAsync(e => e.Id, cancellationToken);
         var topEvents = topAggregates.Select(x =>
         {
-            var ev = eventDetails.FirstOrDefault(e => e.Id == x.EventId);
-            return new TopEventStat(x.EventId, ev?.Title ?? "N/A", ev?.Category ?? "N/A", x.TicketsSold, x.Revenue, ev?.TotalSeats ?? 0);
+            var hasEvent = eventDetails.TryGetValue(x.EventId, out var ev);
+            return new TopEventStat(x.EventId, hasEvent ? ev!.Title : "N/A", hasEvent ? ev!.Category : "N/A", x.TicketsSold, x.Revenue, hasEvent ? ev!.TotalSeats : 0);
         }).ToList();
 
         var localToday = _time.LocalNow.Date;

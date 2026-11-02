@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -38,6 +39,7 @@ public sealed class IdempotencyFilter : IAsyncActionFilter, IAsyncResourceFilter
 {
     public const string HeaderName = "Idempotency-Key";
     public const string ReplayHeaderName = "Idempotency-Replay";
+    public const int MaxIdempotentBodyBytes = 64 * 1024; // 64 KB
     private static readonly JsonSerializerOptions WebJsonOptions = new(JsonSerializerDefaults.Web);
     private readonly IIdempotencyStore _store;
     private readonly ILogger<IdempotencyFilter> _logger;
@@ -97,7 +99,13 @@ public sealed class IdempotencyFilter : IAsyncActionFilter, IAsyncResourceFilter
         var userId = http.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "anonymous";
         var method = http.Request.Method;
         var path = http.Request.Path.Value ?? string.Empty;
-        var bodyHash = await ComputeBodyHashAsync(http.Request);
+        var bodyHashResult = await ComputeBodyHashAsync(http.Request, http.RequestAborted);
+        if (bodyHashResult.IsTooLarge)
+        {
+            context.Result = Error(http, StatusCodes.Status413PayloadTooLarge, "IDEMPOTENCY_PAYLOAD_TOO_LARGE", "Payload Too Large", "Kích thước nội dung yêu cầu vượt quá giới hạn tối đa cho phép (64 KB).");
+            return;
+        }
+        var bodyHash = bodyHashResult.Hash;
         var fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes($"{userId}:{method}:{path}:{http.Request.QueryString}:{bodyHash}")));
         var key = $"tickex:idempotency:{userId}:{method}:{path}:{keyGuid:D}";
         var sentinel = JsonSerializer.Serialize(new IdempotencyRecord { Status = "Processing", Fingerprint = fingerprint }, WebJsonOptions);
@@ -175,21 +183,79 @@ public sealed class IdempotencyFilter : IAsyncActionFilter, IAsyncResourceFilter
         }
     }
 
-    private static async Task<string> ComputeBodyHashAsync(HttpRequest request)
+    internal readonly struct BodyHashResult
     {
-        if (request.ContentLength == 0) return string.Empty;
+        public bool IsTooLarge { get; init; }
+        public string Hash { get; init; }
+
+        public static BodyHashResult TooLarge() => new() { IsTooLarge = true, Hash = string.Empty };
+        public static BodyHashResult Success(string hash) => new() { IsTooLarge = false, Hash = hash };
+    }
+
+    internal static async Task<BodyHashResult> ComputeBodyHashAsync(HttpRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request.ContentLength > MaxIdempotentBodyBytes)
+        {
+            return BodyHashResult.TooLarge();
+        }
+
+        if (request.ContentLength == 0) return BodyHashResult.Success(string.Empty);
         request.EnableBuffering();
         if (request.Body.CanSeek)
         {
             request.Body.Position = 0;
         }
-        using var reader = new StreamReader(request.Body, Encoding.UTF8, false, leaveOpen: true);
-        var bodyText = await reader.ReadToEndAsync();
-        if (request.Body.CanSeek)
+
+        using var hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        var buffer = ArrayPool<byte>.Shared.Rent(4096);
+        var totalBytesRead = 0;
+        var hasNonWhitespace = false;
+
+        try
         {
-            request.Body.Position = 0;
+            while (true)
+            {
+                var bytesRead = await request.Body.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken);
+                if (bytesRead == 0) break;
+
+                totalBytesRead += bytesRead;
+                if (totalBytesRead > MaxIdempotentBodyBytes)
+                {
+                    return BodyHashResult.TooLarge();
+                }
+
+                if (!hasNonWhitespace)
+                {
+                    for (var i = 0; i < bytesRead; i++)
+                    {
+                        var b = buffer[i];
+                        if (b is not (byte)' ' and not (byte)'\t' and not (byte)'\r' and not (byte)'\n')
+                        {
+                            hasNonWhitespace = true;
+                            break;
+                        }
+                    }
+                }
+
+                hasher.AppendData(buffer, 0, bytesRead);
+            }
+
+            if (!hasNonWhitespace)
+            {
+                return BodyHashResult.Success(string.Empty);
+            }
+
+            var hashBytes = hasher.GetHashAndReset();
+            return BodyHashResult.Success(Convert.ToHexString(hashBytes));
         }
-        return string.IsNullOrWhiteSpace(bodyText) ? string.Empty : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(bodyText)));
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+            if (request.Body.CanSeek)
+            {
+                request.Body.Position = 0;
+            }
+        }
     }
 
     private async Task ReleaseClaimSafeAsync(string key, string ownerToken, CancellationToken cancellationToken)

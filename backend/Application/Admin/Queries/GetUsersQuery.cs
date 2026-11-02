@@ -58,15 +58,26 @@ public class GetUsersQueryHandler : IRequestHandler<GetUsersQuery, PagedResult<U
             query = query.Where(u => u.IsBlocked == request.IsBlocked.Value);
         }
 
-        var totalCount = await query.CountAsync(cancellationToken);
-
-        var users = await query
+        var pagedQuery = query
             .OrderByDescending(u => u.CreatedAt)
             .ThenBy(u => u.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(u => new { u.Id, u.Name, u.Email, u.Role, u.IsBlocked, u.CreatedAt, u.Version, u.Phone, u.AvatarUrl })
-            .ToListAsync(cancellationToken);
+            .Select(u => new { u.Id, u.Name, u.Email, u.Role, u.IsBlocked, u.CreatedAt, u.Version, u.Phone, u.AvatarUrl });
+
+        var users = await pagedQuery.ToListAsync(cancellationToken);
+
+        int totalCount;
+        if (page == 1)
+        {
+            totalCount = users.Count < pageSize ? users.Count : await query.CountAsync(cancellationToken);
+        }
+        else
+        {
+            totalCount = users.Count > 0 && users.Count < pageSize
+                ? ((page - 1) * pageSize) + users.Count
+                : await query.CountAsync(cancellationToken);
+        }
 
         var items = users.Select(u => new UserDto(
             u.Id, u.Name, u.Email, u.Role, u.IsBlocked, u.CreatedAt,

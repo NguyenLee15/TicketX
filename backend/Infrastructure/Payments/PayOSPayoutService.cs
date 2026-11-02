@@ -53,7 +53,8 @@ public sealed class PayOSPayoutService : IPayOSPayoutService
             return await FindByReferenceAsync(referenceId, cancellationToken);
         }
         _resilience.RecordSuccess();
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
         return Parse(document.RootElement);
     }
 
@@ -69,7 +70,8 @@ public sealed class PayOSPayoutService : IPayOSPayoutService
             return new PayOSPayoutResult(payoutId, null, $"PayOS status returned HTTP {(int)response.StatusCode}.");
         }
         _resilience.RecordSuccess();
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
         return Parse(document.RootElement);
     }
 
@@ -85,7 +87,8 @@ public sealed class PayOSPayoutService : IPayOSPayoutService
             return new PayOSPayoutResult(null, null, $"PayOS reference lookup returned HTTP {(int)response.StatusCode}.");
         }
         _resilience.RecordSuccess();
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
         var root = document.RootElement;
         var data = root.TryGetProperty("data", out var d) ? d : default;
         var payouts = data.ValueKind == JsonValueKind.Object && data.TryGetProperty("payouts", out var p) ? p : default;

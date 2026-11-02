@@ -64,9 +64,7 @@ public class GetAdminEventsQueryHandler : IRequestHandler<GetAdminEventsQuery, P
             query = query.Where(e => e.Status == request.Status.Value);
         }
 
-        var totalCount = await query.CountAsync(cancellationToken);
-
-        var rawEvents = await query
+        var pagedQuery = query
             .OrderByDescending(e => e.Date)
             .ThenBy(e => e.Id)
             .Skip((page - 1) * pageSize)
@@ -89,8 +87,25 @@ public class GetAdminEventsQueryHandler : IRequestHandler<GetAdminEventsQuery, P
                 e.RefundCutoffHours,
                 e.IsDeleted,
                 e.Version
-            })
-            .ToListAsync(cancellationToken);
+            });
+
+        var rawEvents = await pagedQuery.ToListAsync(cancellationToken);
+        int totalCount;
+        if (page == 1)
+        {
+            totalCount = rawEvents.Count < pageSize ? rawEvents.Count : await query.CountAsync(cancellationToken);
+        }
+        else
+        {
+            totalCount = rawEvents.Count > 0 && rawEvents.Count < pageSize
+                ? ((page - 1) * pageSize) + rawEvents.Count
+                : await query.CountAsync(cancellationToken);
+        }
+
+        if (rawEvents.Count == 0)
+        {
+            return new PagedResult<EventDto>(new List<EventDto>(), totalCount, page, pageSize);
+        }
 
         var eventIds = rawEvents.Select(e => e.Id).ToArray();
         var lockExpiry = _time.UtcNow.Subtract(_holdDuration);
@@ -101,17 +116,18 @@ public class GetAdminEventsQueryHandler : IRequestHandler<GetAdminEventsQuery, P
             ? _context.Tickets.IgnoreQueryFilters().AsNoTracking()
             : _context.Tickets.AsNoTracking();
 
-        var availableSeats = await seatsQuery
-            .Where(s => eventIds.Contains(s.EventId)
-                && (s.Status == SeatStatus.Available || (s.Status == SeatStatus.Locked && s.LockedAt <= lockExpiry)))
-            .GroupBy(s => s.EventId)
-            .Select(g => new { EventId = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.EventId, x => x.Count, cancellationToken);
-        var seatPrices = await seatsQuery
+        var seatStats = await seatsQuery
             .Where(s => eventIds.Contains(s.EventId))
             .GroupBy(s => s.EventId)
-            .Select(g => new { EventId = g.Key, MinPrice = g.Min(s => (double)s.Price), MaxPrice = g.Max(s => (double)s.Price) })
-            .ToDictionaryAsync(x => x.EventId, x => (MinPrice: (decimal)x.MinPrice, MaxPrice: (decimal)x.MaxPrice), cancellationToken);
+            .Select(g => new
+            {
+                EventId = g.Key,
+                AvailableCount = g.Count(s => s.Status == SeatStatus.Available || (s.Status == SeatStatus.Locked && s.LockedAt <= lockExpiry)),
+                MinPrice = (decimal)g.Min(s => (double)s.Price),
+                MaxPrice = (decimal)g.Max(s => (double)s.Price)
+            })
+            .ToDictionaryAsync(x => x.EventId, x => (x.AvailableCount, x.MinPrice, x.MaxPrice), cancellationToken);
+
         var ticketHistoryIds = await ticketsQuery
             .Where(t => eventIds.Contains(t.EventId))
             .Select(t => t.EventId)
@@ -119,29 +135,33 @@ public class GetAdminEventsQueryHandler : IRequestHandler<GetAdminEventsQuery, P
             .ToListAsync(cancellationToken);
         var ticketHistory = ticketHistoryIds.ToHashSet();
 
-        var events = rawEvents.Select(e => new EventDto(
-            e.Id,
-            e.Title,
-            e.Description,
-            e.Date,
-            e.EndDate,
-            e.Location,
-            e.VenueName,
-            e.Category,
-            e.ImageUrl,
-            e.BannerUrl,
-            e.OrganizerName,
-            e.TotalSeats,
-            availableSeats.GetValueOrDefault(e.Id),
-            e.BasePrice,
-            seatPrices.TryGetValue(e.Id, out var prices) ? prices.MinPrice : e.BasePrice,
-            seatPrices.TryGetValue(e.Id, out prices) ? prices.MaxPrice : e.BasePrice,
-            e.Status,
-            e.RefundCutoffHours,
-            e.IsDeleted,
-            ticketHistory.Contains(e.Id),
-            e.Version != null && e.Version.Length > 0 ? Convert.ToBase64String(e.Version) : null
-        )).ToList();
+        var events = rawEvents.Select(e =>
+        {
+            var hasStats = seatStats.TryGetValue(e.Id, out var stats);
+            return new EventDto(
+                e.Id,
+                e.Title,
+                e.Description,
+                e.Date,
+                e.EndDate,
+                e.Location,
+                e.VenueName,
+                e.Category,
+                e.ImageUrl,
+                e.BannerUrl,
+                e.OrganizerName,
+                e.TotalSeats,
+                hasStats ? stats.AvailableCount : 0,
+                e.BasePrice,
+                hasStats ? stats.MinPrice : e.BasePrice,
+                hasStats ? stats.MaxPrice : e.BasePrice,
+                e.Status,
+                e.RefundCutoffHours,
+                e.IsDeleted,
+                ticketHistory.Contains(e.Id),
+                e.Version != null && e.Version.Length > 0 ? Convert.ToBase64String(e.Version) : null
+            );
+        }).ToList();
 
         return new PagedResult<EventDto>(events, totalCount, page, pageSize);
     }
