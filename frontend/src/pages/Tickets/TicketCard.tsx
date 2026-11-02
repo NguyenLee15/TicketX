@@ -147,22 +147,22 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
         </div>
 
         {/* Seat Details Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
-          <div className="bg-surface-2/70 p-2.5 rounded-xl border border-border-subtle text-center">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-border-subtle/60 rounded-xl overflow-hidden border border-border-subtle/60 mt-1">
+          <div className="bg-surface-2/60 p-2.5 text-center flex flex-col justify-center">
             <div className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold mb-0.5 whitespace-nowrap">Hàng Ghế</div>
             <div className="font-black text-lg text-white font-display whitespace-nowrap">{ticket.row}</div>
           </div>
-          <div className="bg-surface-2/70 p-2.5 rounded-xl border border-border-subtle text-center">
+          <div className="bg-surface-2/60 p-2.5 text-center flex flex-col justify-center">
             <div className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold mb-0.5 whitespace-nowrap">Số Ghế</div>
             <div className="font-black text-lg text-white font-display whitespace-nowrap tabular-nums">{ticket.number}</div>
           </div>
-          <div className="bg-surface-2/70 p-2.5 rounded-xl border border-border-subtle text-center">
+          <div className="bg-surface-2/60 p-2.5 text-center flex flex-col justify-center">
             <div className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold mb-0.5 whitespace-nowrap">Hạng Vé</div>
             <div className="font-bold text-xs sm:text-sm text-brand-secondary font-display mt-0.5 whitespace-nowrap">
               {isVip ? 'VIP' : ticket.tier === 2 ? 'Tiết Kiệm' : 'Tiêu Chuẩn'}
             </div>
           </div>
-          <div className="bg-surface-2/70 p-2.5 rounded-xl border border-border-subtle text-center">
+          <div className="bg-surface-2/60 p-2.5 text-center flex flex-col justify-center">
             <div className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold mb-0.5 whitespace-nowrap">Giá Vé</div>
             <div className="font-black text-xs sm:text-sm text-success font-display mt-0.5 whitespace-nowrap tabular-nums">
               {formatCurrency(ticket.price)}

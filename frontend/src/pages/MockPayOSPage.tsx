@@ -124,7 +124,7 @@ export default function MockPayOSPage() {
               <div className="flex-1 flex flex-col items-center justify-center border border-dashed border-border-default rounded-xl p-6 sm:p-8 bg-surface-1/60 relative overflow-hidden group">
                 <div className="w-48 h-48 bg-white shadow-md border border-border-subtle rounded-xl flex items-center justify-center mb-6 relative">
                   <div className="absolute inset-4 border border-brand-primary/20 rounded-lg" />
-                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=payos-sandbox" alt="QR Code" className="w-[85%] h-[85%] opacity-60 grayscale mix-blend-multiply" />
+                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=payos-sandbox" alt="Mã QR thanh toán PayOS bản thử nghiệm" width="150" height="150" className="w-[85%] h-[85%] opacity-60 grayscale mix-blend-multiply" />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span className="bg-brand-primary text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">CHẾ ĐỘ THỬ NGHIỆM</span>
                   </div>

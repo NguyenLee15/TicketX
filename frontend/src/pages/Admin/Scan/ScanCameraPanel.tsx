@@ -179,7 +179,7 @@ export const ScanCameraPanel: React.FC<ScanCameraPanelProps> = ({ onScanToken, i
       </div>
 
       {/* Video Viewfinder Container */}
-      <div className="relative w-full min-h-[260px] sm:min-h-[300px] rounded-xl bg-surface-1 border-2 border-dashed border-brand-primary/40 flex flex-col items-center justify-center overflow-hidden shadow-inner">
+      <div className="relative w-full min-h-[260px] sm:min-h-[300px] aspect-[4/3] sm:aspect-[16/10] rounded-xl bg-surface-1 border-2 border-dashed border-brand-primary/40 flex flex-col items-center justify-center overflow-hidden shadow-inner">
         {cameraActive ? (
           <>
             <div id="tickex-qr-reader" className="w-full h-full max-w-sm overflow-hidden" />

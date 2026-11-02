@@ -113,6 +113,12 @@ export default function AdminRefundsPage() {
         </div>
       </div>
 
+      {/* Mobile Scroll Hint */}
+      <div className="sm:hidden flex items-center justify-between text-[11px] text-text-tertiary px-1 pb-1">
+        <span>Bảng dữ liệu nhiều cột</span>
+        <span>Vuốt ngang để xem đủ thông tin →</span>
+      </div>
+
       {/* Responsive Table View */}
       <div 
         role="region" 

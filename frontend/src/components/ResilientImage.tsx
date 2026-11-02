@@ -29,13 +29,13 @@ export function ResilientImage({
   if (!src || failed) {
     if (!alt || alt.trim() === '') {
       return (
-        <div aria-hidden="true" className={fallbackClassName ?? `${className} bg-surface-3 flex items-center justify-center text-text-tertiary`}>
+        <div aria-hidden="true" className={fallbackClassName ?? `${className} bg-surface-3 flex items-center justify-center text-text-tertiary`} style={width || height ? { width, height } : undefined}>
           <ImageOff className="h-5 w-5" aria-hidden="true" />
         </div>
       );
     }
     return (
-      <div role="img" aria-label={alt} className={fallbackClassName ?? `${className} bg-surface-3 flex items-center justify-center text-text-tertiary`}>
+      <div role="img" aria-label={alt} className={fallbackClassName ?? `${className} bg-surface-3 flex items-center justify-center text-text-tertiary`} style={width || height ? { width, height } : undefined}>
         <ImageOff className="h-5 w-5" aria-hidden="true" />
       </div>
     );

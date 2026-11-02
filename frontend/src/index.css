@@ -4,6 +4,7 @@
 
 @theme {
   --color-brand-primary: #BA4F2D;
+  --color-brand-primary-light: #E87A54;
   --color-brand-secondary: #D9A26C;
   --color-brand-accent: #F1E7D8;
   --color-brand-glow: rgba(186, 79, 45, 0.18);
@@ -139,6 +140,7 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+    transform: none !important;
   }
 }
 

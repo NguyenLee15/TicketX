@@ -32,6 +32,10 @@ export const AdminEventsTable: React.FC<AdminEventsTableProps> = ({
       {/* Desktop Table View */}
       <div className="hidden md:block surface-panel overflow-hidden shadow-lg">
         <h2 className="sr-only">Danh sách sự kiện</h2>
+        {/* Tablet Scroll Hint */}
+        <div className="hidden md:flex lg:hidden items-center justify-end text-[11px] text-text-tertiary px-5 pt-3 pb-1">
+          <span>Vuốt ngang để xem đủ thông tin →</span>
+        </div>
         <div 
           role="region" 
           aria-label="Bảng quản lý sự kiện" 

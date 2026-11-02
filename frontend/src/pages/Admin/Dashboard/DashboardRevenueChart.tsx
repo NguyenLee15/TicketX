@@ -54,8 +54,14 @@ export function DashboardRevenueChart({ dailyStats }: DashboardRevenueChartProps
               const dayName = chartDayFormatter.format(dateObj);
 
               return (
-                <div key={item.date} className="flex flex-col items-center h-full justify-end group relative">
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-12 z-20 pointer-events-none bg-surface-1 border border-border-subtle shadow-xl px-2.5 py-1.5 rounded-lg text-center whitespace-nowrap tabular-nums">
+                <div 
+                  key={item.date} 
+                  tabIndex={0} 
+                  role="group" 
+                  aria-label={`${formattedDate} ${dayName}: ${currencyFormatter.format(item.revenue)}, ${numberFormatter.format(item.ticketsSold)} vé`} 
+                  className="flex flex-col items-center h-full justify-end group relative focus:outline-none focus-visible:ring-1 focus-visible:ring-brand-primary rounded-lg"
+                >
+                  <div className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity absolute -top-12 z-20 pointer-events-none bg-surface-1 border border-border-subtle shadow-xl px-2.5 py-1.5 rounded-lg text-center whitespace-nowrap tabular-nums">
                     <p className="text-[11px] font-bold text-white">{currencyFormatter.format(item.revenue)}</p>
                     <p className="text-[10px] text-text-secondary">{numberFormatter.format(item.ticketsSold)} vé ({item.date})</p>
                   </div>

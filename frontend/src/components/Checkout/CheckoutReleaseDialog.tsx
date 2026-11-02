@@ -23,16 +23,17 @@ export const CheckoutReleaseDialog: React.FC<CheckoutReleaseDialogProps> = React
 
   return (
     <div 
-      className="absolute inset-0 z-20 flex items-center justify-center bg-surface-1/95 p-5 animate-backdrop-in" 
+      className="absolute inset-0 z-30 flex items-center justify-center bg-surface-1/95 backdrop-blur-sm p-5 animate-backdrop-in" 
       role="alertdialog" 
       aria-modal="true" 
       aria-labelledby="release-confirm-title"
+      aria-describedby="release-confirm-desc"
     >
       <div ref={dialogRef} className="w-full max-w-sm rounded-2xl border border-border-subtle bg-surface-2 p-5 shadow-2xl space-y-3 animate-modal-pop">
         <h2 id="release-confirm-title" className="text-base font-bold text-white">
           Rời phiên thanh toán?
         </h2>
-        <p className="text-xs leading-relaxed text-text-secondary">
+        <p id="release-confirm-desc" className="text-xs leading-relaxed text-text-secondary">
           Ghế sẽ được trả lại để người khác có thể đặt, và liên kết thanh toán hiện tại sẽ bị hủy.
         </p>
         
