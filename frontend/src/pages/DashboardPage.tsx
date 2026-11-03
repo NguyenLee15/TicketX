@@ -11,6 +11,7 @@ export default function DashboardPage() {
   const [urlParams, setUrlParams] = useSearchParams();
   const catalogState = parseCatalogState(urlParams);
   const { search: urlSearch, category, sort: sortBy, page } = catalogState;
+  const selectedCity = urlParams.get('city') || 'All';
 
   // Local draft state for search input text
   const [searchInput, setSearchInput] = useState(urlSearch);
@@ -27,8 +28,33 @@ export default function DashboardPage() {
       sort: updates.sort !== undefined ? updates.sort : sortBy,
       page: updates.page !== undefined ? updates.page : 1,
     };
-    setUrlParams(writeCatalogState(next));
+    const nextParams = writeCatalogState(next);
+    if (selectedCity && selectedCity !== 'All') {
+      nextParams.set('city', selectedCity);
+    }
+    setUrlParams(nextParams);
+  }, [urlSearch, category, sortBy, selectedCity, setUrlParams]);
+
+  const handleCityChange = useCallback((cityId: string) => {
+    const nextParams = writeCatalogState({
+      search: urlSearch,
+      category,
+      sort: sortBy,
+      page: 1,
+    });
+    if (cityId && cityId !== 'All') {
+      nextParams.set('city', cityId);
+    }
+    setUrlParams(nextParams);
   }, [urlSearch, category, sortBy, setUrlParams]);
+
+  const cityQueryMap: Record<string, string> = {
+    HCMC: 'HCMC',
+    Hanoi: 'Hanoi',
+    DaNang: 'Đà Nẵng',
+  };
+  const cityKeyword = selectedCity !== 'All' ? (cityQueryMap[selectedCity] || selectedCity) : '';
+  const effectiveSearch = [urlSearch.trim(), cityKeyword].filter(Boolean).join(' ');
 
   const {
     data: catalogResult,
@@ -38,7 +64,7 @@ export default function DashboardPage() {
   } = useEventsCatalogQuery({
     page,
     pageSize: 6,
-    search: urlSearch,
+    search: effectiveSearch,
     category,
     sort: sortBy,
   });
@@ -73,9 +99,11 @@ export default function DashboardPage() {
         search={searchInput}
         sortBy={sortBy}
         selectedCategory={category}
+        selectedCity={selectedCity}
         onSearchChange={setSearchInput}
         onSortChange={(value) => updateFilters({ sort: value, page: 1 })}
         onCategoryChange={(value) => updateFilters({ category: value, page: 1 })}
+        onCityChange={handleCityChange}
         onSubmit={handleSearchSubmit}
       />
 

@@ -1,5 +1,5 @@
 import { FormEvent } from 'react';
-import { ArrowRight, Calendar, Search, Sparkles, Tag, Users, Zap } from 'lucide-react';
+import { ArrowRight, Calendar, Search, Sparkles, Tag, Users, Zap, MapPin } from 'lucide-react';
 import { motion } from 'motion/react';
 
 const CATEGORIES = [
@@ -10,13 +10,22 @@ const CATEGORIES = [
   { id: 'Sports', label: 'Thể thao', icon: Calendar },
 ];
 
+export const CITIES = [
+  { id: 'All', label: 'Toàn quốc' },
+  { id: 'HCMC', label: 'TP. Hồ Chí Minh' },
+  { id: 'Hanoi', label: 'Hà Nội' },
+  { id: 'DaNang', label: 'Đà Nẵng' },
+];
+
 interface DiscoveryHeroProps {
   search: string;
   sortBy: string;
   selectedCategory: string;
+  selectedCity?: string;
   onSearchChange: (value: string) => void;
   onSortChange: (value: string) => void;
   onCategoryChange: (value: string) => void;
+  onCityChange?: (value: string) => void;
   onSubmit: (event: FormEvent) => void;
 }
 
@@ -24,9 +33,11 @@ export function DiscoveryHero({
   search,
   sortBy,
   selectedCategory,
+  selectedCity = 'All',
   onSearchChange,
   onSortChange,
   onCategoryChange,
+  onCityChange,
   onSubmit,
 }: DiscoveryHeroProps) {
   return (
@@ -42,8 +53,34 @@ export function DiscoveryHero({
           </p>
         </div>
 
-        <div className="surface-panel p-4 sm:p-5">
-          <p className="mb-3 text-sm font-semibold text-text-primary">Bạn muốn đi đâu tối nay?</p>
+        <div className="surface-panel p-4 sm:p-5 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-text-primary">Bạn muốn đi đâu tối nay?</p>
+            {/* City Selector Pills */}
+            <div role="group" aria-label="Lọc theo thành phố" className="flex items-center gap-1 overflow-x-auto text-xs">
+              <span className="sr-only">Khu vực:</span>
+              <MapPin className="w-3.5 h-3.5 text-brand-secondary shrink-0" aria-hidden="true" />
+              {CITIES.map(({ id, label }) => {
+                const active = selectedCity === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => onCityChange?.(id)}
+                    aria-pressed={active}
+                    className={`px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all shrink-0 cursor-pointer ${
+                      active
+                        ? 'bg-brand-secondary/20 text-brand-secondary border border-brand-secondary/40 shadow-sm'
+                        : 'bg-surface-1 hover:bg-surface-3 text-text-secondary hover:text-white border border-border-subtle'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <form onSubmit={onSubmit} className="space-y-3">
             <label htmlFor="event-search" className="sr-only">Tìm kiếm sự kiện</label>
             <div className="flex items-center gap-3 rounded-lg border border-border-subtle bg-surface-1 px-3 focus-within:border-brand-primary">
