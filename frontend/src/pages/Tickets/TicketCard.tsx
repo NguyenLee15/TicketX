@@ -178,7 +178,7 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
               <span>Chưa hoàn tất thanh toán. Ghế đang được giữ tạm thời.</span>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <div className="grid grid-cols-1 sm:flex sm:items-center gap-2 w-full sm:w-auto">
               {onResumePayment && (
                 <button
                   type="button"
@@ -186,7 +186,7 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
                   disabled={isResuming || isReleasing}
                   aria-busy={isResuming}
                   aria-label={`Tiếp tục thanh toán vé sự kiện ${ticket.eventTitle}`}
-                  className="min-h-11 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-primary hover:bg-brand-primary/90 text-white font-bold transition-[background-color,transform] active:scale-[0.98] text-xs whitespace-nowrap shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+                  className="w-full sm:w-auto min-h-11 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-primary hover:bg-brand-primary/90 text-white font-bold transition-[background-color,transform] active:scale-[0.98] text-xs whitespace-nowrap shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
                 >
                   {isResuming ? (
                     <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
@@ -204,7 +204,7 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
                   disabled={isResuming || isReleasing}
                   aria-busy={isReleasing}
                   aria-label={`Hủy giữ chỗ vé sự kiện ${ticket.eventTitle}`}
-                  className="min-h-11 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-3 hover:bg-danger/20 text-text-secondary hover:text-danger border border-border-subtle hover:border-danger/40 font-bold transition-[background-color,border-color,color,transform] active:scale-[0.98] text-xs whitespace-nowrap shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
+                  className="w-full sm:w-auto min-h-11 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-3 hover:bg-danger/20 text-text-secondary hover:text-danger border border-border-subtle hover:border-danger/40 font-bold transition-[background-color,border-color,color,transform] active:scale-[0.98] text-xs whitespace-nowrap shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
                 >
                   {isReleasing ? (
                     <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />

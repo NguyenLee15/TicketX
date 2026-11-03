@@ -24,7 +24,7 @@ export const SelectedSeatPanel: React.FC<SelectedSeatPanelProps> = ({
   onBookTicket,
 }) => {
   return (
-    <div className="surface-panel p-5 sm:p-6 relative overflow-hidden">
+    <div className="surface-panel p-5 sm:p-6 relative overflow-hidden shadow-xl border border-border-subtle/80 backdrop-blur-md">
       <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
         <div className="w-6 h-6 rounded-lg bg-surface-3 flex items-center justify-center text-brand-primary">
           <Check className="w-3.5 h-3.5" aria-hidden="true" />
@@ -124,7 +124,7 @@ export const SelectedSeatPanel: React.FC<SelectedSeatPanelProps> = ({
           </div>
           <p className="text-white font-bold text-xs sm:text-sm mb-0.5">Chưa chọn ghế</p>
           <p className="text-[11px] text-text-secondary leading-relaxed">
-            Nhấp vào bất kỳ ghế nào trên sơ đồ khán đài bên phải để xem giá và tiến hành giữ chỗ.
+            Nhấp vào bất kỳ ghế nào trên sơ đồ khán đài để xem giá và tiến hành giữ chỗ.
           </p>
         </div>
       )}

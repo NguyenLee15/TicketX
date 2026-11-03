@@ -50,7 +50,7 @@ export default function StandardLayout() {
     <div className="min-h-dvh bg-surface-1 text-text-primary font-sans flex flex-col relative overflow-hidden">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-white focus:text-black focus:rounded-lg">Bỏ qua đến nội dung chính</a>
       {/* Compact navigation shell */}
-      <div className="fixed top-0 w-full z-50 pt-6 px-4 pointer-events-none">
+      <div className="fixed top-0 w-full z-50 pt-3 sm:pt-6 px-3 sm:px-4 pointer-events-none">
         <div className="max-w-5xl mx-auto">
           <header className="surface-raised h-16 px-5 sm:px-6 flex items-center justify-between pointer-events-auto transition-colors duration-200 animate-slide-up shadow-lg">
             <Link to="/" className="flex items-center gap-2.5 group">

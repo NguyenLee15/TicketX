@@ -307,26 +307,28 @@ export default function EventDetailPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Col: Event Details & Selected Seat Panel (4 cols) */}
-        <div className="lg:col-span-4 space-y-5">
+      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 items-start">
+        {/* Left Col: Event Details (Row 1 on desktop, order-1 on mobile) */}
+        <div className="w-full lg:col-span-4 order-1">
           <EventInfoCard event={event} />
+        </div>
 
-          {/* Seat Selection Panel */}
+        {/* Right Col: Interactive Auditorium Seat Map (Row 1..2 on desktop, order-2 on mobile) */}
+        <div className="w-full lg:col-span-8 order-2 lg:row-span-2">
+          <SeatMap 
+            seats={event.seats} 
+            selectedSeat={selectedSeat} 
+            onSeatClick={handleSeatClick} 
+          />
+        </div>
+
+        {/* Left Col: Selected Seat Panel (Row 2 on desktop under EventInfoCard, order-3 on mobile) */}
+        <div className={`w-full lg:col-span-4 order-3 ${selectedSeat ? 'sticky bottom-3 z-30 lg:static' : ''}`}>
           <SelectedSeatPanel
             selectedSeat={selectedSeat}
             lockTimeLeft={lockTimeLeft}
             locking={locking}
             onBookTicket={handleBookTicket}
-          />
-        </div>
-
-        {/* Right Col: Interactive Auditorium Seat Map (8 cols) */}
-        <div className="lg:col-span-8">
-          <SeatMap 
-            seats={event.seats} 
-            selectedSeat={selectedSeat} 
-            onSeatClick={handleSeatClick} 
           />
         </div>
       </div>
