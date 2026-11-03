@@ -84,3 +84,4 @@ describe('CheckoutVietQrView - Live Radar & Manual Check', () => {
     expect(screen.getByText(/Đang kiểm tra.../i)).toBeInTheDocument();
   });
 });
+
