@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Calendar, LogOut, Ticket, Users, Home, QrCode, Menu, X, Banknote } from 'lucide-react';
+import { LayoutDashboard, Calendar, LogOut, Ticket, Users, Home, QrCode, Menu, X, Banknote, Landmark } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { useModalAccessibility } from '../Admin/useModalAccessibility';
@@ -31,6 +31,7 @@ export default function AdminLayout() {
     { name: 'Trạm Soát vé QR', href: '/admin/scan-ticket', icon: QrCode, roles: ['Admin', 'Staff'] },
     { name: 'Quản lý người dùng', href: '/admin/users', icon: Users, roles: ['Admin'] },
     { name: 'Hoàn tiền', href: '/admin/refunds', icon: Banknote, roles: ['Admin'] },
+    { name: 'Duyệt quyết toán', href: '/admin/settlements', icon: Landmark, roles: ['Admin'] },
   ];
 
   const currentRole = user?.role || 'Customer';

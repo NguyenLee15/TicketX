@@ -19,6 +19,7 @@ public interface IApplicationDbContext
     DbSet<NotificationOutboxItem> NotificationOutbox { get; }
     DbSet<Coupon> Coupons { get; }
     DbSet<TicketTransfer> TicketTransfers { get; }
+    DbSet<Settlement> Settlements { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken);

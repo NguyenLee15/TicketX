@@ -42,6 +42,7 @@ interface AuthState {
   logout: () => void;
   isAuthenticated: () => boolean;
   isAdmin: () => boolean;
+  isOrganizer: () => boolean;
   canAccessAdmin: () => boolean;
 }
 
@@ -66,6 +67,11 @@ export const useAuthStore = create<AuthState>()(
         const { user, isHydrating } = get();
         if (isHydrating) return false;
         return user?.role === 'Admin';
+      },
+      isOrganizer: () => {
+        const { user, isHydrating } = get();
+        if (isHydrating) return false;
+        return user?.role === 'Organizer' || user?.role === 'Admin';
       },
       canAccessAdmin: () => {
         const { user, isHydrating } = get();

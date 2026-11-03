@@ -1,14 +1,14 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../../stores/useAuthStore';
-import { LogOut, ShieldCheck, Zap, Ticket, Calendar, Menu, X } from 'lucide-react';
+import { LogOut, ShieldCheck, Zap, Ticket, Calendar, Menu, X, Building } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import api from '../../services/api';
 import { ResilientImage } from '../ResilientImage';
 
 export default function StandardLayout() {
   const queryClient = useQueryClient();
-  const { isAuthenticated, isAdmin, logout, user } = useAuthStore();
+  const { isAuthenticated, isAdmin, isOrganizer, logout, user } = useAuthStore();
   const isAuth = isAuthenticated();
   const { pathname } = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -69,6 +69,12 @@ export default function StandardLayout() {
                 <Link to="/my-tickets" className={`text-sm font-medium transition-colors relative py-1 flex items-center gap-1.5 group ${pathname === '/my-tickets' ? 'text-white font-bold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-brand-primary' : 'text-text-secondary hover:text-white'}`}>
                   <Ticket className="w-4 h-4" aria-hidden="true" />
                   Vé của tôi
+                </Link>
+              )}
+              {isOrganizer() && (
+                <Link to="/organizer" className="text-sm font-medium text-text-secondary hover:text-white flex items-center gap-1.5 transition-colors">
+                  <Building className="w-4 h-4 text-brand-primary" aria-hidden="true" />
+                  Ban tổ chức
                 </Link>
               )}
               {isAdmin() && (
@@ -137,6 +143,11 @@ export default function StandardLayout() {
               {isAuth && (
                 <Link onClick={() => setMobileOpen(false)} to="/profile" className="min-h-11 p-3 rounded-xl hover:bg-surface-2 flex items-center transition-[background-color,transform] active:scale-[0.98]">
                   Hồ sơ
+                </Link>
+              )}
+              {isOrganizer() && (
+                <Link onClick={() => setMobileOpen(false)} to="/organizer" className="min-h-11 p-3 rounded-xl hover:bg-surface-2 flex items-center gap-2 text-brand-primary font-semibold transition-[background-color,transform] active:scale-[0.98]">
+                  <Building className="w-4 h-4" aria-hidden="true" /> Ban tổ chức
                 </Link>
               )}
               {isAdmin() && (

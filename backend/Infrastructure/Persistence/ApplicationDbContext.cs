@@ -24,6 +24,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<NotificationOutboxItem> NotificationOutbox => Set<NotificationOutboxItem>();
     public DbSet<Coupon> Coupons => Set<Coupon>();
     public DbSet<TicketTransfer> TicketTransfers => Set<TicketTransfer>();
+    public DbSet<Settlement> Settlements => Set<Settlement>();
 
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken) =>
         Database.BeginTransactionAsync(cancellationToken);

@@ -20,6 +20,8 @@ public class Event : BaseEntity
     public int RefundCutoffHours { get; private set; } = 24;
     public int MaxTicketsPerUser { get; private set; } = 4;
     public bool IsDeleted { get; private set; } = false;
+    public Guid? OrganizerId { get; private set; }
+    public User? Organizer { get; private set; }
 
     // Optimistic concurrency token for admin event mutations
     public byte[] Version { get; private set; } = Guid.NewGuid().ToByteArray();
@@ -44,7 +46,8 @@ public class Event : BaseEntity
         decimal basePrice = 200000m,
         int refundCutoffHours = 24,
         EventStatus status = EventStatus.Published,
-        int maxTicketsPerUser = 4)
+        int maxTicketsPerUser = 4,
+        Guid? organizerId = null)
     {
         Title = title;
         Description = description;
@@ -61,6 +64,18 @@ public class Event : BaseEntity
         Status = status;
         RefundCutoffHours = refundCutoffHours;
         MaxTicketsPerUser = maxTicketsPerUser > 0 ? maxTicketsPerUser : 4;
+        OrganizerId = organizerId;
+    }
+
+    public void SetOrganizer(Guid organizerId, string? organizerName = null)
+    {
+        OrganizerId = organizerId;
+        if (!string.IsNullOrWhiteSpace(organizerName))
+        {
+            OrganizerName = organizerName.Trim();
+        }
+        UpdatedAt = DateTime.UtcNow;
+        Version = Guid.NewGuid().ToByteArray();
     }
 
     public void Update(

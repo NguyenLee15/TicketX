@@ -9,6 +9,8 @@ import StandardLayout from './components/Layout/StandardLayout';
 import AdminLayout from './components/Layout/AdminLayout';
 import PrivateRoute from './components/Layout/PrivateRoute';
 import AdminRoute from './components/Layout/AdminRoute';
+import OrganizerLayout from './components/Layout/OrganizerLayout';
+import OrganizerRoute from './components/Layout/OrganizerRoute';
 
 // Standard Pages
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
@@ -27,6 +29,12 @@ const AdminEventsPage = lazy(() => import('./pages/Admin/AdminEventsPage'));
 const AdminUsersPage = lazy(() => import('./pages/Admin/AdminUsersPage'));
 const AdminRefundsPage = lazy(() => import('./pages/Admin/AdminRefundsPage'));
 const AdminScanTicketPage = lazy(() => import('./pages/Admin/AdminScanTicketPage'));
+const AdminSettlementsPage = lazy(() => import('./pages/Admin/AdminSettlementsPage'));
+
+// Organizer Pages
+const OrganizerDashboardPage = lazy(() => import('./pages/Organizer/OrganizerDashboardPage'));
+const OrganizerEventsPage = lazy(() => import('./pages/Organizer/OrganizerEventsPage'));
+const OrganizerSettlementsPage = lazy(() => import('./pages/Organizer/OrganizerSettlementsPage'));
 
 // Mock Pages (Development Only)
 const MockPayOSPage = import.meta.env.DEV
@@ -136,6 +144,28 @@ function App() {
               </AdminRoute>
             }
           />
+          <Route
+            path="settlements"
+            element={
+              <AdminRoute allowedRoles={['Admin']}>
+                <AdminSettlementsPage />
+              </AdminRoute>
+            }
+          />
+        </Route>
+
+        {/* Organizer Portal */}
+        <Route
+          path="/organizer"
+          element={
+            <OrganizerRoute allowedRoles={['Organizer', 'Admin']}>
+              <OrganizerLayout />
+            </OrganizerRoute>
+          }
+        >
+          <Route index element={<OrganizerDashboardPage />} />
+          <Route path="events" element={<OrganizerEventsPage />} />
+          <Route path="settlements" element={<OrganizerSettlementsPage />} />
         </Route>
 
         {/* Mock Routes - Development Only */}

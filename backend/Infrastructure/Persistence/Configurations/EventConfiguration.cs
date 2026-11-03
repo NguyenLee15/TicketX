@@ -21,13 +21,20 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
         builder.Property(e => e.BannerUrl).HasMaxLength(1000);
         builder.Property(e => e.BasePrice).HasPrecision(18, 2);
         builder.Property(e => e.MaxTicketsPerUser).HasDefaultValue(4);
+        builder.Property(e => e.OrganizerId).IsRequired(false);
         builder.Property(e => e.Version).IsRequired().IsConcurrencyToken();
+
+        builder.HasOne(e => e.Organizer)
+            .WithMany()
+            .HasForeignKey(e => e.OrganizerId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasMany(e => e.Seats)
             .WithOne(s => s.Event)
             .HasForeignKey(s => s.EventId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.HasIndex(e => e.OrganizerId);
         builder.HasIndex(e => e.Date);
         builder.HasIndex(e => e.Category);
         builder.HasIndex(e => e.Status);

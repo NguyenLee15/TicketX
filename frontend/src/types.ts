@@ -139,4 +139,49 @@ export interface AppliedCoupon {
   finalAmount: number;
 }
 
+export interface OrganizerMetrics {
+  totalEvents: number;
+  totalSeats: number;
+  totalTicketsSold: number;
+  totalGrossRevenue: number;
+  totalCommissionEstimated: number;
+  totalNetRevenueEstimated: number;
+  averageOccupancyRate: number;
+}
+
+export interface OrganizerEvent {
+  id: string;
+  title: string;
+  date: string;
+  endDate: string;
+  location: string;
+  venueName: string;
+  category: string;
+  totalSeats: number;
+  soldTickets: number;
+  grossRevenue: number;
+  status: number | string;
+}
+
+export interface SettlementItem {
+  id: string;
+  eventId: string;
+  eventTitle: string;
+  organizerId: string;
+  organizerName: string;
+  grossRevenue: number;
+  commissionRate: number;
+  commissionAmount: number;
+  refundDeduction: number;
+  netPayout: number;
+  bankName: string;
+  bankAccountNumber: string;
+  accountHolder: string;
+  status: number; // 1: Pending, 2: Approved, 3: Completed, 4: Rejected
+  adminNote?: string;
+  requestedAt: string;
+  processedAt?: string;
+}
+
+
 
