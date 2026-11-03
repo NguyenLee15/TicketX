@@ -173,3 +173,4 @@ export function DashboardAttendanceHeatmap({ topEvents = [] }: DashboardAttendan
     </div>
   );
 }
+

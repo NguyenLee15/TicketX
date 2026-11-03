@@ -139,3 +139,4 @@ public class SyncOfflineCheckInsCommandHandler : IRequestHandler<SyncOfflineChec
         );
     }
 }
+

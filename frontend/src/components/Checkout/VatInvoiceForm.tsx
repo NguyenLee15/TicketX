@@ -126,3 +126,4 @@ export function VatInvoiceForm({ value, onChange }: VatInvoiceFormProps) {
     </div>
   );
 }
+

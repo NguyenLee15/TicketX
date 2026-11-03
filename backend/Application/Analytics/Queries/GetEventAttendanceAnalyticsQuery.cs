@@ -117,3 +117,4 @@ public class GetEventAttendanceAnalyticsQueryHandler : IRequestHandler<GetEventA
         );
     }
 }
+
