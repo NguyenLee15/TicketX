@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using TickeX.Application.Tickets.Commands;
 using TickeX.Application.Tickets.Queries;
 using TickeX.Application.Interfaces;
+using TickeX.WebApi.Configuration;
 using TickeX.WebApi.Filters;
 
 namespace TickeX.WebApi.Controllers;
@@ -34,39 +35,15 @@ public class TicketsController : ControllerBase
         var effectivePageSize = pageSize ?? 10;
         if (effectivePage < 1 || effectivePageSize is < 1 or > 50 || ((long)effectivePage - 1) * effectivePageSize > int.MaxValue)
         {
-            return BadRequest(new 
-            { 
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Pagination Out Of Range",
-                status = StatusCodes.Status400BadRequest,
-                success = false, 
-                code = "PAGINATION_OUT_OF_RANGE", 
-                message = "page phải dương và pageSize phải nằm trong khoảng 1–50.",
-                detail = "page phải dương và pageSize phải nằm trong khoảng 1–50.",
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = "PAGINATION_OUT_OF_RANGE", message = "page phải dương và pageSize phải nằm trong khoảng 1–50." }
-            });
+            return this.PaginationOutOfRange();
         }
-        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId) || userId == Guid.Empty)
+        var userId = this.GetAuthenticatedUserId();
+        if (userId is null)
         {
-            return Unauthorized(new 
-            { 
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Unauthorized",
-                status = StatusCodes.Status401Unauthorized,
-                success = false, 
-                code = "UNAUTHORIZED", 
-                message = "User is not authenticated", 
-                detail = "User is not authenticated",
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = "UNAUTHORIZED", message = "User is not authenticated" } 
-            });
+            return this.UnauthorizedProblem("User is not authenticated");
         }
 
-        var result = await _mediator.Send(new GetMyTicketsQuery(userId, page, pageSize, status), cancellationToken);
+        var result = await _mediator.Send(new GetMyTicketsQuery(userId.Value, page, pageSize, status), cancellationToken);
         return Ok(new { success = true, data = result });
     }
 
@@ -75,42 +52,18 @@ public class TicketsController : ControllerBase
     {
         if (limit is < 1 or > 50)
         {
-            return BadRequest(new 
-            { 
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Pagination Out Of Range",
-                status = StatusCodes.Status400BadRequest,
-                success = false, 
-                code = "PAGINATION_OUT_OF_RANGE", 
-                message = "limit phải nằm trong khoảng 1–50.",
-                detail = "limit phải nằm trong khoảng 1–50.",
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = "PAGINATION_OUT_OF_RANGE", message = "limit phải nằm trong khoảng 1–50." }
-            });
+            return this.PaginationOutOfRange("limit phải nằm trong khoảng 1–50.");
         }
 
-        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId) || userId == Guid.Empty)
+        var userId = this.GetAuthenticatedUserId();
+        if (userId is null)
         {
-            return Unauthorized(new 
-            { 
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Unauthorized",
-                status = StatusCodes.Status401Unauthorized,
-                success = false, 
-                code = "UNAUTHORIZED", 
-                message = "User is not authenticated",
-                detail = "User is not authenticated",
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = "UNAUTHORIZED", message = "User is not authenticated" }
-            });
+            return this.UnauthorizedProblem("User is not authenticated");
         }
 
         try
         {
-            var result = await _customerTicketReadModel.GetForUserCursorAsync(userId, cursor, limit, status, cancellationToken);
+            var result = await _customerTicketReadModel.GetForUserCursorAsync(userId.Value, cursor, limit, status, cancellationToken);
             return Ok(new { success = true, data = result });
         }
         catch (ArgumentException ex) when (cursor is not null)

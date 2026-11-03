@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using TickeX.Application.Interfaces;
+using TickeX.WebApi.Configuration;
 using TickeX.WebApi.Filters;
 
 namespace TickeX.WebApi.Controllers;
@@ -22,21 +23,10 @@ public sealed class ReservationsController : ControllerBase
     [Idempotent]
     public async Task<IActionResult> Release(Guid ticketId, [FromBody] ReleaseReservationRequest? request, CancellationToken cancellationToken = default)
     {
-        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId) || userId == Guid.Empty)
-            return Unauthorized(new 
-            { 
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Unauthorized",
-                status = StatusCodes.Status401Unauthorized,
-                success = false, 
-                code = "UNAUTHORIZED", 
-                message = "User is not authenticated.",
-                detail = "User is not authenticated.",
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = "UNAUTHORIZED", message = "User is not authenticated." }
-            });
-        var result = await _operations.ReleaseAsync(ticketId, userId, request?.Reason ?? "Customer cancelled checkout", cancellationToken);
+        var userId = this.GetAuthenticatedUserId();
+        if (userId is null)
+            return this.UnauthorizedProblem();
+        var result = await _operations.ReleaseAsync(ticketId, userId.Value, request?.Reason ?? "Customer cancelled checkout", cancellationToken);
         if (!result.Success)
         {
             var status = result.Code switch

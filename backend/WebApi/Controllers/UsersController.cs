@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using TickeX.Application.Users.Commands;
 using TickeX.Application.Users.Queries;
+using TickeX.WebApi.Configuration;
 using TickeX.WebApi.Filters;
 
 namespace TickeX.WebApi.Controllers;
@@ -26,9 +27,9 @@ public class UsersController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> GetProfile(CancellationToken cancellationToken = default)
     {
-        var userId = GetAuthenticatedUserId();
+        var userId = this.GetAuthenticatedUserId();
         if (userId is null)
-            return UnauthorizedEnvelope();
+            return this.UnauthorizedProblem();
 
         var result = await _mediator.Send(new GetUserProfileQuery(userId.Value), cancellationToken);
 
@@ -54,9 +55,9 @@ public class UsersController : ControllerBase
     [Idempotent]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request, CancellationToken cancellationToken = default)
     {
-        var userId = GetAuthenticatedUserId();
+        var userId = this.GetAuthenticatedUserId();
         if (userId is null)
-            return UnauthorizedEnvelope();
+            return this.UnauthorizedProblem();
 
         var command = new UpdateProfileCommand(userId.Value, request.Name, request.Phone, request.AvatarUrl);
         var success = await _mediator.Send(command, cancellationToken);
@@ -84,9 +85,9 @@ public class UsersController : ControllerBase
     [EnableRateLimiting("AuthPolicy")]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request, CancellationToken cancellationToken = default)
     {
-        var userId = GetAuthenticatedUserId();
+        var userId = this.GetAuthenticatedUserId();
         if (userId is null)
-            return UnauthorizedEnvelope();
+            return this.UnauthorizedProblem();
 
         var command = new ChangePasswordCommand(userId.Value, request.CurrentPassword, request.NewPassword);
         var success = await _mediator.Send(command, cancellationToken);
@@ -114,8 +115,8 @@ public class UsersController : ControllerBase
     [EnableRateLimiting("AuthPolicy")]
     public async Task<IActionResult> SaveRefundBankAccount([FromBody] SaveRefundBankAccountRequest request, CancellationToken cancellationToken = default)
     {
-        var userId = GetAuthenticatedUserId();
-        if (userId is null) return UnauthorizedEnvelope();
+        var userId = this.GetAuthenticatedUserId();
+        if (userId is null) return this.UnauthorizedProblem();
         var saved = await _mediator.Send(new SaveRefundBankAccountCommand(userId.Value, request.BankBin, request.AccountName, request.AccountNumber), cancellationToken);
         if (!saved) return BadRequest(new
         {
@@ -137,28 +138,11 @@ public class UsersController : ControllerBase
     [Idempotent]
     public async Task<IActionResult> DeleteRefundBankAccount(CancellationToken cancellationToken = default)
     {
-        var userId = GetAuthenticatedUserId();
-        if (userId is null) return UnauthorizedEnvelope();
+        var userId = this.GetAuthenticatedUserId();
+        if (userId is null) return this.UnauthorizedProblem();
         await _mediator.Send(new DeleteRefundBankAccountCommand(userId.Value), cancellationToken);
         return NoContent();
     }
-
-    private Guid? GetAuthenticatedUserId() =>
-        Guid.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var userId) && userId != Guid.Empty ? userId : null;
-
-    private IActionResult UnauthorizedEnvelope() => Unauthorized(new
-    {
-        type = "https://tools.ietf.org/html/rfc9110#section-15.5.2",
-        title = "Unauthorized",
-        status = StatusCodes.Status401Unauthorized,
-        detail = "User is not authenticated.",
-        instance = HttpContext.Request.Path.Value,
-        traceId = HttpContext.TraceIdentifier,
-        success = false,
-        code = "UNAUTHORIZED",
-        message = "User is not authenticated.",
-        error = new { code = "UNAUTHORIZED", message = "User is not authenticated." }
-    });
 }
 
 public record UpdateProfileRequest(string Name, string Phone, string AvatarUrl);

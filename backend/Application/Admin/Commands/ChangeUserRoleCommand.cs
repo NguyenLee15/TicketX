@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TickeX.Application.Common.Models;
 using TickeX.Application.Interfaces;
 using TickeX.Domain.Entities;
@@ -26,13 +27,15 @@ public class ChangeUserRoleCommandHandler : IRequestHandler<ChangeUserRoleComman
     private readonly IDistributedLockService _lockService;
     private readonly IRefreshTokenStore? _refreshTokens;
     private readonly IUserSecurityStateCache? _securityStateCache;
+    private readonly ILogger<ChangeUserRoleCommandHandler>? _logger;
 
-    public ChangeUserRoleCommandHandler(IApplicationDbContext context, IDistributedLockService lockService, IRefreshTokenStore? refreshTokens = null, IUserSecurityStateCache? securityStateCache = null)
+    public ChangeUserRoleCommandHandler(IApplicationDbContext context, IDistributedLockService lockService, IRefreshTokenStore? refreshTokens = null, IUserSecurityStateCache? securityStateCache = null, ILogger<ChangeUserRoleCommandHandler>? logger = null)
     {
         _context = context;
         _lockService = lockService;
         _refreshTokens = refreshTokens;
         _securityStateCache = securityStateCache;
+        _logger = logger;
     }
 
     public async Task<AdminOperationResult> Handle(ChangeUserRoleCommand request, CancellationToken cancellationToken)
@@ -60,8 +63,9 @@ public class ChangeUserRoleCommandHandler : IRequestHandler<ChangeUserRoleComman
         {
             lease = await _lockService.AcquireLockAsync(lockKey, TimeSpan.FromSeconds(30), cancellationToken);
         }
-        catch
+        catch (Exception ex)
         {
+            _logger?.LogWarning(ex, "Failed to acquire distributed lock for change role of user {UserId}", request.UserId);
             return AdminOperationResult.Conflict("Không thể khóa thao tác quản trị lúc này. Vui lòng thử lại.", "ADMIN_LOCK_UNAVAILABLE");
         }
         if (lease is null)

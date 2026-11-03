@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using TickeX.Application.Seats.Commands;
+using TickeX.WebApi.Configuration;
 using TickeX.WebApi.Filters;
 
 namespace TickeX.WebApi.Controllers;
@@ -27,22 +28,10 @@ public class SeatsController : ControllerBase
     [HttpPost("{id}/lock")]
     public async Task<IActionResult> LockSeat(Guid id, [FromBody] LockSeatRequest request, CancellationToken cancellationToken = default)
     {
-        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var currentUserId) || currentUserId == Guid.Empty)
+        var currentUserId = this.GetAuthenticatedUserId();
+        if (currentUserId is null)
         {
-            return Unauthorized(new 
-            { 
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Unauthorized",
-                status = StatusCodes.Status401Unauthorized,
-                success = false, 
-                code = "UNAUTHORIZED", 
-                message = "User is not authenticated.",
-                detail = "User is not authenticated.",
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = "UNAUTHORIZED", message = "User is not authenticated." }
-            });
+            return this.UnauthorizedProblem();
         }
 
         byte[] versionBytes;
@@ -83,7 +72,7 @@ public class SeatsController : ControllerBase
             });
         }
 
-        var command = new LockSeatCommand(request.EventId, id, currentUserId, versionBytes);
+        var command = new LockSeatCommand(request.EventId, id, currentUserId.Value, versionBytes);
         var lockResult = await _mediator.Send(command, cancellationToken);
 
         if (!lockResult.Success)

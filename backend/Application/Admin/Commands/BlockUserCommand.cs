@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TickeX.Application.Common.Models;
 using TickeX.Application.Interfaces;
 using TickeX.Domain.Entities;
@@ -21,13 +22,15 @@ public class BlockUserCommandHandler : IRequestHandler<BlockUserCommand, AdminOp
     private readonly IDistributedLockService _lockService;
     private readonly IRefreshTokenStore? _refreshTokens;
     private readonly IUserSecurityStateCache? _securityStateCache;
+    private readonly ILogger<BlockUserCommandHandler>? _logger;
 
-    public BlockUserCommandHandler(IApplicationDbContext context, IDistributedLockService lockService, IRefreshTokenStore? refreshTokens = null, IUserSecurityStateCache? securityStateCache = null)
+    public BlockUserCommandHandler(IApplicationDbContext context, IDistributedLockService lockService, IRefreshTokenStore? refreshTokens = null, IUserSecurityStateCache? securityStateCache = null, ILogger<BlockUserCommandHandler>? logger = null)
     {
         _context = context;
         _lockService = lockService;
         _refreshTokens = refreshTokens;
         _securityStateCache = securityStateCache;
+        _logger = logger;
     }
 
     public async Task<AdminOperationResult> Handle(BlockUserCommand request, CancellationToken cancellationToken)
@@ -44,8 +47,9 @@ public class BlockUserCommandHandler : IRequestHandler<BlockUserCommand, AdminOp
         {
             lease = await _lockService.AcquireLockAsync(lockKey, TimeSpan.FromSeconds(30), cancellationToken);
         }
-        catch
+        catch (Exception ex)
         {
+            _logger?.LogWarning(ex, "Failed to acquire distributed lock for block/unblock user {UserId}", request.UserId);
             return AdminOperationResult.Conflict("Không thể khóa thao tác quản trị lúc này. Vui lòng thử lại.", "ADMIN_LOCK_UNAVAILABLE");
         }
         if (lease is null)

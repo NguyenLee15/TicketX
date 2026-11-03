@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TickeX.Application.Admin;
 using TickeX.Application.Common.Models;
 using TickeX.Application.Interfaces;
@@ -34,11 +35,16 @@ public class UpdateEventCommandHandler : IRequestHandler<UpdateEventCommand, Adm
 {
     private readonly IApplicationDbContext _context;
     private readonly ICustomerEventCatalogCache? _catalogCache;
+    private readonly ILogger<UpdateEventCommandHandler>? _logger;
 
-    public UpdateEventCommandHandler(IApplicationDbContext context, ICustomerEventCatalogCache? catalogCache = null)
+    public UpdateEventCommandHandler(
+        IApplicationDbContext context, 
+        ICustomerEventCatalogCache? catalogCache = null,
+        ILogger<UpdateEventCommandHandler>? logger = null)
     {
         _context = context;
         _catalogCache = catalogCache;
+        _logger = logger;
     }
 
     public async Task<AdminOperationResult> Handle(UpdateEventCommand request, CancellationToken cancellationToken)
@@ -186,7 +192,10 @@ public class UpdateEventCommandHandler : IRequestHandler<UpdateEventCommand, Adm
         if (_catalogCache != null)
         {
             try { await _catalogCache.InvalidateAsync(cancellationToken); }
-            catch { /* non-critical cache invalidation */ }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Failed to invalidate customer event catalog cache after updating event {EventId}", request.Id);
+            }
         }
 
         return AdminOperationResult.Ok("Cập nhật sự kiện thành công.");

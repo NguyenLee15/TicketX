@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TickeX.Application.Admin;
 using TickeX.Application.Common.Models;
 using TickeX.Application.Interfaces;
@@ -20,12 +21,18 @@ public class DeleteEventCommandHandler : IRequestHandler<DeleteEventCommand, Adm
     private readonly IApplicationDbContext _context;
     private readonly IDistributedLockService? _lockService;
     private readonly ICustomerEventCatalogCache? _catalogCache;
+    private readonly ILogger<DeleteEventCommandHandler>? _logger;
 
-    public DeleteEventCommandHandler(IApplicationDbContext context, IDistributedLockService? lockService = null, ICustomerEventCatalogCache? catalogCache = null)
+    public DeleteEventCommandHandler(
+        IApplicationDbContext context, 
+        IDistributedLockService? lockService = null, 
+        ICustomerEventCatalogCache? catalogCache = null,
+        ILogger<DeleteEventCommandHandler>? logger = null)
     {
         _context = context;
         _lockService = lockService;
         _catalogCache = catalogCache;
+        _logger = logger;
     }
 
     public async Task<AdminOperationResult> Handle(DeleteEventCommand request, CancellationToken cancellationToken)
@@ -38,8 +45,9 @@ public class DeleteEventCommandHandler : IRequestHandler<DeleteEventCommand, Adm
                 eventLease = await _lockService.AcquireLockAsync(
                     $"event:cancel:{request.Id:N}", TimeSpan.FromSeconds(30), cancellationToken);
             }
-            catch
+            catch (Exception ex)
             {
+                _logger?.LogWarning(ex, "Failed to acquire distributed lock for deleting event {EventId}", request.Id);
                 return AdminOperationResult.Conflict("Không thể khóa thao tác xóa sự kiện lúc này. Vui lòng thử lại.", "EVENT_LOCK_UNAVAILABLE");
             }
 
@@ -114,7 +122,10 @@ public class DeleteEventCommandHandler : IRequestHandler<DeleteEventCommand, Adm
             if (_catalogCache != null)
             {
                 try { await _catalogCache.InvalidateAsync(cancellationToken); }
-                catch { /* non-critical cache invalidation */ }
+                catch (Exception ex)
+                {
+                    _logger?.LogWarning(ex, "Failed to invalidate customer event catalog cache after deleting event {EventId}", request.Id);
+                }
             }
 
             return AdminOperationResult.Ok("Xóa sự kiện thành công.");

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using TickeX.Application.Events.Queries;
 using TickeX.Application.Events.Commands;
 using TickeX.Application.Interfaces;
+using TickeX.WebApi.Configuration;
 using TickeX.WebApi.Filters;
 
 namespace TickeX.WebApi.Controllers;
@@ -30,21 +31,7 @@ public class EventsController : ControllerBase
     {
         var effectivePageSize = query.Limit ?? query.PageSize;
         if (query.Page < 1 || effectivePageSize is < 1 or > 50 || ((long)query.Page - 1) * effectivePageSize > int.MaxValue)
-        {
-            return BadRequest(new
-            {
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Pagination Out Of Range",
-                status = StatusCodes.Status400BadRequest,
-                success = false,
-                code = "PAGINATION_OUT_OF_RANGE",
-                message = "page phải dương và pageSize/limit phải nằm trong khoảng 1–50.",
-                detail = "page phải dương và pageSize/limit phải nằm trong khoảng 1–50.",
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = "PAGINATION_OUT_OF_RANGE", message = "page phải dương và pageSize/limit phải nằm trong khoảng 1–50." }
-            });
-        }
+            return this.PaginationOutOfRange("page phải dương và pageSize/limit phải nằm trong khoảng 1–50.");
 
         try
         {
@@ -75,21 +62,7 @@ public class EventsController : ControllerBase
     public async Task<IActionResult> GetAdminEvents([FromQuery] GetAdminEventsQuery query, CancellationToken cancellationToken = default)
     {
         if (query.Page < 1 || query.PageSize is < 1 or > 50 || ((long)query.Page - 1) * query.PageSize > int.MaxValue)
-        {
-            return BadRequest(new
-            {
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Pagination Out Of Range",
-                status = StatusCodes.Status400BadRequest,
-                success = false,
-                code = "PAGINATION_OUT_OF_RANGE",
-                message = "page phải dương và pageSize phải nằm trong khoảng 1–50.",
-                detail = "page phải dương và pageSize phải nằm trong khoảng 1–50.",
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = "PAGINATION_OUT_OF_RANGE", message = "page phải dương và pageSize phải nằm trong khoảng 1–50." }
-            });
-        }
+            return this.PaginationOutOfRange("page phải dương và pageSize/limit phải nằm trong khoảng 1–50.");
 
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(new { success = true, data = result });
@@ -100,12 +73,7 @@ public class EventsController : ControllerBase
     [EnableRateLimiting("PublicReadPolicy")]
     public async Task<IActionResult> GetEvent(Guid id, CancellationToken cancellationToken = default)
     {
-        Guid? currentUserId = null;
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (Guid.TryParse(userIdStr, out var parsedId))
-        {
-            currentUserId = parsedId;
-        }
+        Guid? currentUserId = this.GetAuthenticatedUserId();
 
         var result = await _mediator.Send(new GetEventWithSeatsQuery(id, currentUserId), cancellationToken);
         if (result == null) 
@@ -124,20 +92,6 @@ public class EventsController : ControllerBase
             });
         return Ok(new { success = true, data = result });
     }
-
-    private IActionResult UnauthorizedEnvelope(string detail = "User is not authenticated.") => Unauthorized(new
-    {
-        type = "https://tools.ietf.org/html/rfc9457",
-        title = "Unauthorized",
-        status = StatusCodes.Status401Unauthorized,
-        success = false,
-        code = "UNAUTHORIZED",
-        message = detail,
-        detail,
-        instance = HttpContext.Request.Path.Value,
-        traceId = HttpContext.TraceIdentifier,
-        error = new { code = "UNAUTHORIZED", message = detail }
-    });
 
     [HttpPost]
     [Idempotent]
@@ -160,9 +114,9 @@ public class EventsController : ControllerBase
                 error = new { code = "INVALID_REQUEST", message = "Thiếu dữ liệu sự kiện." } 
             });
 
-        var adminUserIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(adminUserIdStr) || !Guid.TryParse(adminUserIdStr, out var adminUserId) || adminUserId == Guid.Empty)
-            return UnauthorizedEnvelope("Không xác định được danh tính quản trị viên từ token.");
+        var adminUserId = this.GetAuthenticatedUserId();
+        if (adminUserId is null)
+            return this.UnauthorizedProblem("Không xác định được danh tính quản trị viên từ token.");
         var adminEmail = User.FindFirstValue(ClaimTypes.Email) ?? "admin@tickex.com";
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
@@ -183,7 +137,7 @@ public class EventsController : ControllerBase
             request.RowCount,
             request.SeatsPerRow,
             request.Status,
-            adminUserId,
+            adminUserId.Value,
             adminEmail,
             ipAddress);
         var id = await _adminEventOperations.CreateAsync(command, cancellationToken);
@@ -261,9 +215,9 @@ public class EventsController : ControllerBase
                 error = new { code = "ID_MISMATCH", message = "Định danh sự kiện không trùng khớp." } 
             });
 
-        var adminUserIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(adminUserIdStr) || !Guid.TryParse(adminUserIdStr, out var adminUserId) || adminUserId == Guid.Empty)
-            return UnauthorizedEnvelope("Không xác định được danh tính quản trị viên từ token.");
+        var adminUserId = this.GetAuthenticatedUserId();
+        if (adminUserId is null)
+            return this.UnauthorizedProblem("Không xác định được danh tính quản trị viên từ token.");
         var adminEmail = User.FindFirstValue(ClaimTypes.Email) ?? "admin@tickex.com";
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
@@ -283,7 +237,7 @@ public class EventsController : ControllerBase
             request.BasePrice,
             request.Status,
             request.RefundCutoffHours,
-            adminUserId,
+            adminUserId.Value,
             adminEmail,
             ipAddress,
             request.ExpectedVersion), cancellationToken);
@@ -328,14 +282,14 @@ public class EventsController : ControllerBase
                 traceId = HttpContext.TraceIdentifier,
                 error = new { code = "INVALID_REQUEST", message = "Thiếu lý do hủy sự kiện." } 
             });
-        var adminUserIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(adminUserIdStr) || !Guid.TryParse(adminUserIdStr, out var adminUserId) || adminUserId == Guid.Empty)
-            return UnauthorizedEnvelope("Không xác định được danh tính quản trị viên từ token.");
+        var adminUserId = this.GetAuthenticatedUserId();
+        if (adminUserId is null)
+            return this.UnauthorizedProblem("Không xác định được danh tính quản trị viên từ token.");
         var adminEmail = User.FindFirstValue(ClaimTypes.Email) ?? "admin@tickex.com";
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
         var result = await _adminEventOperations.CancelAsync(new CancelEventCommand(
-            id, request.Reason, request.ExpectedVersion, adminUserId, adminEmail, ipAddress), cancellationToken);
+            id, request.Reason, request.ExpectedVersion, adminUserId.Value, adminEmail, ipAddress), cancellationToken);
         if (!result.Success)
             return StatusCode(result.StatusCode, new 
             { 
@@ -360,13 +314,13 @@ public class EventsController : ControllerBase
     [EnableRateLimiting("AdminPolicy")]
     public async Task<IActionResult> DeleteEvent(Guid id, [FromQuery] string? expectedVersion = null, CancellationToken cancellationToken = default)
     {
-        var adminUserIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(adminUserIdStr) || !Guid.TryParse(adminUserIdStr, out var adminUserId) || adminUserId == Guid.Empty)
-            return UnauthorizedEnvelope("Không xác định được danh tính quản trị viên từ token.");
+        var adminUserId = this.GetAuthenticatedUserId();
+        if (adminUserId is null)
+            return this.UnauthorizedProblem("Không xác định được danh tính quản trị viên từ token.");
         var adminEmail = User.FindFirstValue(ClaimTypes.Email) ?? "admin@tickex.com";
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
-        var result = await _adminEventOperations.DeleteAsync(new DeleteEventCommand(id, adminUserId, adminEmail, ipAddress, expectedVersion), cancellationToken);
+        var result = await _adminEventOperations.DeleteAsync(new DeleteEventCommand(id, adminUserId.Value, adminEmail, ipAddress, expectedVersion), cancellationToken);
         if (!result.Success)
             return StatusCode(result.StatusCode, new 
             { 

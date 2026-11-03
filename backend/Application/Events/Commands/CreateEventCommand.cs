@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using TickeX.Application.Interfaces;
 using TickeX.Domain.Entities;
 using TickeX.Domain.Enums;
@@ -30,11 +31,16 @@ public class CreateEventCommandHandler : IRequestHandler<CreateEventCommand, Gui
 {
     private readonly IApplicationDbContext _context;
     private readonly ICustomerEventCatalogCache? _catalogCache;
+    private readonly ILogger<CreateEventCommandHandler>? _logger;
 
-    public CreateEventCommandHandler(IApplicationDbContext context, ICustomerEventCatalogCache? catalogCache = null)
+    public CreateEventCommandHandler(
+        IApplicationDbContext context, 
+        ICustomerEventCatalogCache? catalogCache = null,
+        ILogger<CreateEventCommandHandler>? logger = null)
     {
         _context = context;
         _catalogCache = catalogCache;
+        _logger = logger;
     }
 
     public async Task<Guid> Handle(CreateEventCommand request, CancellationToken cancellationToken)
@@ -78,7 +84,10 @@ public class CreateEventCommandHandler : IRequestHandler<CreateEventCommand, Gui
         if (_catalogCache != null)
         {
             try { await _catalogCache.InvalidateAsync(cancellationToken); }
-            catch { /* non-critical cache invalidation */ }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Failed to invalidate customer event catalog cache after creating event {EventId}", newEvent.Id);
+            }
         }
 
         return newEvent.Id;

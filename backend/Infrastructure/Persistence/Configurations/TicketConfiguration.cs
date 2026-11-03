@@ -42,6 +42,7 @@ public class TicketConfiguration : IEntityTypeConfiguration<Ticket>
         builder.HasIndex(t => new { t.EventId, t.Status });
         builder.HasIndex(t => new { t.SeatId, t.Status });
         builder.HasIndex(t => new { t.UserId, t.EventId, t.Status });
+        builder.HasIndex(t => new { t.UserId, t.CreatedAt, t.Id });
 
         builder.HasIndex(t => t.SeatId)
             .IsUnique()

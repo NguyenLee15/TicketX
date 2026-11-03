@@ -7,6 +7,7 @@ using TickeX.Application.Admin.Commands;
 using TickeX.Application.Admin.Queries;
 using TickeX.Application.Interfaces;
 using Microsoft.AspNetCore.RateLimiting;
+using TickeX.WebApi.Configuration;
 using TickeX.WebApi.Filters;
 
 namespace TickeX.WebApi.Controllers;
@@ -37,19 +38,7 @@ public class AdminController : ControllerBase
     public async Task<IActionResult> GetUsers([FromQuery] GetUsersQuery query, CancellationToken cancellationToken = default)
     {
         if (query.Page < 1 || query.PageSize is < 1 or > 50 || ((long)query.Page - 1) * query.PageSize > int.MaxValue)
-            return BadRequest(new 
-            { 
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Pagination Out Of Range",
-                status = StatusCodes.Status400BadRequest,
-                success = false, 
-                code = "PAGINATION_OUT_OF_RANGE", 
-                message = "page phải dương và pageSize phải nằm trong khoảng 1–50.",
-                detail = "page phải dương và pageSize phải nằm trong khoảng 1–50.",
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = "PAGINATION_OUT_OF_RANGE", message = "page phải dương và pageSize phải nằm trong khoảng 1–50." }
-            });
+            return this.PaginationOutOfRange();
 
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(new { success = true, data = result });
@@ -59,19 +48,7 @@ public class AdminController : ControllerBase
     public async Task<IActionResult> GetRefunds([FromQuery] int page = 1, [FromQuery] int pageSize = 25, CancellationToken cancellationToken = default)
     {
         if (page < 1 || pageSize is < 1 or > 50 || ((long)page - 1) * pageSize > int.MaxValue)
-            return BadRequest(new 
-            { 
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Pagination Out Of Range",
-                status = StatusCodes.Status400BadRequest,
-                success = false, 
-                code = "PAGINATION_OUT_OF_RANGE", 
-                message = "page phải dương và pageSize phải nằm trong khoảng 1–50.",
-                detail = "page phải dương và pageSize phải nằm trong khoảng 1–50.",
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = "PAGINATION_OUT_OF_RANGE", message = "page phải dương và pageSize phải nằm trong khoảng 1–50." }
-            });
+            return this.PaginationOutOfRange();
         var result = await _mediator.Send(new GetRefundRequestsQuery(page, pageSize), cancellationToken);
         return Ok(new { success = true, data = result });
     }
@@ -155,20 +132,6 @@ public class AdminController : ControllerBase
 
     public record ChangeRoleRequest(string Role, string? ExpectedVersion = null);
 
-    private IActionResult UnauthorizedEnvelope(string detail = "User is not authenticated.") => Unauthorized(new
-    {
-        type = "https://tools.ietf.org/html/rfc9457",
-        title = "Unauthorized",
-        status = StatusCodes.Status401Unauthorized,
-        success = false,
-        code = "UNAUTHORIZED",
-        message = detail,
-        detail,
-        instance = HttpContext.Request.Path.Value,
-        traceId = HttpContext.TraceIdentifier,
-        error = new { code = "UNAUTHORIZED", message = detail }
-    });
-
     [HttpPut("users/{id}/role")]
     [Idempotent]
     public async Task<IActionResult> ChangeUserRole(Guid id, [FromBody] ChangeRoleRequest? request, CancellationToken cancellationToken = default)
@@ -201,16 +164,16 @@ public class AdminController : ControllerBase
                 traceId = HttpContext.TraceIdentifier,
                 error = new { code = "INVALID_VERSION", message = "Phiên bản dữ liệu người dùng không hợp lệ." } 
             });
-        var currentAdminIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(currentAdminIdStr) || !Guid.TryParse(currentAdminIdStr, out var currentAdminId) || currentAdminId == Guid.Empty)
-            return UnauthorizedEnvelope("Không xác định được danh tính quản trị viên từ token.");
+        var currentAdminId = this.GetAuthenticatedUserId();
+        if (currentAdminId is null)
+            return this.UnauthorizedProblem("Không xác định được danh tính quản trị viên từ token.");
         var adminEmail = User.FindFirstValue(ClaimTypes.Email) ?? "admin@tickex.com";
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
         var result = await _adminUserOperations.ChangeRoleAsync(new ChangeUserRoleCommand(
             id, 
             request.Role, 
-            currentAdminId,
+            currentAdminId.Value,
             adminEmail,
             ipAddress,
             expectedVersion
@@ -268,16 +231,16 @@ public class AdminController : ControllerBase
                 traceId = HttpContext.TraceIdentifier,
                 error = new { code = "INVALID_VERSION", message = "Phiên bản dữ liệu người dùng không hợp lệ." } 
             });
-        var currentAdminIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(currentAdminIdStr) || !Guid.TryParse(currentAdminIdStr, out var currentAdminId) || currentAdminId == Guid.Empty)
-            return UnauthorizedEnvelope("Không xác định được danh tính quản trị viên từ token.");
+        var currentAdminId = this.GetAuthenticatedUserId();
+        if (currentAdminId is null)
+            return this.UnauthorizedProblem("Không xác định được danh tính quản trị viên từ token.");
         var adminEmail = User.FindFirstValue(ClaimTypes.Email) ?? "admin@tickex.com";
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
         var result = await _adminUserOperations.SetBlockedAsync(new BlockUserCommand(
             id, 
             request.IsBlocked, 
-            currentAdminId,
+            currentAdminId.Value,
             adminEmail,
             ipAddress,
             expectedVersion

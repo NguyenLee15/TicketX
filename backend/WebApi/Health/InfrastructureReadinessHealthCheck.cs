@@ -21,9 +21,15 @@ public sealed class InfrastructureReadinessHealthCheck : IHealthCheck
     {
         try
         {
-            if (!await _database.Database.CanConnectAsync(cancellationToken) || !_redis.IsConnected
-                || (await _database.Database.GetPendingMigrationsAsync(cancellationToken)).Any())
-                return HealthCheckResult.Unhealthy("A required infrastructure dependency is unavailable.");
+            if (!await _database.Database.CanConnectAsync(cancellationToken))
+                return HealthCheckResult.Unhealthy("Database connection is unavailable.");
+
+            var pendingMigrations = await _database.Database.GetPendingMigrationsAsync(cancellationToken);
+            if (pendingMigrations.Any())
+                return HealthCheckResult.Unhealthy("Pending database migrations detected.");
+
+            if (!_redis.IsConnected)
+                return HealthCheckResult.Unhealthy("Redis connection is disconnected.");
 
             var factory = new ConnectionFactory
             {
@@ -37,9 +43,9 @@ public sealed class InfrastructureReadinessHealthCheck : IHealthCheck
             await using var connection = await factory.CreateConnectionAsync(cancellationToken);
             return HealthCheckResult.Healthy();
         }
-        catch
+        catch (Exception ex)
         {
-            return HealthCheckResult.Unhealthy("A required infrastructure dependency is unavailable.");
+            return HealthCheckResult.Unhealthy($"Infrastructure readiness check failed: {ex.Message}", ex);
         }
     }
 }

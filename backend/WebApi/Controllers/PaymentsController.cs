@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using TickeX.Application.Interfaces;
+using TickeX.WebApi.Configuration;
 using TickeX.WebApi.Filters;
 
 namespace TickeX.WebApi.Controllers;
@@ -21,8 +22,9 @@ public class PaymentsController : ControllerBase
     [HttpGet("status/{orderCode:long}")]
     public async Task<IActionResult> GetStatus(long orderCode, CancellationToken cancellationToken)
     {
-        if (!TryGetUserId(out var userId)) return UnauthorizedEnvelope();
-        return Respond(await _checkout.GetStatusAsync(orderCode, userId, cancellationToken), notFound: true);
+        var userId = this.GetAuthenticatedUserId();
+        if (userId is null) return this.UnauthorizedProblem();
+        return Respond(await _checkout.GetStatusAsync(orderCode, userId.Value, cancellationToken), notFound: true);
     }
 
     [Authorize]
@@ -30,8 +32,9 @@ public class PaymentsController : ControllerBase
     [HttpPost("create-link")]
     public async Task<IActionResult> CreatePaymentLink([FromBody] CreatePaymentLinkRequest request, CancellationToken cancellationToken)
     {
-        if (!TryGetUserId(out var userId)) return UnauthorizedEnvelope();
-        return Respond(await _checkout.CreatePaymentLinkAsync(request.TicketId, userId, cancellationToken));
+        var userId = this.GetAuthenticatedUserId();
+        if (userId is null) return this.UnauthorizedProblem();
+        return Respond(await _checkout.CreatePaymentLinkAsync(request.TicketId, userId.Value, cancellationToken));
     }
 
     [AllowAnonymous]
@@ -83,8 +86,9 @@ public class PaymentsController : ControllerBase
     [HttpPost("simulate-success/{orderCode:long}")]
     public async Task<IActionResult> SimulateSuccess(long orderCode, CancellationToken cancellationToken)
     {
-        if (!TryGetUserId(out var userId)) return UnauthorizedEnvelope();
-        var result = await _checkout.SimulateSuccessAsync(orderCode, userId, cancellationToken);
+        var userId = this.GetAuthenticatedUserId();
+        if (userId is null) return this.UnauthorizedProblem();
+        var result = await _checkout.SimulateSuccessAsync(orderCode, userId.Value, cancellationToken);
         return result.Code == "PAYMENT_SIMULATION_DISABLED" 
             ? NotFound(new 
             { 
@@ -101,23 +105,6 @@ public class PaymentsController : ControllerBase
             }) 
             : Respond(result, notFound: true);
     }
-
-    private bool TryGetUserId(out Guid userId) =>
-        Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId) && userId != Guid.Empty;
-
-    private IActionResult UnauthorizedEnvelope() => Unauthorized(new
-    {
-        type = "https://tools.ietf.org/html/rfc9457",
-        title = "Unauthorized",
-        status = StatusCodes.Status401Unauthorized,
-        success = false,
-        code = "UNAUTHORIZED",
-        message = "User is not authenticated.",
-        detail = "User is not authenticated.",
-        instance = HttpContext.Request.Path.Value,
-        traceId = HttpContext.TraceIdentifier,
-        error = new { code = "UNAUTHORIZED", message = "User is not authenticated." }
-    });
 
     private IActionResult Respond(CustomerCheckoutResult result, bool notFound = false)
     {
