@@ -102,9 +102,12 @@ export default function LoginForm({ serverError, onSubmit, onClearServerError }:
         </div>
 
         <div className="space-y-1">
-          <label htmlFor="login-password" className="block text-xs font-medium text-text-secondary">
-            Mật khẩu
-          </label>
+          <div className="flex justify-between items-center">
+            <label htmlFor="login-password" className="block text-xs font-medium text-text-secondary">
+              Mật khẩu
+            </label>
+            <span className="text-[11px] text-brand-primary-light hover:underline cursor-pointer">Quên mật khẩu?</span>
+          </div>
           <div className="group relative">
             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
               <Lock className="h-4 w-4 text-text-tertiary group-focus-within:text-brand-primary transition-colors" aria-hidden="true" />
@@ -119,14 +122,13 @@ export default function LoginForm({ serverError, onSubmit, onClearServerError }:
               className={`block w-full min-h-11 pl-10 pr-10 py-2.5 bg-surface-2 border ${
                 errors.password ? 'border-danger focus:border-danger focus:ring-danger' : 'border-border-subtle focus:border-brand-primary focus:ring-brand-primary'
               } rounded-xl text-white placeholder-text-tertiary focus:outline-none focus-visible:ring-2 transition-[border-color,background-color,box-shadow] text-xs sm:text-sm`}
-              placeholder="Mật khẩu của bạn"
+              placeholder="••••••••"
             />
             <button
               type="button"
-              onClick={() => setShowPassword((previous) => !previous)}
-              aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-              aria-pressed={showPassword}
-              className="absolute inset-y-0 right-0 px-3.5 min-w-11 min-h-11 flex items-center justify-center text-text-tertiary hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary rounded-xl cursor-pointer"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-text-tertiary hover:text-white transition-colors focus-visible:outline-none"
+              aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
             >
               {showPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
             </button>
@@ -152,7 +154,7 @@ export default function LoginForm({ serverError, onSubmit, onClearServerError }:
             <button
               type="button"
               onClick={() => fillDemoCredentials('admin@tickex.com')}
-              className="min-h-11 px-2.5 py-1.5 rounded-xl bg-surface-3 hover:bg-surface-4 text-[11px] font-medium text-white transition-colors text-left border border-border-subtle hover:border-brand-primary/50 group active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+              className="min-h-11 px-2.5 py-1.5 rounded-xl bg-surface-3 hover:bg-surface-4 text-[11px] font-medium text-white transition-all text-left border border-border-subtle hover:border-brand-primary/50 group active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
             >
               <span className="text-brand-primary font-semibold block text-[11px]">Quản Trị Viên</span>
               <span className="text-text-tertiary text-[10px] truncate block group-hover:text-text-secondary font-mono">admin@tickex.com</span>
@@ -160,7 +162,7 @@ export default function LoginForm({ serverError, onSubmit, onClearServerError }:
             <button
               type="button"
               onClick={() => fillDemoCredentials('user@tickex.com')}
-              className="min-h-11 px-2.5 py-1.5 rounded-xl bg-surface-3 hover:bg-surface-4 text-[11px] font-medium text-white transition-colors text-left border border-border-subtle hover:border-brand-secondary/50 group active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary"
+              className="min-h-11 px-2.5 py-1.5 rounded-xl bg-surface-3 hover:bg-surface-4 text-[11px] font-medium text-white transition-all text-left border border-border-subtle hover:border-brand-secondary/50 group active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-secondary"
             >
               <span className="text-brand-secondary font-semibold block text-[11px]">Khách Hàng</span>
               <span className="text-text-tertiary text-[10px] truncate block group-hover:text-text-secondary font-mono">user@tickex.com</span>

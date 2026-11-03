@@ -8,10 +8,10 @@ import {
   Percent,
   PlusCircle,
   AlertCircle,
-  Loader2,
   ChevronRight,
   DollarSign
 } from 'lucide-react';
+import { motion } from 'motion/react';
 import api from '../../services/api';
 import type { OrganizerMetrics, OrganizerEvent, ApiResponse } from '../../types';
 
@@ -61,9 +61,50 @@ export default function OrganizerDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] gap-3" role="status" aria-busy="true">
-        <Loader2 className="w-8 h-8 text-brand-primary animate-spin" aria-hidden="true" />
-        <span className="text-sm text-text-secondary">Đang tải chỉ số doanh thu ban tổ chức...</span>
+      <div 
+        className="p-6 md:p-8 max-w-7xl mx-auto w-full space-y-8 animate-pulse" 
+        role="status" 
+        aria-busy="true"
+        aria-live="polite"
+      >
+        <span className="sr-only">Đang tải chỉ số doanh thu ban tổ chức...</span>
+        {/* Header Skeleton */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border-subtle">
+          <div className="space-y-2">
+            <div className="h-8 w-64 bg-surface-2/60 rounded-xl" />
+            <div className="h-4 w-96 bg-surface-2/40 rounded-lg" />
+          </div>
+          <div className="flex gap-3">
+            <div className="h-11 w-36 bg-surface-2/60 rounded-xl" />
+            <div className="h-11 w-28 bg-surface-2/60 rounded-xl" />
+          </div>
+        </div>
+
+        {/* 4 Cards Skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+          {[...Array(4)].map((_, i) => (
+            <div key={`org-kpi-skel-${i}`} className="p-5 rounded-2xl bg-surface-1/80 border border-border-subtle h-36 flex flex-col justify-between">
+              <div className="flex justify-between items-center">
+                <div className="h-4 w-24 bg-surface-2 rounded" />
+                <div className="w-9 h-9 rounded-xl bg-surface-2" />
+              </div>
+              <div className="space-y-2">
+                <div className="h-7 w-32 bg-surface-2 rounded-lg" />
+                <div className="h-3 w-40 bg-surface-2/60 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Table Skeleton */}
+        <div className="rounded-2xl bg-surface-1 border border-border-subtle overflow-hidden p-6 space-y-4">
+          <div className="h-6 w-48 bg-surface-2 rounded-lg" />
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={`org-row-skel-${i}`} className="h-14 bg-surface-2/40 rounded-xl" />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -79,8 +120,51 @@ export default function OrganizerDashboardPage() {
     );
   }
 
+  const kpis = [
+    {
+      title: 'Tổng Doanh Thu',
+      value: formatVnd(metrics?.totalGrossRevenue ?? 0),
+      desc: 'Doanh số bán vé tích lũy',
+      icon: TrendingUp,
+      color: 'text-brand-primary',
+      bg: 'bg-brand-primary/10',
+      border: 'border-brand-primary/20',
+      badge: 'Doanh số gộp'
+    },
+    {
+      title: 'Thực Nhận (95%)',
+      value: formatVnd(metrics?.totalNetRevenueEstimated ?? 0),
+      desc: 'Sau khi khấu trừ phí sàn 5%',
+      icon: DollarSign,
+      color: 'text-success',
+      bg: 'bg-success/10',
+      border: 'border-success/20',
+      badge: 'Thực nhận'
+    },
+    {
+      title: 'Phí Nền Tảng (5%)',
+      value: formatVnd(metrics?.totalCommissionEstimated ?? 0),
+      desc: 'Chi phí dịch vụ sàn TickeX',
+      icon: Percent,
+      color: 'text-text-secondary',
+      bg: 'bg-surface-2',
+      border: 'border-border-subtle',
+      badge: 'Hoa hồng sàn'
+    },
+    {
+      title: 'Tỷ Lệ Lấp Đầy',
+      value: `${(metrics?.averageOccupancyRate ?? 0).toFixed(1)}%`,
+      desc: `Đã bán ${metrics?.totalTicketsSold ?? 0} / ${metrics?.totalSeats ?? 0} vé (${metrics?.totalEvents ?? 0} sự kiện)`,
+      icon: Ticket,
+      color: 'text-brand-primary-light',
+      bg: 'bg-brand-primary/10',
+      border: 'border-brand-primary/20',
+      badge: 'Công suất vé'
+    }
+  ];
+
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto w-full space-y-8 animate-fade-in">
+    <div className="p-6 md:p-8 max-w-7xl mx-auto w-full space-y-8 animate-fade-in text-text-primary">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border-subtle">
         <div>
@@ -94,14 +178,14 @@ export default function OrganizerDashboardPage() {
         <div className="flex items-center gap-3">
           <Link
             to="/organizer/events?create=true"
-            className="min-h-11 inline-flex items-center gap-2 px-4 py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white font-semibold text-sm rounded-xl transition-[background-color,transform] active:scale-[0.98] shadow-sm shadow-brand-glow"
+            className="min-h-11 inline-flex items-center gap-2 px-4 py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white font-semibold text-sm rounded-xl transition-[background-color,transform] active:scale-[0.98] shadow-sm shadow-brand-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
           >
             <PlusCircle className="w-4 h-4" aria-hidden="true" />
             <span>Tạo Sự Kiện Mới</span>
           </Link>
           <Link
             to="/organizer/settlements"
-            className="min-h-11 inline-flex items-center gap-2 px-4 py-2.5 bg-surface-2 hover:bg-surface-3 text-white font-medium text-sm rounded-xl border border-border-subtle transition-colors"
+            className="min-h-11 inline-flex items-center gap-2 px-4 py-2.5 bg-surface-2 hover:bg-surface-3 text-white font-medium text-sm rounded-xl border border-border-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
           >
             <Landmark className="w-4 h-4 text-brand-primary" aria-hidden="true" />
             <span>Quyết Toán</span>
@@ -109,77 +193,46 @@ export default function OrganizerDashboardPage() {
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
-        {/* Doanh thu tổng */}
-        <div className="p-5 rounded-2xl bg-surface-1 border border-border-subtle flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-text-tertiary">Tổng Doanh Thu</span>
-            <div className="w-9 h-9 rounded-xl bg-brand-primary/10 border border-brand-primary/20 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-brand-primary" aria-hidden="true" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <div className="text-2xl font-bold font-display text-white tabular-nums">
-              {formatVnd(metrics?.totalGrossRevenue ?? 0)}
-            </div>
-            <p className="text-xs text-text-tertiary mt-1">Doanh số bán vé tích lũy</p>
-          </div>
-        </div>
+      {/* KPI Cards Grid with Staggered Motion */}
+      <motion.div 
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: { opacity: 0 },
+          visible: { opacity: 1, transition: { staggerChildren: 0.08 } }
+        }}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5"
+      >
+        {kpis.map((kpi) => (
+          <motion.div
+            key={kpi.title}
+            variants={{
+              hidden: { opacity: 0, y: 14 },
+              visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 350, damping: 26 } }
+            }}
+            className="p-5 rounded-2xl bg-surface-1 border border-border-subtle flex flex-col justify-between hover:border-border-default/80 hover:shadow-xl hover:shadow-black/20 transition-all duration-200 relative overflow-hidden group"
+          >
+            {/* Ambient top reflection */}
+            <div className="pointer-events-none absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/[0.02] blur-xl" aria-hidden="true" />
 
-        {/* Thực nhận ước tính */}
-        <div className="p-5 rounded-2xl bg-surface-1 border border-border-subtle flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-text-tertiary">Thực Nhận (95%)</span>
-            <div className="w-9 h-9 rounded-xl bg-success/10 border border-success/20 flex items-center justify-center">
-              <DollarSign className="w-4 h-4 text-success" aria-hidden="true" />
+            <div className="flex items-center justify-between relative z-10">
+              <span className="text-xs font-semibold uppercase tracking-wider text-text-tertiary">{kpi.title}</span>
+              <div className={`w-9 h-9 rounded-xl ${kpi.bg} border ${kpi.border} flex items-center justify-center`}>
+                <kpi.icon className={`w-4 h-4 ${kpi.color}`} aria-hidden="true" />
+              </div>
             </div>
-          </div>
-          <div className="mt-4">
-            <div className="text-2xl font-bold font-display text-success tabular-nums">
-              {formatVnd(metrics?.totalNetRevenueEstimated ?? 0)}
+            <div className="mt-4 relative z-10">
+              <div className={`text-2xl font-bold font-display tabular-nums ${kpi.title.includes('Thực Nhận') ? 'text-success' : 'text-white'}`}>
+                {kpi.value}
+              </div>
+              <p className="text-xs text-text-tertiary mt-1">{kpi.desc}</p>
             </div>
-            <p className="text-xs text-text-tertiary mt-1">Sau khi khấu trừ phí sàn 5%</p>
-          </div>
-        </div>
-
-        {/* Phí sàn */}
-        <div className="p-5 rounded-2xl bg-surface-1 border border-border-subtle flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-text-tertiary">Phí Nền Tảng (5%)</span>
-            <div className="w-9 h-9 rounded-xl bg-surface-2 border border-border-subtle flex items-center justify-center">
-              <Percent className="w-4 h-4 text-text-secondary" aria-hidden="true" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <div className="text-2xl font-bold font-display text-text-secondary tabular-nums">
-              {formatVnd(metrics?.totalCommissionEstimated ?? 0)}
-            </div>
-            <p className="text-xs text-text-tertiary mt-1">Chi phí dịch vụ sàn TickeX</p>
-          </div>
-        </div>
-
-        {/* Tỷ lệ lấp đầy & Vé */}
-        <div className="p-5 rounded-2xl bg-surface-1 border border-border-subtle flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-text-tertiary">Tỷ Lệ Lấp Đầy</span>
-            <div className="w-9 h-9 rounded-xl bg-brand-primary/10 border border-brand-primary/20 flex items-center justify-center">
-              <Ticket className="w-4 h-4 text-brand-primary" aria-hidden="true" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <div className="text-2xl font-bold font-display text-white tabular-nums">
-              {(metrics?.averageOccupancyRate ?? 0).toFixed(1)}%
-            </div>
-            <p className="text-xs text-text-tertiary mt-1">
-              Đã bán {metrics?.totalTicketsSold ?? 0} / {metrics?.totalSeats ?? 0} vé ({metrics?.totalEvents ?? 0} sự kiện)
-            </p>
-          </div>
-        </div>
-      </div>
+          </motion.div>
+        ))}
+      </motion.div>
 
       {/* Events Performance Table */}
-      <div className="rounded-2xl bg-surface-1 border border-border-subtle overflow-hidden">
+      <div className="rounded-2xl bg-surface-1 border border-border-subtle overflow-hidden shadow-lg">
         <div className="p-5 border-b border-border-subtle flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold font-display text-white">Sự Kiện Gần Đây</h2>
@@ -200,22 +253,23 @@ export default function OrganizerDashboardPage() {
             <p className="text-sm">Bạn chưa tạo sự kiện nào.</p>
             <Link
               to="/organizer/events?create=true"
-              className="inline-flex items-center gap-2 px-4 py-2 bg-brand-primary text-white rounded-lg text-xs font-semibold hover:bg-brand-primary/90"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-brand-primary text-white text-xs font-semibold rounded-xl hover:bg-brand-primary/90 transition-colors"
             >
               <PlusCircle className="w-3.5 h-3.5" aria-hidden="true" />
-              Tạo sự kiện đầu tiên
+              Tạo Sự Kiện Đầu Tiên
             </Link>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm" aria-label="Bảng hiệu suất sự kiện">
+            <table className="w-full text-left text-sm" aria-label="Bảng sự kiện gần đây">
               <thead className="bg-surface-2 text-text-tertiary text-xs uppercase font-semibold">
                 <tr>
-                  <th scope="col" className="px-5 py-3">Sự kiện</th>
-                  <th scope="col" className="px-5 py-3">Thời gian</th>
-                  <th scope="col" className="px-5 py-3 text-right">Vé đã bán</th>
-                  <th scope="col" className="px-5 py-3 text-right">Tỷ lệ lấp đầy</th>
-                  <th scope="col" className="px-5 py-3 text-right">Doanh thu</th>
+                  <th scope="col" className="px-5 py-3">Tên sự kiện</th>
+                  <th scope="col" className="px-5 py-3">Thời gian & Địa điểm</th>
+                  <th scope="col" className="px-5 py-3 text-center">Vé đã bán</th>
+                  <th scope="col" className="px-5 py-3">Tỷ lệ lấp đầy</th>
+                  <th scope="col" className="px-5 py-3 text-right">Doanh thu gộp</th>
+                  <th scope="col" className="px-5 py-3 text-center">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-subtle">
@@ -223,37 +277,48 @@ export default function OrganizerDashboardPage() {
                   const occupancy = evt.totalSeats > 0 ? (evt.soldTickets / evt.totalSeats) * 100 : 0;
                   return (
                     <tr key={evt.id} className="hover:bg-surface-2/50 transition-colors">
-                      <td className="px-5 py-4 font-medium text-white max-w-xs truncate">
-                        <div className="font-semibold">{evt.title}</div>
-                        <div className="text-xs text-text-tertiary truncate">{evt.venueName} - {evt.location}</div>
+                      <td className="px-5 py-4 font-semibold text-white max-w-xs truncate">
+                        {evt.title}
                       </td>
-                      <td className="px-5 py-4 text-text-secondary text-xs whitespace-nowrap">
-                        {new Date(evt.date).toLocaleDateString('vi-VN', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                      <td className="px-5 py-4 text-xs text-text-secondary whitespace-nowrap">
+                        <div>
+                          {new Date(evt.date).toLocaleDateString('vi-VN', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                          })}
+                        </div>
+                        <div className="text-text-tertiary truncate max-w-[200px]">
+                          {evt.venueName} - {evt.location}
+                        </div>
                       </td>
-                      <td className="px-5 py-4 text-right text-text-primary tabular-nums whitespace-nowrap font-medium">
+                      <td className="px-5 py-4 text-center tabular-nums font-medium text-white whitespace-nowrap">
                         {evt.soldTickets} / {evt.totalSeats}
                       </td>
-                      <td className="px-5 py-4 text-right whitespace-nowrap">
-                        <div className="inline-flex items-center gap-2 justify-end">
-                          <div className="w-16 h-2 rounded-full bg-surface-3 overflow-hidden">
+                      <td className="px-5 py-4 min-w-[140px]">
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-xs text-text-tertiary">
+                            <span className="tabular-nums font-semibold text-white">{occupancy.toFixed(0)}%</span>
+                          </div>
+                          <div className="w-full h-2 rounded-full bg-surface-3 overflow-hidden">
                             <div
-                              className="h-full bg-brand-primary rounded-full transition-all"
+                              className="h-full bg-brand-primary rounded-full transition-[width] duration-500 ease-out"
                               style={{ width: `${Math.min(occupancy, 100)}%` }}
                             />
                           </div>
-                          <span className="text-xs text-text-secondary tabular-nums w-10 text-right font-medium">
-                            {occupancy.toFixed(0)}%
-                          </span>
                         </div>
                       </td>
-                      <td className="px-5 py-4 text-right font-semibold text-white tabular-nums whitespace-nowrap">
+                      <td className="px-5 py-4 text-right tabular-nums font-bold text-white whitespace-nowrap">
                         {formatVnd(evt.grossRevenue)}
+                      </td>
+                      <td className="px-5 py-4 text-center whitespace-nowrap">
+                        <Link
+                          to={`/organizer/settlements?eventId=${evt.id}`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-2 hover:bg-surface-3 text-xs font-semibold text-brand-primary transition-colors border border-border-subtle"
+                        >
+                          <Landmark className="w-3.5 h-3.5" aria-hidden="true" />
+                          <span>Quyết toán</span>
+                        </Link>
                       </td>
                     </tr>
                   );
@@ -266,4 +331,3 @@ export default function OrganizerDashboardPage() {
     </div>
   );
 }
-

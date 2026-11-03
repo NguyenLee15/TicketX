@@ -14,6 +14,7 @@ import {
   User,
   Info
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import api from '../../services/api';
 import { useModalAccessibility } from '../../components/Admin/useModalAccessibility';
 import type { SettlementItem, OrganizerEvent, ApiResponse } from '../../types';
@@ -290,17 +291,28 @@ export default function OrganizerSettlementsPage() {
       )}
 
       {/* Modal Yêu Cầu Quyết Toán */}
-      {isModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="modal-settle-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-1/80 backdrop-blur-sm animate-fade-in"
-        >
-          <div
-            ref={modalRef}
-            className="w-full max-w-lg bg-surface-1 border border-border-subtle rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-modal-pop"
+      <AnimatePresence>
+        {isModalOpen && (
+          <motion.div
+            key="settle-modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-settle-title"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-1/80 backdrop-blur-sm"
           >
+            <motion.div
+              key="settle-modal-content"
+              ref={modalRef}
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              className="w-full max-w-lg bg-surface-1 border border-border-subtle rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+            >
             {/* Modal Header */}
             <div className="p-5 border-b border-border-subtle flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5">
@@ -444,9 +456,10 @@ export default function OrganizerSettlementsPage() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+    </AnimatePresence>
     </div>
   );
 }

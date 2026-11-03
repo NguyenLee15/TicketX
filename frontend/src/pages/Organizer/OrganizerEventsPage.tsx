@@ -13,6 +13,7 @@ import {
   MapPin,
   Clock
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import api from '../../services/api';
 import { useModalAccessibility } from '../../components/Admin/useModalAccessibility';
 import type { OrganizerEvent, ApiResponse } from '../../types';
@@ -300,17 +301,28 @@ export default function OrganizerEventsPage() {
       )}
 
       {/* Modal: Tạo Sự Kiện Mới */}
-      {isModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="modal-create-event-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-1/80 backdrop-blur-sm animate-fade-in"
-        >
-          <div
-            ref={modalRef}
-            className="w-full max-w-2xl bg-surface-1 border border-border-subtle rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-modal-pop"
+      <AnimatePresence>
+        {isModalOpen && (
+          <motion.div
+            key="create-event-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-create-event-title"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-1/80 backdrop-blur-sm"
           >
+            <motion.div
+              key="create-event-content"
+              ref={modalRef}
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              className="w-full max-w-2xl bg-surface-1 border border-border-subtle rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
             {/* Modal Header */}
             <div className="p-5 border-b border-border-subtle flex items-center justify-between shrink-0">
               <h2 id="modal-create-event-title" className="text-lg font-bold font-display text-white">
@@ -527,9 +539,10 @@ export default function OrganizerEventsPage() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+    </AnimatePresence>
     </div>
   );
 }

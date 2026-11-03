@@ -1,4 +1,5 @@
 import { Users, Calendar, DollarSign, Ticket, RotateCcw, CheckCircle2, TrendingUp } from 'lucide-react';
+import { motion } from 'motion/react';
 import { Stats } from './types';
 
 interface DashboardKpiGridProps {
@@ -90,12 +91,27 @@ export function DashboardKpiGrid({ stats }: DashboardKpiGridProps) {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+    <motion.div 
+      initial="hidden"
+      animate="visible"
+      variants={{
+        hidden: { opacity: 0 },
+        visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
+      }}
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
+    >
       {statCards.map((stat) => (
-        <div 
+        <motion.div 
           key={stat.title}
-          className="surface-panel p-5 sm:p-6 relative overflow-hidden group hover:border-border-default transition-colors duration-200"
+          variants={{
+            hidden: { opacity: 0, y: 12 },
+            visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 350, damping: 26 } }
+          }}
+          className="surface-panel p-5 sm:p-6 relative overflow-hidden group hover:border-border-default/80 hover:shadow-xl hover:shadow-black/20 transition-all duration-200"
         >
+          {/* Subtle top ambient sheen */}
+          <div className="pointer-events-none absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/[0.02] blur-xl" aria-hidden="true" />
+
           <div className="flex justify-between items-start mb-3 relative z-10 gap-2">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${stat.border} ${stat.bg} shrink-0`}>
               <stat.icon className={`w-5 h-5 ${stat.color}`} aria-hidden="true" />
@@ -114,9 +130,8 @@ export function DashboardKpiGrid({ stats }: DashboardKpiGridProps) {
               <p className="text-[11px] text-text-tertiary mt-1 font-medium whitespace-nowrap tabular-nums">{stat.subtitle}</p>
             )}
           </div>
-        </div>
+        </motion.div>
       ))}
-    </div>
+    </motion.div>
   );
 }
-
