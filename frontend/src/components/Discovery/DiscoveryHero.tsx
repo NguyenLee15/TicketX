@@ -1,5 +1,6 @@
 import { FormEvent } from 'react';
 import { ArrowRight, Calendar, Search, Sparkles, Tag, Users, Zap } from 'lucide-react';
+import { motion } from 'motion/react';
 
 const CATEGORIES = [
   { id: 'All', label: 'Tất cả sự kiện', icon: Sparkles },
@@ -73,7 +74,7 @@ export function DiscoveryHero({
         </div>
       </div>
 
-      <div role="group" aria-label="Lọc theo danh mục" tabIndex={0} className="mt-8 flex gap-2 overflow-x-auto pb-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-primary">
+      <div role="group" aria-label="Lọc theo danh mục" tabIndex={0} className="mt-8 flex gap-2.5 overflow-x-auto pb-1.5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-primary">
         {CATEGORIES.map(({ id, label, icon: Icon }) => {
           const active = selectedCategory === id;
           return (
@@ -82,10 +83,24 @@ export function DiscoveryHero({
               type="button"
               aria-pressed={active}
               onClick={() => onCategoryChange(id)}
-              className={`inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg border px-4 text-sm font-semibold transition-[background-color,border-color,color,box-shadow,transform] active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${active ? 'border-brand-primary bg-brand-primary text-white shadow-md shadow-brand-glow' : 'border-border-subtle bg-surface-2 text-text-secondary hover:border-brand-primary/60 hover:text-text-primary hover:bg-surface-3'}`}
+              className={`relative inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl px-4 text-sm font-semibold transition-[color,transform] active:scale-[0.97] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary ${
+                active ? 'text-white' : 'text-text-secondary hover:text-text-primary'
+              }`}
             >
-              <Icon className="h-4 w-4" aria-hidden="true" />
-              {label}
+              {active && (
+                <motion.div
+                  layoutId="activeCategoryPill"
+                  className="absolute inset-0 rounded-xl bg-brand-primary shadow-md shadow-brand-glow"
+                  transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                />
+              )}
+              {!active && (
+                <div className="absolute inset-0 rounded-xl bg-surface-2 border border-border-subtle hover:bg-surface-3 transition-colors" />
+              )}
+              <span className="relative z-10 flex items-center gap-2">
+                <Icon className="h-4 w-4" aria-hidden="true" />
+                <span>{label}</span>
+              </span>
             </button>
           );
         })}

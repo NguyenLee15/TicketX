@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, MapPin, Loader2, Download, RotateCcw, Crown, CheckCircle2, XCircle, Clock, CreditCard, Ban, Send } from 'lucide-react';
+import { Calendar, MapPin, Loader2, Download, RotateCcw, Crown, CheckCircle2, XCircle, Clock, CreditCard, Ban, Send, Sparkles } from 'lucide-react';
+import { motion } from 'motion/react';
 import { DynamicQrCodeView } from '../../components/Tickets/DynamicQrCodeView';
 import { formatCurrency, formatDate, formatTime } from '../../utils/formatters';
 import { toast } from 'react-hot-toast';
@@ -76,7 +77,7 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
     const s = status.toLowerCase();
     if (s === 'paid') {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold bg-success/15 text-success border border-success/30 uppercase tracking-wider whitespace-nowrap shrink-0">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-success/15 text-success border border-success/30 uppercase tracking-wider whitespace-nowrap shrink-0 shadow-sm">
           <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" /> Hợp Lệ
         </span>
       );
@@ -113,19 +114,28 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
   };
 
   return (
-    <div 
-      id={`ticket-${ticket.id}`} 
-      className="surface-panel rounded-2xl overflow-hidden shadow-xl flex flex-col md:flex-row relative group"
+    <motion.div 
+      id={`ticket-${ticket.id}`}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      className={`rounded-2xl overflow-hidden shadow-xl flex flex-col md:flex-row relative group transition-all duration-200 border ${
+        isVip 
+          ? 'vip-foil-gradient shadow-amber-950/20 hover:shadow-amber-500/10' 
+          : 'surface-panel border-border-subtle hover:border-brand-primary/50'
+      }`}
     >
       {/* Left: Concert Pass Information */}
-      <div className="p-5 sm:p-6 flex-1 border-b md:border-b-0 md:border-r border-border-subtle border-dashed relative z-10 flex flex-col justify-between space-y-4">
+      <div className="p-5 sm:p-6 flex-1 border-b md:border-b-0 md:border-r border-border-subtle/80 border-dashed relative z-10 flex flex-col justify-between space-y-4">
         <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             {getStatusBadge(ticket.status)}
 
             {isVip && (
-              <span className="inline-flex items-center gap-1 text-xs font-black px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-sm shadow-amber-500/20 whitespace-nowrap shrink-0">
-                <Crown className="w-3 h-3" aria-hidden="true" /> HẠNG VIP
+              <span className="inline-flex items-center gap-1 text-xs font-black px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/50 shadow-sm shadow-amber-500/20 whitespace-nowrap shrink-0">
+                <Crown className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" />
+                <span>HẠNG VIP CHÍNH THỨC</span>
+                <Sparkles className="w-3 h-3 text-amber-300 animate-pulse ml-0.5" aria-hidden="true" />
               </span>
             )}
           </div>
@@ -135,13 +145,13 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
           </h2>
           
           <div className="flex flex-wrap items-center gap-2 text-text-secondary text-xs">
-            <div className="flex items-center bg-surface-2/60 px-2.5 py-1 rounded-lg border border-border-subtle whitespace-nowrap tabular-nums">
+            <div className="flex items-center bg-surface-2/80 px-2.5 py-1.5 rounded-lg border border-border-subtle whitespace-nowrap tabular-nums">
               <Calendar className="w-3.5 h-3.5 mr-1.5 text-brand-secondary shrink-0" aria-hidden="true" />
               <span className="font-semibold text-white">
                 {formatDate(ticket.eventDate, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
-            <div className="flex items-center bg-surface-2/60 px-2.5 py-1 rounded-lg border border-border-subtle whitespace-nowrap max-w-full">
+            <div className="flex items-center bg-surface-2/80 px-2.5 py-1.5 rounded-lg border border-border-subtle whitespace-nowrap max-w-full">
               <MapPin className="w-3.5 h-3.5 mr-1.5 text-brand-primary shrink-0" aria-hidden="true" />
               <span className="font-semibold text-white truncate">{ticket.venueName || ticket.location}</span>
             </div>
@@ -149,22 +159,22 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
         </div>
 
         {/* Seat Details Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-border-subtle/60 rounded-xl overflow-hidden border border-border-subtle/60 mt-1">
-          <div className="bg-surface-2/60 p-2.5 text-center flex flex-col justify-center">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-border-subtle/60 rounded-xl overflow-hidden border border-border-subtle/80 mt-1 shadow-inner">
+          <div className="bg-surface-2/80 p-3 text-center flex flex-col justify-center">
             <div className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold mb-0.5 whitespace-nowrap">Hàng Ghế</div>
-            <div className="font-black text-lg text-white font-display whitespace-nowrap">{ticket.row}</div>
+            <div className="font-black text-xl text-white font-display whitespace-nowrap">{ticket.row}</div>
           </div>
-          <div className="bg-surface-2/60 p-2.5 text-center flex flex-col justify-center">
+          <div className="bg-surface-2/80 p-3 text-center flex flex-col justify-center">
             <div className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold mb-0.5 whitespace-nowrap">Số Ghế</div>
-            <div className="font-black text-lg text-white font-display whitespace-nowrap tabular-nums">{ticket.number}</div>
+            <div className="font-black text-xl text-white font-display whitespace-nowrap tabular-nums">{ticket.number}</div>
           </div>
-          <div className="bg-surface-2/60 p-2.5 text-center flex flex-col justify-center">
+          <div className="bg-surface-2/80 p-3 text-center flex flex-col justify-center">
             <div className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold mb-0.5 whitespace-nowrap">Hạng Vé</div>
             <div className="font-bold text-xs sm:text-sm text-brand-secondary font-display mt-0.5 whitespace-nowrap">
-              {isVip ? 'VIP' : ticket.tier === 2 ? 'Tiết Kiệm' : 'Tiêu Chuẩn'}
+              {isVip ? 'VIP Hạng Nhất' : ticket.tier === 2 ? 'Tiết Kiệm' : 'Tiêu Chuẩn'}
             </div>
           </div>
-          <div className="bg-surface-2/60 p-2.5 text-center flex flex-col justify-center">
+          <div className="bg-surface-2/80 p-3 text-center flex flex-col justify-center">
             <div className="text-[10px] text-text-tertiary uppercase tracking-wider font-bold mb-0.5 whitespace-nowrap">Giá Vé</div>
             <div className="font-black text-xs sm:text-sm text-success font-display mt-0.5 whitespace-nowrap tabular-nums">
               {formatCurrency(ticket.price)}
@@ -188,7 +198,7 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
                   disabled={isResuming || isReleasing}
                   aria-busy={isResuming}
                   aria-label={`Tiếp tục thanh toán vé sự kiện ${ticket.eventTitle}`}
-                  className="w-full sm:w-auto min-h-11 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-primary hover:bg-brand-primary/90 text-white font-bold transition-[background-color,transform] active:scale-[0.98] text-xs whitespace-nowrap shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+                  className="w-full sm:w-auto min-h-11 inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-brand-primary hover:bg-brand-primary/90 text-white font-bold transition-[background-color,transform] active:scale-[0.98] text-xs whitespace-nowrap shrink-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary shadow-sm shadow-brand-glow"
                 >
                   {isResuming ? (
                     <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
@@ -234,7 +244,7 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
                   type="button"
                   onClick={() => onInitiateTransfer(ticket)}
                   aria-label={`Chuyển nhượng vé sự kiện ${ticket.eventTitle}`}
-                  className="min-h-11 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-3 hover:bg-surface-2 text-text-primary border border-border-subtle hover:border-brand-primary font-bold transition-[background-color,border-color,transform] active:scale-[0.98] text-xs whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+                  className="min-h-11 inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-surface-3 hover:bg-surface-2 text-text-primary border border-border-subtle hover:border-brand-primary font-bold transition-[background-color,border-color,transform] active:scale-[0.98] text-xs whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
                 >
                   <Send className="w-3 h-3 text-brand-primary" aria-hidden="true" />
                   <span>Chuyển Nhượng</span>
@@ -248,7 +258,7 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
                   disabled={refundingId === ticket.id}
                   aria-busy={refundingId === ticket.id}
                   aria-label={`Yêu cầu hoàn vé sự kiện ${ticket.eventTitle}`}
-                  className="min-h-11 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-danger/10 hover:bg-danger/20 text-danger border border-danger/30 font-bold transition-[background-color,transform] active:scale-[0.98] text-xs whitespace-nowrap shrink-0 cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
+                  className="min-h-11 inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-danger/10 hover:bg-danger/20 text-danger border border-danger/30 font-bold transition-[background-color,transform] active:scale-[0.98] text-xs whitespace-nowrap shrink-0 cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
                 >
                   {refundingId === ticket.id ? (
                     <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
@@ -267,27 +277,30 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
         )}
       </div>
       
-      {/* Right: Live QR Code & Download Box */}
-      <div className="p-5 sm:p-6 flex flex-col items-center justify-center md:w-72 bg-surface-2 relative z-10 space-y-3 shrink-0">
-        {/* Ticket Perforation Notches */}
+      {/* Right: Concert Stub Live QR Code & Download Box */}
+      <div className="p-5 sm:p-6 flex flex-col items-center justify-center md:w-72 bg-surface-2/95 relative z-10 space-y-3.5 shrink-0">
+        {/* Ticket Perforation Notches - Authentic Semicircular Cutouts */}
         <span className="hidden md:block absolute -top-3.5 -left-3.5 w-7 h-7 rounded-full bg-surface-1 border border-border-subtle shadow-inner z-20" aria-hidden="true" />
         <span className="hidden md:block absolute -bottom-3.5 -left-3.5 w-7 h-7 rounded-full bg-surface-1 border border-border-subtle shadow-inner z-20" aria-hidden="true" />
         <span className="md:hidden absolute -top-3.5 -left-3.5 w-7 h-7 rounded-full bg-surface-1 border border-border-subtle shadow-inner z-20" aria-hidden="true" />
         <span className="md:hidden absolute -top-3.5 -right-3.5 w-7 h-7 rounded-full bg-surface-1 border border-border-subtle shadow-inner z-20" aria-hidden="true" />
+        
         {canShowQr ? (
-          <DynamicQrCodeView
-            ticketId={ticket.id}
-            fallbackToken={ticket.qrCodeSignature}
-            isUsed={ticket.status.toLowerCase() === 'used'}
-            ticketTitle={ticket.eventTitle}
-          />
+          <div className="p-2 rounded-2xl bg-surface-1 border border-border-subtle/80 shadow-md">
+            <DynamicQrCodeView
+              ticketId={ticket.id}
+              fallbackToken={ticket.qrCodeSignature}
+              isUsed={ticket.status.toLowerCase() === 'used'}
+              ticketTitle={ticket.eventTitle}
+            />
+          </div>
         ) : (
-          <div className="flex h-[159px] w-[159px] items-center justify-center rounded-xl border border-border-subtle bg-surface-3 p-4 text-center text-xs text-text-tertiary">
+          <div className="flex h-[159px] w-[159px] items-center justify-center rounded-2xl border border-border-subtle bg-surface-3 p-4 text-center text-xs text-text-tertiary">
             QR sẽ hiển thị sau khi thanh toán được xác nhận.
           </div>
         )}
 
-        <div className="text-center">
+        <div className="text-center space-y-0.5">
           <p className="text-[11px] font-mono font-bold text-text-secondary uppercase tracking-wider whitespace-nowrap tabular-nums">
             Mã đơn: #{ticket.orderCode}
           </p>
@@ -314,6 +327,6 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
           <span>{isDownloadingPdf ? 'Đang tạo file PDF...' : 'Tải File Vé PDF Chuẩn'}</span>
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 });

@@ -261,6 +261,15 @@ export default function CheckoutModal({
       if (res.data?.success) {
         setAppliedCoupon(res.data.data);
         toast.success(res.data.message || 'Áp dụng mã giảm giá thành công!');
+        try {
+          const confetti = (await import('canvas-confetti')).default;
+          confetti({
+            particleCount: 45,
+            spread: 60,
+            origin: { y: 0.7 },
+            colors: ['#BA4F2D', '#D9A26C', '#10B981'],
+          });
+        } catch { /* ignore optional confetti on unsupported environments */ }
         setPaymentRetryKey(k => k + 1);
       } else {
         toast.error(res.data?.message || 'Mã giảm giá không hợp lệ.');

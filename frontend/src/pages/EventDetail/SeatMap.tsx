@@ -28,11 +28,11 @@ export const SeatMap: React.FC<SeatMapProps> = React.memo(({ seats, selectedSeat
 
   const getSeatColor = (seat: Seat, isSelected: boolean) => {
     if (isSelected) {
-      return 'bg-brand-primary border-brand-primary text-white z-20 ring-2 ring-brand-accent/80 shadow-md shadow-brand-glow';
+      return 'bg-brand-primary border-brand-primary text-white z-20 ring-2 ring-brand-accent shadow-lg shadow-brand-glow scale-[1.03]';
     }
     const isLockedByMe = seat.isLockedByCurrentUser || seat.isLockedByMe;
     if (isLockedByMe) {
-      return 'bg-warning/25 border-warning text-warning hover:border-warning hover:bg-warning/35 cursor-pointer ring-1 ring-warning/50';
+      return 'bg-warning/25 border-warning text-warning hover:border-warning hover:bg-warning/35 cursor-pointer ring-1 ring-warning/50 shadow-sm';
     }
     if (seat.status === 1) {
       return 'bg-warning/20 border-warning/50 text-warning/50 cursor-not-allowed opacity-60'; // Locked
@@ -41,16 +41,16 @@ export const SeatMap: React.FC<SeatMapProps> = React.memo(({ seats, selectedSeat
       return 'bg-danger/20 border-danger/50 text-danger/50 cursor-not-allowed opacity-40'; // Sold
     }
 
-    // Available seat styles by tier
+    // Available seat styles by tier with tactile optical depth
     const tier = getSeatTierInfo(seat);
     if (tier.isVip) {
-      return 'bg-amber-500/15 border-amber-400/70 hover:border-amber-400 hover:bg-amber-500/30 text-amber-300 cursor-pointer';
+      return 'bg-amber-500/20 border-amber-400/80 hover:border-amber-300 hover:bg-amber-500/35 text-amber-200 cursor-pointer shadow-sm shadow-amber-500/10 hover:shadow-amber-500/25';
     }
     if (tier.name.includes('Economy')) {
-      return 'bg-emerald-500/15 border-emerald-400/70 hover:border-emerald-400 hover:bg-emerald-500/30 text-emerald-300 cursor-pointer';
+      return 'bg-emerald-500/20 border-emerald-400/80 hover:border-emerald-300 hover:bg-emerald-500/35 text-emerald-200 cursor-pointer shadow-sm shadow-emerald-500/10 hover:shadow-emerald-500/25';
     }
 
-    return 'bg-surface-2 border-border-subtle hover:border-brand-primary hover:bg-brand-primary/20 text-text-primary cursor-pointer';
+    return 'bg-surface-2 border-border-subtle hover:border-brand-primary hover:bg-brand-primary/25 text-text-primary cursor-pointer hover:shadow-sm hover:shadow-brand-glow/20';
   };
 
   // Group seats by row using useMemo to prevent unnecessary recalculations on re-renders
@@ -65,18 +65,19 @@ export const SeatMap: React.FC<SeatMapProps> = React.memo(({ seats, selectedSeat
   const sortedRowKeys = useMemo(() => Object.keys(rows).sort(), [rows]);
 
   return (
-    <div className="surface-panel p-5 sm:p-7 md:p-8 shadow-xl relative overflow-hidden min-h-[480px] lg:min-h-[540px] flex flex-col justify-between">
+    <div className="surface-panel p-5 sm:p-7 md:p-8 shadow-2xl relative overflow-hidden min-h-[480px] lg:min-h-[540px] flex flex-col justify-between border border-border-subtle/80">
       <h2 className="sr-only">Sơ đồ chọn ghế</h2>
-      {/* Curved Stage Header */}
+      
+      {/* Curved Stage Header with Spotlight Ambient Arc */}
       <div className="mb-8 text-center relative z-10 pt-2">
         <div className="w-3/4 max-w-lg mx-auto relative flex flex-col items-center">
           {/* Spotlight Cone Glow */}
-          <div className="absolute -top-4 inset-x-0 h-16 stage-spotlight-arch pointer-events-none rounded-t-full opacity-70" aria-hidden="true" />
+          <div className="absolute -top-6 inset-x-0 h-24 stage-spotlight-arch pointer-events-none rounded-t-full opacity-80" aria-hidden="true" />
           {/* Curved Stage Arc */}
-          <div className="w-full h-2 rounded-full stage-glow-bar relative z-10 mb-3" />
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-surface-3/80 border border-brand-primary/30 shadow-sm relative z-10">
-            <span className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse" aria-hidden="true" />
-            <p className="text-xs font-bold text-brand-primary-light uppercase tracking-[0.2em]">
+          <div className="w-full h-2.5 rounded-full stage-glow-bar relative z-10 mb-3 shadow-lg" />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface-3/90 border border-brand-primary/40 shadow-md relative z-10">
+            <span className="w-2 h-2 rounded-full bg-brand-primary animate-pulse" aria-hidden="true" />
+            <p className="text-xs font-black text-brand-primary-light uppercase tracking-[0.22em]">
               Sân khấu trung tâm
             </p>
           </div>
@@ -89,7 +90,7 @@ export const SeatMap: React.FC<SeatMapProps> = React.memo(({ seats, selectedSeat
       </div>
 
       {/* Seat Matrix Grid */}
-      <div role="region" aria-label="Sơ đồ ghế ngồi" tabIndex={0} className="w-full flex-1 justify-center relative z-10 overflow-x-auto pb-3 max-md:hide-scrollbar focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-primary">
+      <div role="region" aria-label="Sơ đồ ghế ngồi" tabIndex={0} className="w-full flex-1 justify-center relative z-10 overflow-x-auto pb-4 max-md:hide-scrollbar focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand-primary">
         <div className="min-w-max mx-auto px-4 flex flex-col gap-3 sm:gap-3.5 items-center">
         {sortedRowKeys.map(rowName => {
           const rowSeats = rows[rowName] || [];
@@ -97,7 +98,7 @@ export const SeatMap: React.FC<SeatMapProps> = React.memo(({ seats, selectedSeat
           return (
             <div key={rowName} className="flex gap-2.5 sm:gap-4 items-center group/row">
               <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black shadow-inner ${
-                isVipRow ? 'bg-amber-500/20 text-amber-300 border border-amber-400/40' : 'bg-surface-3 text-text-secondary border border-border-subtle'
+                isVipRow ? 'bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-amber-500/10' : 'bg-surface-3 text-text-secondary border border-border-subtle'
               }`}>
                 {rowName}
               </div>
@@ -127,7 +128,7 @@ export const SeatMap: React.FC<SeatMapProps> = React.memo(({ seats, selectedSeat
                       disabled={!isClickable}
                       aria-pressed={isSelected}
                       aria-label={`Hàng ${seat.row}, ghế ${seat.number}, hạng ${tierInfo.name}, ${statusLabel}, giá ${formatVND(seat.price)}`}
-                      className={`w-11 h-11 rounded-lg border-2 flex items-center justify-center text-xs font-bold transition-[opacity,background-color,border-color,transform] duration-150 ease-out active:scale-95 relative group/seat focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-1 ${getSeatColor(seat, isSelected)}`}
+                      className={`w-11 h-11 rounded-xl border-2 flex items-center justify-center text-xs font-black transition-[opacity,background-color,border-color,transform,box-shadow] duration-150 ease-out active:scale-[0.92] relative group/seat focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface-1 ${getSeatColor(seat, isSelected)}`}
                     >
                       {/* Subtle status indicator for color-blind accessibility */}
                       {isSelected && (
@@ -152,7 +153,7 @@ export const SeatMap: React.FC<SeatMapProps> = React.memo(({ seats, selectedSeat
               </div>
 
               <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black shadow-inner ${
-                isVipRow ? 'bg-amber-500/20 text-amber-300 border border-amber-400/40' : 'bg-surface-3 text-text-secondary border border-border-subtle'
+                isVipRow ? 'bg-amber-500/20 text-amber-300 border border-amber-400/40 shadow-amber-500/10' : 'bg-surface-3 text-text-secondary border border-border-subtle'
               }`}>
                 {rowName}
               </div>
@@ -167,4 +168,3 @@ export const SeatMap: React.FC<SeatMapProps> = React.memo(({ seats, selectedSeat
     </div>
   );
 });
-

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Clock, Loader2, ArrowRight, ShieldAlert, Zap, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Seat, SeatTier } from '../../types';
 import { formatCurrency } from '../../utils/formatters';
 
@@ -55,50 +56,57 @@ export const SelectedSeatPanel: React.FC<SelectedSeatPanelProps> = ({
           <span>Thông Tin Ghế Đang Chọn</span>
         </div>
         {seats.length > 0 && (
-          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-primary/20 text-brand-primary border border-brand-primary/30">
+          <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-brand-primary/20 text-brand-primary border border-brand-primary/30">
             {seats.length}/4 ghế
           </span>
         )}
       </h2>
 
       {seats.length > 0 ? (
-        <div className="space-y-4 animate-slide-up">
-          {/* List of selected seats */}
+        <div className="space-y-4">
+          {/* List of selected seats with smooth Spring exit/enter */}
           <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-            {seats.map((seat) => (
-              <div
-                key={seat.id}
-                className="flex justify-between items-center bg-surface-2/80 p-3 rounded-xl border border-brand-primary/30 shadow-inner relative overflow-hidden text-sm"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-1.5">
-                      <p className="font-extrabold text-white tracking-tight">
-                        Hàng {seat.row} - Ghế <span className="tabular-nums">{seat.number}</span>
-                      </p>
-                      {getTierBadge(seat.tier)}
+            <AnimatePresence initial={false}>
+              {seats.map((seat) => (
+                <motion.div
+                  key={seat.id}
+                  layout
+                  initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.92, transition: { duration: 0.15 } }}
+                  transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                  className="flex justify-between items-center bg-surface-2/80 p-3 rounded-xl border border-brand-primary/30 shadow-inner relative overflow-hidden text-sm"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-extrabold text-white tracking-tight">
+                          Hàng {seat.row} - Ghế <span className="tabular-nums">{seat.number}</span>
+                        </p>
+                        {getTierBadge(seat.tier)}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <p className="font-bold text-success tabular-nums">{formatCurrency(seat.price)}</p>
-                  {onRemoveSeat && !locking && (
-                    <button
-                      type="button"
-                      onClick={() => onRemoveSeat(seat.id)}
-                      className="text-text-tertiary hover:text-danger p-1 rounded transition-colors cursor-pointer"
-                      aria-label={`Bỏ chọn ghế hàng ${seat.row} số ${seat.number}`}
-                    >
-                      <X className="w-3.5 h-3.5" aria-hidden="true" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
+                  <div className="flex items-center gap-3">
+                    <p className="font-bold text-success tabular-nums">{formatCurrency(seat.price)}</p>
+                    {onRemoveSeat && !locking && (
+                      <button
+                        type="button"
+                        onClick={() => onRemoveSeat(seat.id)}
+                        className="text-text-tertiary hover:text-danger p-1 rounded transition-colors cursor-pointer"
+                        aria-label={`Bỏ chọn ghế hàng ${seat.row} số ${seat.number}`}
+                      >
+                        <X className="w-3.5 h-3.5" aria-hidden="true" />
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
 
           {/* Total Price Summary */}
-          <div className="flex justify-between items-center bg-surface-3/60 px-4 py-2.5 rounded-lg border border-border-subtle">
+          <div className="flex justify-between items-center bg-surface-3/60 px-4 py-2.5 rounded-xl border border-border-subtle shadow-sm">
             <span className="text-xs font-bold text-text-secondary uppercase">
               Tổng cộng ({seats.length} vé):
             </span>
@@ -144,7 +152,7 @@ export const SelectedSeatPanel: React.FC<SelectedSeatPanelProps> = ({
             <Link
               to="/my-tickets"
               aria-label={seats.length === 1 ? `Tiếp tục thanh toán cho ghế hàng ${seats[0].row} số ${seats[0].number}` : "Tiếp tục thanh toán cho các ghế đang giữ"}
-              className="w-full min-h-11 py-3.5 bg-warning hover:bg-warning/90 text-surface-0 font-extrabold rounded-lg transition-[background-color,transform] flex items-center justify-center text-sm group relative overflow-hidden active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning cursor-pointer"
+              className="w-full min-h-11 py-3.5 bg-warning hover:bg-warning/90 text-surface-0 font-extrabold rounded-xl transition-[background-color,transform] flex items-center justify-center text-sm group relative overflow-hidden active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-warning cursor-pointer shadow-sm shadow-warning/20"
             >
               <span>Ghế Đang Giữ - Tiếp Tục Thanh Toán</span>
               <ArrowRight className="ml-1.5 w-4 h-4 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
@@ -156,7 +164,7 @@ export const SelectedSeatPanel: React.FC<SelectedSeatPanelProps> = ({
               disabled={locking}
               aria-busy={locking}
               aria-label={seats.length === 1 ? `Khóa ghế hàng ${seats[0].row} số ${seats[0].number} và đặt vé` : `Khóa ${seats.length} ghế và đặt vé`}
-              className="w-full min-h-11 py-3.5 bg-brand-primary hover:bg-brand-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-[background-color,transform] flex items-center justify-center text-sm group relative overflow-hidden active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer"
+              className="w-full min-h-11 py-3.5 bg-brand-primary hover:bg-brand-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-[background-color,transform] flex items-center justify-center text-sm group relative overflow-hidden active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer shadow-sm shadow-brand-glow"
             >
               {locking ? (
                 <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
@@ -169,7 +177,7 @@ export const SelectedSeatPanel: React.FC<SelectedSeatPanelProps> = ({
             </button>
           )}
 
-          <div className="flex items-start gap-2 bg-warning/10 p-3 rounded-lg border border-warning/20 text-warning text-[11px] font-medium leading-relaxed">
+          <div className="flex items-start gap-2 bg-warning/10 p-3 rounded-xl border border-warning/20 text-warning text-[11px] font-medium leading-relaxed">
             <ShieldAlert className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
             <p>Hệ thống tự động khóa giữ ghế độc quyền trong 5 phút. Mỗi tài khoản được đặt tối đa 4 ghế/lần.</p>
           </div>
@@ -177,7 +185,7 @@ export const SelectedSeatPanel: React.FC<SelectedSeatPanelProps> = ({
       ) : (
         <div
           role="status"
-          className="text-center p-6 border-2 border-dashed border-border-subtle rounded-xl bg-surface-2/30"
+          className="text-center p-6 border-2 border-dashed border-border-subtle rounded-2xl bg-surface-2/30"
         >
           <div className="w-10 h-10 bg-surface-3 rounded-xl flex items-center justify-center mx-auto mb-2 text-text-tertiary">
             <Zap className="w-5 h-5 text-brand-primary" aria-hidden="true" />
