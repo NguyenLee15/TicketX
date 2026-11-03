@@ -19,7 +19,7 @@ public static class RateLimitingExtensions
                 context.HttpContext.Response.ContentType = "application/json";
                 await context.HttpContext.Response.WriteAsJsonAsync(new
                 {
-                    type = "https://tools.ietf.org/html/rfc9457",
+                    type = "https://datatracker.ietf.org/doc/html/rfc9457#section-3.1",
                     title = "Too Many Requests",
                     status = StatusCodes.Status429TooManyRequests,
                     detail = "Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau 1 phút.",

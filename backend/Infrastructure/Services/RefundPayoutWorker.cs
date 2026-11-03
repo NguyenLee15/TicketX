@@ -19,17 +19,44 @@ public sealed class RefundPayoutWorker(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        var consecutiveFailures = 0;
         while (!stoppingToken.IsCancellationRequested)
         {
+            var hadWork = false;
             try
             {
-                if (!await ProcessOneAsync(stoppingToken)) await Task.Delay(PollInterval, stoppingToken);
+                hadWork = await ProcessOneAsync(stoppingToken);
+                consecutiveFailures = 0;
             }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Refund payout worker iteration failed.");
-                await Task.Delay(PollInterval, stoppingToken);
+                consecutiveFailures++;
+                logger.LogError(ex, "Refund payout worker iteration failed (consecutive failures: {Failures}).", consecutiveFailures);
+            }
+
+            if (!hadWork || consecutiveFailures > 0)
+            {
+                var baseDelayMs = consecutiveFailures switch
+                {
+                    0 => (int)PollInterval.TotalMilliseconds,
+                    1 => 10000,
+                    2 => 20000,
+                    _ => 60000
+                };
+                var jitterMs = Random.Shared.Next(0, 1000);
+
+                try
+                {
+                    await Task.Delay(baseDelayMs + jitterMs, stoppingToken);
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
             }
         }
     }

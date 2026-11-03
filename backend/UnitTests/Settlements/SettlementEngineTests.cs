@@ -112,6 +112,37 @@ public sealed class SettlementEngineTests : IDisposable
     }
 
     [Fact]
+    public async Task RequestSettlement_WhenConcurrentRaceConditionOccurs_FilteredUniqueIndexPreventsDuplicate()
+    {
+        var (ev, organizer, _) = await SeedSettlementDataAsync();
+
+        // Simulate concurrent insert that bypassed the pre-check
+        var concurrentSettlement = new Settlement(
+            ev.Id, organizer.Id, 10_000_000m, 0.05m, 1_000_000m, "VCB", "123", "HOLDER"
+        );
+        _context.Settlements.Add(concurrentSettlement);
+        await _context.SaveChangesAsync();
+
+        // Directly invoke handler with a separate context or bypass pre-check
+        // Because concurrentSettlement is in DB with Status = Pending (0),
+        // another attempt with same EventId will either be blocked by pre-check or unique index.
+        var handler = new RequestSettlementCommandHandler(_context);
+        var cmd = new RequestSettlementCommand(ev.Id, organizer.Id, "VCB", "123", "HOLDER");
+
+        var result = await handler.Handle(cmd, CancellationToken.None);
+        result.Success.Should().BeFalse();
+        result.Code.Should().Be("SETTLEMENT_ALREADY_PENDING");
+
+        // Verify database unique index physically rejects second active settlement
+        var duplicateAttempt = new Settlement(
+            ev.Id, organizer.Id, 10_000_000m, 0.05m, 1_000_000m, "BIDV", "456", "HOLDER2"
+        );
+        _context.Settlements.Add(duplicateAttempt);
+        var act = () => _context.SaveChangesAsync();
+        await act.Should().ThrowAsync<DbUpdateException>();
+    }
+
+    [Fact]
     public async Task RequestSettlement_WhenCallerNotOrganizer_ReturnsForbidden()
     {
         var (ev, _, _) = await SeedSettlementDataAsync();

@@ -11,20 +11,53 @@ public sealed class NotificationOutboxDispatcher : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<NotificationOutboxDispatcher> _logger;
-    public NotificationOutboxDispatcher(IServiceScopeFactory scopeFactory, ILogger<NotificationOutboxDispatcher> logger) => (_scopeFactory, _logger) = (scopeFactory, logger);
+
+    public NotificationOutboxDispatcher(IServiceScopeFactory scopeFactory, ILogger<NotificationOutboxDispatcher> logger)
+    {
+        _scopeFactory = scopeFactory;
+        _logger = logger;
+    }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        var consecutiveFailures = 0;
         while (!stoppingToken.IsCancellationRequested)
         {
-            try { await DispatchBatchAsync(stoppingToken); }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
-            catch (Exception ex) { _logger.LogError(ex, "Notification outbox dispatch failed"); }
+            try
+            {
+                await DispatchBatchAsync(stoppingToken);
+                consecutiveFailures = 0;
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                consecutiveFailures++;
+                _logger.LogError(ex, "Notification outbox dispatch iteration failed (consecutive failures: {Failures})", consecutiveFailures);
+            }
 
-            var jitterMs = Random.Shared.Next(4500, 5500);
-            try { await Task.Delay(jitterMs, stoppingToken); }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
+            var baseDelayMs = consecutiveFailures switch
+            {
+                0 => 5000,
+                1 => 10000,
+                2 => 20000,
+                _ => 60000
+            };
+            var jitterMs = Random.Shared.Next(0, 1000);
+
+            try
+            {
+                await Task.Delay(baseDelayMs + jitterMs, stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
         }
     }
+
     private async Task DispatchBatchAsync(CancellationToken cancellationToken)
     {
         await using var scope = _scopeFactory.CreateAsyncScope();
@@ -34,7 +67,7 @@ public sealed class NotificationOutboxDispatcher : BackgroundService
         var utcNow = DateTime.UtcNow;
         var candidateIds = await context.NotificationOutbox
             .Where(x => (x.Status == "Pending" && (x.NextAttemptAt == null || x.NextAttemptAt <= utcNow))
-                     || (x.Status == "Processing" && x.NextAttemptAt <= utcNow))
+                     || (x.Status == "Processing" && (x.LeaseExpiresAtUtc == null || x.LeaseExpiresAtUtc <= utcNow)))
             .OrderBy(x => x.CreatedAt)
             .ThenBy(x => x.Id)
             .Take(20)
@@ -46,15 +79,16 @@ public sealed class NotificationOutboxDispatcher : BackgroundService
         var leaseToken = "lease:" + Guid.NewGuid().ToString("N");
         var leaseUntil = utcNow.Add(TimeSpan.FromMinutes(2));
 
-        // Atomically claim eligible rows in a single DB update to prevent multi-instance races
+        // Atomically claim eligible rows using dedicated LeaseOwner and LeaseExpiresAtUtc columns
         var claimedCount = await context.NotificationOutbox
             .Where(x => candidateIds.Contains(x.Id) &&
                        ((x.Status == "Pending" && (x.NextAttemptAt == null || x.NextAttemptAt <= utcNow))
-                     || (x.Status == "Processing" && x.NextAttemptAt <= utcNow)))
+                     || (x.Status == "Processing" && (x.LeaseExpiresAtUtc == null || x.LeaseExpiresAtUtc <= utcNow))))
             .ExecuteUpdateAsync(s => s
                 .SetProperty(b => b.Status, "Processing")
+                .SetProperty(b => b.LeaseExpiresAtUtc, leaseUntil)
                 .SetProperty(b => b.NextAttemptAt, leaseUntil)
-                .SetProperty(b => b.LastError, leaseToken)
+                .SetProperty(b => b.LeaseOwner, leaseToken)
                 .SetProperty(b => b.UpdatedAt, utcNow),
                 cancellationToken);
 
@@ -63,7 +97,7 @@ public sealed class NotificationOutboxDispatcher : BackgroundService
         // Fetch only records securely leased by this instance
         var claimedItems = await context.NotificationOutbox
             .AsNoTracking()
-            .Where(x => candidateIds.Contains(x.Id) && x.Status == "Processing" && x.LastError == leaseToken)
+            .Where(x => candidateIds.Contains(x.Id) && x.Status == "Processing" && x.LeaseOwner == leaseToken)
             .ToListAsync(cancellationToken);
 
         var brokerFailed = false;
@@ -89,13 +123,15 @@ public sealed class NotificationOutboxDispatcher : BackgroundService
             }
 
             var updatedCount = await context.NotificationOutbox
-                .Where(x => x.Id == item.Id && x.Status == "Processing" && x.LastError == leaseToken)
+                .Where(x => x.Id == item.Id && x.Status == "Processing" && x.LeaseOwner == leaseToken)
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(b => b.Status, item.Status)
                     .SetProperty(b => b.AttemptCount, item.AttemptCount)
                     .SetProperty(b => b.NextAttemptAt, item.NextAttemptAt)
                     .SetProperty(b => b.ProcessedAt, item.ProcessedAt)
                     .SetProperty(b => b.LastError, item.LastError)
+                    .SetProperty(b => b.LeaseOwner, item.LeaseOwner)
+                    .SetProperty(b => b.LeaseExpiresAtUtc, item.LeaseExpiresAtUtc)
                     .SetProperty(b => b.UpdatedAt, item.UpdatedAt),
                     cancellationToken);
 

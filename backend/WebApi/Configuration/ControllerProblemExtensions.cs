@@ -17,7 +17,7 @@ public static class ControllerProblemExtensions
     {
         return controller.Unauthorized(new
         {
-            type = "https://tools.ietf.org/html/rfc9457",
+            type = "https://datatracker.ietf.org/doc/html/rfc9457#section-3.1",
             title = "Unauthorized",
             status = StatusCodes.Status401Unauthorized,
             success = false,
@@ -36,7 +36,7 @@ public static class ControllerProblemExtensions
     {
         return controller.BadRequest(new
         {
-            type = "https://tools.ietf.org/html/rfc9457",
+            type = "https://datatracker.ietf.org/doc/html/rfc9457#section-3.1",
             title = "Pagination Out Of Range",
             status = StatusCodes.Status400BadRequest,
             success = false,

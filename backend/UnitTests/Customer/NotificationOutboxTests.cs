@@ -97,18 +97,19 @@ public sealed class NotificationOutboxTests : IDisposable
 
         // Worker B tries to commit a transition using its own token "lease:worker-B"
         var updatedRows = await context.NotificationOutbox
-            .Where(x => x.Id == item.Id && x.Status == "Processing" && x.LastError == "lease:worker-B")
+            .Where(x => x.Id == item.Id && x.Status == "Processing" && x.LeaseOwner == "lease:worker-B")
             .ExecuteUpdateAsync(s => s
                 .SetProperty(b => b.Status, "Completed")
                 .SetProperty(b => b.ProcessedAt, DateTime.UtcNow)
-                .SetProperty(b => b.LastError, (string?)null));
+                .SetProperty(b => b.LeaseOwner, (string?)null));
 
         updatedRows.Should().Be(0);
 
-        // Verify the database still retains worker-A's ownership
+        // Verify the database still retains worker-A's ownership and LastError remains clean
         var persisted = await context.NotificationOutbox.AsNoTracking().SingleAsync(x => x.Id == item.Id);
         persisted.Status.Should().Be("Processing");
-        persisted.LastError.Should().Be("lease:worker-A");
+        persisted.LeaseOwner.Should().Be("lease:worker-A");
+        persisted.LastError.Should().BeNull();
     }
 
     [Fact]
@@ -129,13 +130,13 @@ public sealed class NotificationOutboxTests : IDisposable
         var utcNow = DateTime.UtcNow;
         var candidateIdsA = await contextA.NotificationOutbox
             .Where(x => (x.Status == "Pending" && (x.NextAttemptAt == null || x.NextAttemptAt <= utcNow))
-                     || (x.Status == "Processing" && x.NextAttemptAt <= utcNow))
+                     || (x.Status == "Processing" && (x.LeaseExpiresAtUtc == null || x.LeaseExpiresAtUtc <= utcNow)))
             .Select(x => x.Id)
             .ToListAsync();
 
         var candidateIdsB = await contextB.NotificationOutbox
             .Where(x => (x.Status == "Pending" && (x.NextAttemptAt == null || x.NextAttemptAt <= utcNow))
-                     || (x.Status == "Processing" && x.NextAttemptAt <= utcNow))
+                     || (x.Status == "Processing" && (x.LeaseExpiresAtUtc == null || x.LeaseExpiresAtUtc <= utcNow)))
             .Select(x => x.Id)
             .ToListAsync();
 
@@ -150,29 +151,31 @@ public sealed class NotificationOutboxTests : IDisposable
         var claimedA = await contextA.NotificationOutbox
             .Where(x => candidateIdsA.Contains(x.Id) &&
                        ((x.Status == "Pending" && (x.NextAttemptAt == null || x.NextAttemptAt <= utcNow))
-                     || (x.Status == "Processing" && x.NextAttemptAt <= utcNow)))
+                     || (x.Status == "Processing" && (x.LeaseExpiresAtUtc == null || x.LeaseExpiresAtUtc <= utcNow))))
             .ExecuteUpdateAsync(s => s
                 .SetProperty(b => b.Status, "Processing")
+                .SetProperty(b => b.LeaseExpiresAtUtc, leaseUntil)
                 .SetProperty(b => b.NextAttemptAt, leaseUntil)
-                .SetProperty(b => b.LastError, leaseTokenA)
+                .SetProperty(b => b.LeaseOwner, leaseTokenA)
                 .SetProperty(b => b.UpdatedAt, utcNow));
 
         // Replica B attempts concurrent claim
         var claimedB = await contextB.NotificationOutbox
             .Where(x => candidateIdsB.Contains(x.Id) &&
                        ((x.Status == "Pending" && (x.NextAttemptAt == null || x.NextAttemptAt <= utcNow))
-                     || (x.Status == "Processing" && x.NextAttemptAt <= utcNow)))
+                     || (x.Status == "Processing" && (x.LeaseExpiresAtUtc == null || x.LeaseExpiresAtUtc <= utcNow))))
             .ExecuteUpdateAsync(s => s
                 .SetProperty(b => b.Status, "Processing")
+                .SetProperty(b => b.LeaseExpiresAtUtc, leaseUntil)
                 .SetProperty(b => b.NextAttemptAt, leaseUntil)
-                .SetProperty(b => b.LastError, leaseTokenB)
+                .SetProperty(b => b.LeaseOwner, leaseTokenB)
                 .SetProperty(b => b.UpdatedAt, utcNow));
 
         claimedA.Should().Be(2);
         claimedB.Should().Be(0);
 
-        var itemsA = await contextA.NotificationOutbox.Where(x => x.LastError == leaseTokenA).ToListAsync();
-        var itemsB = await contextB.NotificationOutbox.Where(x => x.LastError == leaseTokenB).ToListAsync();
+        var itemsA = await contextA.NotificationOutbox.Where(x => x.LeaseOwner == leaseTokenA).ToListAsync();
+        var itemsB = await contextB.NotificationOutbox.Where(x => x.LeaseOwner == leaseTokenB).ToListAsync();
 
         itemsA.Should().HaveCount(2);
         itemsB.Should().BeEmpty();

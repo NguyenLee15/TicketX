@@ -67,6 +67,11 @@ public class SettlementConfiguration : IEntityTypeConfiguration<Settlement>
         builder.HasIndex(s => s.EventId);
         builder.HasIndex(s => s.OrganizerId);
         builder.HasIndex(s => s.Status);
+
+        // Filtered unique index: An event can have at most ONE active (Pending=0 or Approved=1) settlement at any time
+        builder.HasIndex(s => s.EventId)
+            .HasFilter("Status IN (0, 1)")
+            .IsUnique();
     }
 }
 

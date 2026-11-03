@@ -39,7 +39,7 @@ public class GlobalExceptionMiddleware
 
             var response = new
             {
-                type = "https://tools.ietf.org/html/rfc9457",
+                type = "https://datatracker.ietf.org/doc/html/rfc9457#section-3.1",
                 title = "Validation Failed",
                 status = (int)HttpStatusCode.BadRequest,
                 detail = "Dữ liệu đầu vào không hợp lệ.",
@@ -74,7 +74,7 @@ public class GlobalExceptionMiddleware
 
             var response = new
             {
-                type = "https://tools.ietf.org/html/rfc9457",
+                type = "https://datatracker.ietf.org/doc/html/rfc9457#section-3.1",
                 title = "Bad Request",
                 status = (int)HttpStatusCode.BadRequest,
                 detail = ex.Message,
@@ -112,7 +112,7 @@ public class GlobalExceptionMiddleware
 
             var response = new
             {
-                type = "https://tools.ietf.org/html/rfc9457",
+                type = "https://datatracker.ietf.org/doc/html/rfc9457#section-3.1",
                 title = "Internal Server Error",
                 status = (int)HttpStatusCode.InternalServerError,
                 detail = "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.",

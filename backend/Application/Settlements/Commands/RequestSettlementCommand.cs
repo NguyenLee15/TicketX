@@ -49,23 +49,21 @@ public class RequestSettlementCommandHandler : IRequestHandler<RequestSettlement
         if (existingActive)
             return new RequestSettlementResult(false, "Sự kiện này đã có yêu cầu quyết toán đang được xử lý.", Code: "SETTLEMENT_ALREADY_PENDING");
 
-        // Fetch paid & checked-in tickets
-        var paidTickets = await _context.Tickets.AsNoTracking()
+        // Fetch paid & checked-in tickets gross revenue via direct database aggregation
+        var grossDouble = await _context.Tickets.AsNoTracking()
             .Where(t => t.EventId == request.EventId && (t.Status == TicketStatus.Paid || t.Status == TicketStatus.Used))
-            .Select(t => t.Price)
-            .ToListAsync(cancellationToken);
+            .SumAsync(t => (double?)t.Price, cancellationToken) ?? 0;
+        var grossRevenue = (decimal)grossDouble;
 
-        var grossRevenue = paidTickets.Sum();
         if (grossRevenue <= 0)
             return new RequestSettlementResult(false, "Sự kiện chưa phát sinh doanh thu bán vé hợp lệ.", Code: "NO_VALID_REVENUE");
 
-        // Fetch refunded tickets
-        var refundedTickets = await _context.Tickets.AsNoTracking()
+        // Fetch refunded tickets deduction via direct database aggregation
+        var refundDouble = await _context.Tickets.AsNoTracking()
             .Where(t => t.EventId == request.EventId && (t.Status == TicketStatus.Cancelled || t.Status == TicketStatus.RefundPending))
-            .Select(t => t.RefundAmount ?? t.Price)
-            .ToListAsync(cancellationToken);
+            .SumAsync(t => (double?)(t.RefundAmount ?? t.Price), cancellationToken) ?? 0;
+        var refundDeduction = (decimal)refundDouble;
 
-        var refundDeduction = refundedTickets.Sum();
         const decimal commissionRate = 0.05m; // 5% platform commission
 
         var settlement = new Settlement(
@@ -80,7 +78,16 @@ public class RequestSettlementCommandHandler : IRequestHandler<RequestSettlement
         );
 
         _context.Settlements.Add(settlement);
-        await _context.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            // Catches filtered unique index violation when concurrent requests slip past pre-check
+            return new RequestSettlementResult(false, "Sự kiện này đã có yêu cầu quyết toán đang được xử lý.", Code: "SETTLEMENT_ALREADY_PENDING");
+        }
 
         return new RequestSettlementResult(
             true,
