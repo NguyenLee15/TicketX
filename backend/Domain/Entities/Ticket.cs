@@ -130,6 +130,17 @@ public class Ticket : BaseEntity
         Version = Guid.NewGuid().ToByteArray();
     }
 
+    public void TransferTo(Guid newUserId, string newQrCodeSignature)
+    {
+        if (Status != TicketStatus.Paid)
+            throw new InvalidOperationException("Chỉ có vé đã thanh toán hợp lệ mới có thể chuyển nhượng.");
+
+        UserId = newUserId;
+        QrCodeSignature = newQrCodeSignature;
+        UpdatedAt = DateTime.UtcNow;
+        Version = Guid.NewGuid().ToByteArray();
+    }
+
     public static long GenerateOrderCode()
     {
         var high = RandomNumberGenerator.GetInt32(100_000, 1_000_000);

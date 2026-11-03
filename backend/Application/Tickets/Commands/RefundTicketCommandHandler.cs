@@ -105,12 +105,13 @@ public class RefundTicketCommandHandler : IRequestHandler<RefundTicketCommand, R
             if (destination is null)
                 return new RefundResult(false, "Hãy thiết lập tài khoản ngân hàng nhận tiền trong hồ sơ trước khi yêu cầu hoàn tiền.", Code: "REFUND_DESTINATION_REQUIRED");
 
-            // Validate cutoff time (Event.RefundCutoffHours)
+            // Validate cutoff time and calculate tiered refund
             var cutoffHours = CustomerRefundPolicy.NormalizeCutoffHours(ticket.Event.RefundCutoffHours);
             var eventStartTime = ticket.Event.Date;
             var allowedUntil = CustomerRefundPolicy.GetAllowedUntil(eventStartTime, cutoffHours);
 
-            if (_time.UtcNow > allowedUntil)
+            var tierEstimate = CustomerRefundPolicy.CalculateTieredRefund(ticket.Price, _time.UtcNow, eventStartTime, cutoffHours);
+            if (tierEstimate.RefundPercentage <= 0)
             {
                 return new RefundResult(
                     false, 
@@ -118,7 +119,7 @@ public class RefundTicketCommandHandler : IRequestHandler<RefundTicketCommand, R
                     Code: "REFUND_CUTOFF_EXPIRED");
             }
 
-            decimal refundAmount = ticket.Price;
+            decimal refundAmount = tierEstimate.RefundAmount;
             if (!lease.IsValid)
                 return new RefundResult(false, "Khóa xử lý đã hết hạn. Vui lòng thử lại.", Code: "REFUND_LOCK_LOST");
 
@@ -128,7 +129,7 @@ public class RefundTicketCommandHandler : IRequestHandler<RefundTicketCommand, R
 
             if (existingTx != null)
             {
-                existingTx.MarkRefundInitiated($"Refund requested: {refundAmount:N0}đ");
+                existingTx.MarkRefundInitiated($"Refund requested: {refundAmount:N0}đ ({tierEstimate.PolicyTierDescription})");
             }
 
             ticket.MarkRefundPending();
@@ -139,7 +140,7 @@ public class RefundTicketCommandHandler : IRequestHandler<RefundTicketCommand, R
                 nameof(Ticket),
                 ticket.Id.ToString(),
                 beforeState: "Paid",
-                afterState: System.Text.Json.JsonSerializer.Serialize(new { Status = "RefundPending", request.Reason }),
+                afterState: System.Text.Json.JsonSerializer.Serialize(new { Status = "RefundPending", refundAmount, tier = tierEstimate.PolicyTierDescription, request.Reason }),
                 ipAddress: request.IpAddress));
             if (!lease.IsValid)
                 return new RefundResult(false, "Khóa xử lý đã hết hạn. Vui lòng thử lại.", Code: "REFUND_LOCK_LOST");
@@ -147,12 +148,12 @@ public class RefundTicketCommandHandler : IRequestHandler<RefundTicketCommand, R
                 [new RefundEnqueueItem(
                     ticket.EventId,
                     ticket.Id,
-                    ticket.Price,
+                    refundAmount,
                     $"customer-refund:{ticket.EventId:N}:ticket:{ticket.Id:N}",
                     destination.EncryptedPayload)],
                 cancellationToken);
             return enqueueResult == RefundEnqueueResult.Created
-                ? new RefundResult(true, "Yêu cầu hoàn tiền đang chờ xử lý.", refundAmount, "REFUND_PENDING")
+                ? new RefundResult(true, $"Yêu cầu hoàn tiền ({tierEstimate.PolicyTierDescription}) đang chờ xử lý.", refundAmount, "REFUND_PENDING")
                 : await RecoverAuthoritativeResultAsync(request.TicketId, cancellationToken);
         }
         }

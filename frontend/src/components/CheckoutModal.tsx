@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { Zap } from 'lucide-react';
-import { EventDetail, Seat } from '../types';
+import { EventDetail, Seat, AppliedCoupon } from '../types';
 import api from '../services/api';
 import { CheckoutInvoice } from './Checkout/CheckoutInvoice';
 import { CheckoutVietQrView, PaymentInfo } from './Checkout/CheckoutVietQrView';
@@ -39,6 +39,9 @@ export default function CheckoutModal({
   const [loadingPayment, setLoadingPayment] = useState(false);
   const [paymentInitError, setPaymentInitError] = useState<string | null>(null);
   const [paymentRetryKey, setPaymentRetryKey] = useState(0);
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
 
   const clockOffsetMsRef = useRef<number>(0);
   if (serverTime) {
@@ -224,6 +227,33 @@ export default function CheckoutModal({
     }
   };
 
+  const effectiveSeats = seats && seats.length > 0 ? seats : [seat];
+  const totalPrice = effectiveSeats.reduce((sum, s) => sum + s.price, 0);
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim() || applyingCoupon) return;
+    setApplyingCoupon(true);
+    try {
+      const res = await api.post('/api/coupons/apply', {
+        code: couponCode.trim(),
+        orderAmount: totalPrice,
+        eventId: event.id,
+      });
+      if (res.data?.success) {
+        setAppliedCoupon(res.data.data);
+        toast.success(res.data.message || 'Áp dụng mã giảm giá thành công!');
+        setPaymentRetryKey(k => k + 1);
+      } else {
+        toast.error(res.data?.message || 'Mã giảm giá không hợp lệ.');
+      }
+    } catch (err: unknown) {
+      const apiErr = err as { response?: { data?: { message?: string } } };
+      toast.error(apiErr.response?.data?.message || 'Không thể áp dụng mã giảm giá lúc này.');
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
+
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -252,6 +282,11 @@ export default function CheckoutModal({
               timeLeft={timeLeft}
               formatTime={formatTime}
               status={status}
+              appliedCoupon={appliedCoupon}
+              couponCodeInput={couponCode}
+              onCouponCodeChange={setCouponCode}
+              onApplyCoupon={handleApplyCoupon}
+              applyingCoupon={applyingCoupon}
             />
 
             <CheckoutVietQrView

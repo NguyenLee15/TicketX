@@ -23,6 +23,14 @@ export const TicketRefundModal: React.FC<TicketRefundModalProps> = React.memo(({
   const navigate = useNavigate();
   const isMissingBank = refundError?.code === 'REFUND_DESTINATION_REQUIRED';
 
+  const hoursUntilEvent = candidate
+    ? (new Date(candidate.eventDate).getTime() - Date.now()) / (1000 * 60 * 60)
+    : 0;
+
+  const isMoreThan48h = hoursUntilEvent >= 48;
+  const refundRate = isMoreThan48h ? 1.0 : 0.7;
+  const estimatedRefundAmount = candidate ? Math.round(candidate.price * refundRate) : 0;
+
   return (
     <ConfirmModal
       isOpen={Boolean(candidate)}
@@ -38,7 +46,22 @@ export const TicketRefundModal: React.FC<TicketRefundModalProps> = React.memo(({
       message={candidate ? (
         <div className="space-y-3 text-xs text-left">
           <p>Bạn đang yêu cầu hoàn vé cho <strong>{candidate.eventTitle}</strong>, hàng {candidate.row} – ghế <span className="tabular-nums">{candidate.number}</span>.</p>
-          <p>Số tiền dự kiến: <strong className="tabular-nums">{formatCurrency(candidate.price)}</strong>.</p>
+          
+          <div className="p-3 bg-surface-2 rounded-xl border border-border-subtle space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-text-secondary">Chính sách áp dụng:</span>
+              <span className="font-semibold text-white">
+                {isMoreThan48h ? 'Hoàn 100% (Trước sự kiện >= 48h)' : 'Hoàn 70% (Trước sự kiện 24h - 48h)'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-text-secondary">Số tiền hoàn dự kiến:</span>
+              <strong className="text-success font-display font-bold tabular-nums text-sm">
+                {formatCurrency(estimatedRefundAmount)}
+              </strong>
+            </div>
+          </div>
+
           <p className="text-warning font-semibold">Vé sẽ chuyển sang trạng thái “Đang hoàn tiền” và chỉ hoàn tất sau khi cổng thanh toán xác nhận.</p>
           
           {isMissingBank && (

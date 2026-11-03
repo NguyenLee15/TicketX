@@ -9,6 +9,7 @@ import { createIdempotencyKey } from '../../utils/idempotency';
 import { TicketCard, TicketItemData } from './TicketCard';
 import { TicketFilterTabs, allowedTicketTabs, TicketTabType } from './TicketFilterTabs';
 import { TicketRefundModal } from './TicketRefundModal';
+import { TicketTransferModal } from '../../components/Tickets/TicketTransferModal';
 import { TicketPagination } from './TicketPagination';
 import { useMyTicketsQuery, useMyTicketsCursorQuery } from '../../hooks/useCustomerQueries';
 
@@ -22,6 +23,7 @@ export default function MyTicketsPage() {
   const [resumingTicketId, setResumingTicketId] = useState<string | null>(null);
   const [releasingTicketId, setReleasingTicketId] = useState<string | null>(null);
   const [refundCandidate, setRefundCandidate] = useState<TicketItemData | null>(null);
+  const [transferCandidate, setTransferCandidate] = useState<TicketItemData | null>(null);
   const [refundError, setRefundError] = useState<{ code?: string; message?: string } | null>(null);
   const [cursorHistory, setCursorHistory] = useState<string[]>([]);
 
@@ -318,6 +320,7 @@ export default function MyTicketsPage() {
               ticket={ticket}
               refundingId={refundingId}
               onInitiateRefund={setRefundCandidate}
+              onInitiateTransfer={setTransferCandidate}
               onResumePayment={handleResumePayment}
               onReleaseReservation={handleReleaseReservation}
               isResuming={resumingTicketId === ticket.id}
@@ -347,6 +350,17 @@ export default function MyTicketsPage() {
           setRefundError(null);
         }}
         onConfirm={handleRefund}
+      />
+
+      {/* Ticket Transfer Modal */}
+      <TicketTransferModal
+        ticket={transferCandidate}
+        isOpen={Boolean(transferCandidate)}
+        onClose={() => setTransferCandidate(null)}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['my-tickets'] });
+          refetchTickets();
+        }}
       />
     </div>
   );

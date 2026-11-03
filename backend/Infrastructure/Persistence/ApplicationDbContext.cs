@@ -22,6 +22,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<RefundBankAccount> RefundBankAccounts => Set<RefundBankAccount>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<NotificationOutboxItem> NotificationOutbox => Set<NotificationOutboxItem>();
+    public DbSet<Coupon> Coupons => Set<Coupon>();
+    public DbSet<TicketTransfer> TicketTransfers => Set<TicketTransfer>();
 
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken) =>
         Database.BeginTransactionAsync(cancellationToken);

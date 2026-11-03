@@ -17,6 +17,8 @@ public interface IApplicationDbContext
     DbSet<RefundBankAccount> RefundBankAccounts { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<NotificationOutboxItem> NotificationOutbox { get; }
+    DbSet<Coupon> Coupons { get; }
+    DbSet<TicketTransfer> TicketTransfers { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken);

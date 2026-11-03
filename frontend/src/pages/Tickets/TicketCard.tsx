@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, MapPin, Loader2, Download, RotateCcw, Crown, CheckCircle2, XCircle, Clock, CreditCard, Ban } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
+import { Calendar, MapPin, Loader2, Download, RotateCcw, Crown, CheckCircle2, XCircle, Clock, CreditCard, Ban, Send } from 'lucide-react';
+import { DynamicQrCodeView } from '../../components/Tickets/DynamicQrCodeView';
 import { formatCurrency, formatDate, formatTime } from '../../utils/formatters';
 import { toast } from 'react-hot-toast';
 
@@ -36,6 +36,7 @@ interface TicketCardProps {
   ticket: TicketItemData;
   refundingId: string | null;
   onInitiateRefund: (ticket: TicketItemData) => void;
+  onInitiateTransfer?: (ticket: TicketItemData) => void;
   onResumePayment?: (ticket: TicketItemData) => void;
   onReleaseReservation?: (ticket: TicketItemData) => void;
   isResuming?: boolean;
@@ -46,6 +47,7 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
   ticket,
   refundingId,
   onInitiateRefund,
+  onInitiateTransfer,
   onResumePayment,
   onReleaseReservation,
   isResuming = false,
@@ -226,27 +228,41 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
               <span>Hạn hoàn vé: Trước giờ diễn {ticket.refundCutoffHours}h</span>
             </div>
 
-            {ticket.canRefund ? (
-              <button
-                type="button"
-                onClick={() => onInitiateRefund(ticket)}
-                disabled={refundingId === ticket.id}
-                aria-busy={refundingId === ticket.id}
-                aria-label={`Yêu cầu hoàn vé sự kiện ${ticket.eventTitle}`}
-                className="min-h-11 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-danger/10 hover:bg-danger/20 text-danger border border-danger/30 font-bold transition-[background-color,transform] active:scale-[0.98] text-xs whitespace-nowrap shrink-0 cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
-              >
-                {refundingId === ticket.id ? (
-                  <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
-                ) : (
-                  <RotateCcw className="w-3 h-3" aria-hidden="true" />
-                )}
-                <span>Yêu Cầu Hoàn Vé</span>
-              </button>
-            ) : (
-              <span className="text-text-tertiary text-[11px] italic whitespace-nowrap">
-                (Đã quá hạn hoàn vé)
-              </span>
-            )}
+            <div className="flex flex-wrap items-center gap-2">
+              {onInitiateTransfer && (
+                <button
+                  type="button"
+                  onClick={() => onInitiateTransfer(ticket)}
+                  aria-label={`Chuyển nhượng vé sự kiện ${ticket.eventTitle}`}
+                  className="min-h-11 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-3 hover:bg-surface-2 text-text-primary border border-border-subtle hover:border-brand-primary font-bold transition-[background-color,border-color,transform] active:scale-[0.98] text-xs whitespace-nowrap shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+                >
+                  <Send className="w-3 h-3 text-brand-primary" aria-hidden="true" />
+                  <span>Chuyển Nhượng</span>
+                </button>
+              )}
+
+              {ticket.canRefund ? (
+                <button
+                  type="button"
+                  onClick={() => onInitiateRefund(ticket)}
+                  disabled={refundingId === ticket.id}
+                  aria-busy={refundingId === ticket.id}
+                  aria-label={`Yêu cầu hoàn vé sự kiện ${ticket.eventTitle}`}
+                  className="min-h-11 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-danger/10 hover:bg-danger/20 text-danger border border-danger/30 font-bold transition-[background-color,transform] active:scale-[0.98] text-xs whitespace-nowrap shrink-0 cursor-pointer disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger"
+                >
+                  {refundingId === ticket.id ? (
+                    <Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <RotateCcw className="w-3 h-3" aria-hidden="true" />
+                  )}
+                  <span>Yêu Cầu Hoàn Vé</span>
+                </button>
+              ) : (
+                <span className="text-text-tertiary text-[11px] italic whitespace-nowrap">
+                  (Đã quá hạn hoàn vé)
+                </span>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -259,9 +275,12 @@ export const TicketCard: React.FC<TicketCardProps> = React.memo(({
         <span className="md:hidden absolute -top-3.5 -left-3.5 w-7 h-7 rounded-full bg-surface-1 border border-border-subtle shadow-inner z-20" aria-hidden="true" />
         <span className="md:hidden absolute -top-3.5 -right-3.5 w-7 h-7 rounded-full bg-surface-1 border border-border-subtle shadow-inner z-20" aria-hidden="true" />
         {canShowQr ? (
-          <div className="bg-white p-3 rounded-xl shadow-lg ring-1 ring-border-subtle relative" role="img" aria-label={`Mã QR vé điện tử ${ticket.eventTitle}`}>
-            <QRCodeSVG id={`qr-svg-${ticket.id}`} value={ticket.qrCodeSignature} size={135} level="H" aria-hidden="true" />
-          </div>
+          <DynamicQrCodeView
+            ticketId={ticket.id}
+            fallbackToken={ticket.qrCodeSignature}
+            isUsed={ticket.status.toLowerCase() === 'used'}
+            ticketTitle={ticket.eventTitle}
+          />
         ) : (
           <div className="flex h-[159px] w-[159px] items-center justify-center rounded-xl border border-border-subtle bg-surface-3 p-4 text-center text-xs text-text-tertiary">
             QR sẽ hiển thị sau khi thanh toán được xác nhận.

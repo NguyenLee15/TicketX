@@ -65,6 +65,7 @@ public static class DependencyInjection
         services.AddSingleton<IUserSecurityStateCache, RedisUserSecurityStateCache>();
         services.AddScoped<IRefreshTokenStore, RefreshTokenStore>();
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
+        services.AddSingleton<ITotpService, TotpService>();
         services.AddScoped<ITicketSecurityService, TicketSecurityService>();
         services.AddTransient<IEmailService, EmailService>();
         services.AddSingleton<IPdfTicketGenerator, PdfTicketGenerator>();

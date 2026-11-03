@@ -133,3 +133,10 @@ export type AsyncState<T> =
   | { status: 'success'; data: T; error?: undefined }
   | { status: 'error'; error: string; data?: T };
 
+export interface AppliedCoupon {
+  code: string;
+  discountAmount: number;
+  finalAmount: number;
+}
+
+

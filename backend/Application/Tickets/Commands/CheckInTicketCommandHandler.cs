@@ -10,6 +10,7 @@ public class CheckInTicketCommandHandler : IRequestHandler<CheckInTicketCommand,
 {
     private readonly IApplicationDbContext _context;
     private readonly ITicketSecurityService _ticketSecurityService;
+    private readonly ITotpService? _totpService;
     private readonly ITimePolicy _time;
     private readonly IDistributedLockService? _lockService;
 
@@ -17,12 +18,14 @@ public class CheckInTicketCommandHandler : IRequestHandler<CheckInTicketCommand,
         IApplicationDbContext context,
         ITicketSecurityService ticketSecurityService,
         ITimePolicy? time = null,
-        IDistributedLockService? lockService = null)
+        IDistributedLockService? lockService = null,
+        ITotpService? totpService = null)
     {
         _context = context;
         _ticketSecurityService = ticketSecurityService;
         _time = time ?? new UtcTimePolicy();
         _lockService = lockService;
+        _totpService = totpService;
     }
 
     public async Task<CheckInResult> Handle(CheckInTicketCommand request, CancellationToken cancellationToken)
@@ -32,15 +35,38 @@ public class CheckInTicketCommandHandler : IRequestHandler<CheckInTicketCommand,
             return new CheckInResult(false, "Mã QR soát vé không được để trống.", StatusCode: 400, Code: "QR_EMPTY");
         }
 
-        // 1. Verify and parse signed QR Token (HMAC-SHA256 Signed Token only, no raw Guid bypass!)
-        var qrResult = _ticketSecurityService.ValidateQrToken(request.QrToken.Trim());
-        if (!qrResult.IsValid || qrResult.Payload == null)
-        {
-            return new CheckInResult(false, qrResult.Message, StatusCode: 400, Code: "QR_INVALID");
-        }
+        var trimmedToken = request.QrToken.Trim();
+        Guid ticketId;
+        TicketQrPayload? payload = null;
 
-        var payload = qrResult.Payload;
-        var ticketId = payload.TicketId;
+        // Support Dynamic TOTP Rolling QR code
+        if (trimmedToken.StartsWith("TICKEX-TOTP:", StringComparison.OrdinalIgnoreCase))
+        {
+            if (_totpService is null)
+            {
+                return new CheckInResult(false, "Dịch vụ xác thực mã QR động chưa được kích hoạt.", StatusCode: 503, Code: "TOTP_UNAVAILABLE");
+            }
+
+            var (isValid, dynamicTicketId, errorReason) = _totpService.ValidateDynamicToken(trimmedToken, _time.UtcNow);
+            if (!isValid)
+            {
+                return new CheckInResult(false, errorReason ?? "Mã QR động đã hết hạn hoặc không hợp lệ.", StatusCode: 400, Code: "DYNAMIC_QR_EXPIRED");
+            }
+
+            ticketId = dynamicTicketId;
+        }
+        else
+        {
+            // 1. Verify and parse signed QR Token (HMAC-SHA256 Signed Token only, no raw Guid bypass!)
+            var qrResult = _ticketSecurityService.ValidateQrToken(trimmedToken);
+            if (!qrResult.IsValid || qrResult.Payload == null)
+            {
+                return new CheckInResult(false, qrResult.Message, StatusCode: 400, Code: "QR_INVALID");
+            }
+
+            ticketId = qrResult.Payload.TicketId;
+            payload = qrResult.Payload;
+        }
 
         IDistributedLockLease? lease = null;
         if (_lockService is not null)
@@ -84,15 +110,18 @@ public class CheckInTicketCommandHandler : IRequestHandler<CheckInTicketCommand,
                     return new CheckInResult(false, "Không tìm thấy thông tin vé trong hệ thống.", StatusCode: 404, Code: "TICKET_NOT_FOUND");
                 }
 
-                // 3. Cross-check payload with DB record
-                if (ticket.EventId != payload.EventId || ticket.OrderCode != payload.OrderCode)
+                // 3. Cross-check payload with DB record if static QR token was used
+                if (payload != null)
                 {
-                    return new CheckInResult(false, "Thông tin mã vé không khớp với sự kiện hoặc mã đơn hàng trên hệ thống.", StatusCode: 400, Code: "QR_TICKET_MISMATCH");
-                }
+                    if (ticket.EventId != payload.EventId || ticket.OrderCode != payload.OrderCode)
+                    {
+                        return new CheckInResult(false, "Thông tin mã vé không khớp với sự kiện hoặc mã đơn hàng trên hệ thống.", StatusCode: 400, Code: "QR_TICKET_MISMATCH");
+                    }
 
-                if (!string.IsNullOrEmpty(ticket.QrCodeSignature) && !string.Equals(ticket.QrCodeSignature, request.QrToken.Trim(), StringComparison.Ordinal))
-                {
-                    return new CheckInResult(false, "Mã QR không khớp với bản phát hành hiện tại của vé hoặc đã bị thu hồi.", StatusCode: 400, Code: "QR_SIGNATURE_MISMATCH");
+                    if (!string.IsNullOrEmpty(ticket.QrCodeSignature) && !string.Equals(ticket.QrCodeSignature, request.QrToken.Trim(), StringComparison.Ordinal))
+                    {
+                        return new CheckInResult(false, "Mã QR không khớp với bản phát hành hiện tại của vé hoặc đã bị thu hồi.", StatusCode: 400, Code: "QR_SIGNATURE_MISMATCH");
+                    }
                 }
 
                 // 4. Event lifecycle and timeframe validation

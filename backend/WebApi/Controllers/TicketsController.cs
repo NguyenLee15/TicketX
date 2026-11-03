@@ -146,6 +146,106 @@ public class TicketsController : ControllerBase
         return Ok(new { success = true, code = result.Code, message = result.Message, data = new { refundAmount = result.RefundAmount } });
     }
 
+    [HttpGet("{id:guid}/dynamic-qr")]
+    public async Task<IActionResult> GetDynamicQr(Guid id, CancellationToken cancellationToken = default)
+    {
+        var userId = this.GetAuthenticatedUserId();
+        if (userId is null)
+        {
+            return this.UnauthorizedProblem();
+        }
+
+        var isAdmin = User.IsInRole("Admin");
+        var result = await _mediator.Send(new GetDynamicQrQuery(id, userId.Value, isAdmin), cancellationToken);
+
+        if (!result.Success)
+        {
+            var status = result.ErrorCode switch
+            {
+                "TICKET_NOT_FOUND" => StatusCodes.Status404NotFound,
+                "FORBIDDEN" => StatusCodes.Status403Forbidden,
+                _ => StatusCodes.Status400BadRequest
+            };
+
+            return StatusCode(status, new
+            {
+                type = "https://tools.ietf.org/html/rfc9457",
+                title = "Get Dynamic QR Failed",
+                status,
+                success = false,
+                code = result.ErrorCode,
+                message = result.Message,
+                detail = result.Message,
+                instance = HttpContext.Request.Path.Value,
+                traceId = HttpContext.TraceIdentifier,
+                error = new { code = result.ErrorCode, message = result.Message }
+            });
+        }
+
+        return Ok(new { success = true, data = result.Data });
+    }
+
+    public record TransferTicketRequest(string RecipientEmail, string? Note = null);
+
+    [HttpPost("{id:guid}/transfer")]
+    [Authorize]
+    [EnableRateLimiting("BookingPolicy")]
+    public async Task<IActionResult> TransferTicket(Guid id, [FromBody] TransferTicketRequest request, CancellationToken cancellationToken = default)
+    {
+        var userId = this.GetAuthenticatedUserId();
+        if (userId is null)
+        {
+            return this.UnauthorizedProblem();
+        }
+
+        if (request == null || string.IsNullOrWhiteSpace(request.RecipientEmail))
+        {
+            return BadRequest(new
+            {
+                type = "https://tools.ietf.org/html/rfc9457",
+                title = "Invalid Transfer Request",
+                status = StatusCodes.Status400BadRequest,
+                success = false,
+                code = "RECIPIENT_EMAIL_EMPTY",
+                message = "Vui lòng nhập email người nhận.",
+                instance = HttpContext.Request.Path.Value,
+                traceId = HttpContext.TraceIdentifier
+            });
+        }
+
+        var command = new TransferTicketCommand(id, userId.Value, request.RecipientEmail, request.Note);
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (!result.Success)
+        {
+            var status = result.Code switch
+            {
+                "TICKET_NOT_FOUND" => StatusCodes.Status404NotFound,
+                "FORBIDDEN" => StatusCodes.Status403Forbidden,
+                "LOCK_CONFLICT" or "CONCURRENCY_CONFLICT" => StatusCodes.Status409Conflict,
+                "LOCK_UNAVAILABLE" => StatusCodes.Status503ServiceUnavailable,
+                "RECIPIENT_NOT_FOUND" => StatusCodes.Status404NotFound,
+                _ => StatusCodes.Status400BadRequest
+            };
+
+            return StatusCode(status, new
+            {
+                type = "https://tools.ietf.org/html/rfc9457",
+                title = "Transfer Ticket Failed",
+                status,
+                success = false,
+                code = result.Code,
+                message = result.Message,
+                detail = result.Message,
+                instance = HttpContext.Request.Path.Value,
+                traceId = HttpContext.TraceIdentifier,
+                error = new { code = result.Code, message = result.Message }
+            });
+        }
+
+        return Ok(new { success = true, code = "TRANSFER_SUCCESS", message = result.Message, data = new { transferId = result.TransferId } });
+    }
+
     public record CheckInRequest(string QrToken);
 
     [HttpPost("check-in")]
