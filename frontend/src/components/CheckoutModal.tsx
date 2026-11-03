@@ -71,13 +71,15 @@ export default function CheckoutModal({
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [releasing, setReleasing] = useState(false);
   const [releaseError, setReleaseError] = useState('');
+  const [checkingStatus, setCheckingStatus] = useState(false);
 
   const modalRef = useRef<HTMLDivElement>(null);
   const simulateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const successRedirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleModalClose = useCallback(() => {
     if (status === 'verifying') return;
-    if (status === 'error') {
+    if (status === 'error' || status === 'success') {
       onClose();
     } else {
       setShowCloseConfirm(true);
@@ -161,12 +163,66 @@ export default function CheckoutModal({
     return () => clearInterval(timer);
   }, [isOpen, status, expiresAt, calculateRemaining]);
 
-  // Cleanup simulation timer
+  // Cleanup timers
   useEffect(() => {
     return () => {
       if (simulateTimerRef.current) clearTimeout(simulateTimerRef.current);
+      if (successRedirectTimerRef.current) clearTimeout(successRedirectTimerRef.current);
     };
   }, []);
+
+  const handlePaymentSuccess = useCallback(async (orderCode: string | number) => {
+    setStatus('success');
+    toast.success('Thanh toán thành công qua chuyển khoản ngân hàng!');
+    try {
+      const confetti = (await import('canvas-confetti')).default;
+      confetti({
+        particleCount: 60,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ['#10B981', '#3B82F6', '#F59E0B', '#BA4F2D'],
+      });
+    } catch { /* ignore optional confetti */ }
+
+    successRedirectTimerRef.current = setTimeout(() => {
+      navigate(`/payment/result?orderCode=${orderCode}&status=PAID`);
+    }, 1800);
+  }, [navigate]);
+
+  const checkPaymentStatus = useCallback(async (manual = false) => {
+    const orderCode = paymentData?.orderCode;
+    if (!orderCode || status !== 'idle') return;
+
+    if (manual) setCheckingStatus(true);
+    try {
+      const res = await api.get<{ success?: boolean; data?: { status?: string } }>(`/api/payments/status/${orderCode}`);
+      const rawStatus = res.data?.data?.status?.toUpperCase();
+      if (rawStatus === 'PAID') {
+        await handlePaymentSuccess(orderCode);
+      } else if (manual) {
+        toast('Chưa nhận được giao dịch chuyển khoản. Vui lòng kiểm tra lại sau ít giây.', { icon: '⏳' });
+      }
+    } catch (err: unknown) {
+      if (manual) {
+        const apiErr = err as { response?: { data?: { message?: string } } };
+        toast.error(apiErr.response?.data?.message || 'Không thể kiểm tra trạng thái lúc này.');
+      }
+    } finally {
+      if (manual) setCheckingStatus(false);
+    }
+  }, [paymentData?.orderCode, status, handlePaymentSuccess]);
+
+  // Auto-polling payment status every 2.5 seconds
+  useEffect(() => {
+    const orderCode = paymentData?.orderCode;
+    if (!isOpen || status !== 'idle' || !orderCode) return;
+
+    const pollInterval = setInterval(() => {
+      void checkPaymentStatus(false);
+    }, 2500);
+
+    return () => clearInterval(pollInterval);
+  }, [isOpen, status, paymentData?.orderCode, checkPaymentStatus]);
 
   const copyToClipboard = (text: string, fieldName: string) => {
     if (!navigator.clipboard?.writeText) {
@@ -326,6 +382,8 @@ export default function CheckoutModal({
               onRetryPayment={() => setPaymentRetryKey(k => k + 1)}
               onProceedPayOS={handleProceedPayOS}
               copyToClipboard={copyToClipboard}
+              onManualCheckStatus={() => void checkPaymentStatus(true)}
+              checkingStatus={checkingStatus}
             />
 
             {/* Dev Simulate & Cancel Actions */}
@@ -360,7 +418,18 @@ export default function CheckoutModal({
           </div>
         )}
 
-        <CheckoutStatusView status={status} onClose={onClose} />
+        <CheckoutStatusView
+          status={status}
+          onClose={onClose}
+          orderCode={paymentData?.orderCode}
+          onViewTickets={() => {
+            if (paymentData?.orderCode) {
+              navigate(`/payment/result?orderCode=${paymentData.orderCode}&status=PAID`);
+            } else {
+              onClose();
+            }
+          }}
+        />
 
         {/* Release Confirmation Dialog */}
         <CheckoutReleaseDialog

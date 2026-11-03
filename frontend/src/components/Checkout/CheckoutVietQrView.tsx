@@ -22,6 +22,8 @@ interface CheckoutVietQrViewProps {
   onRetryPayment: () => void;
   onProceedPayOS: () => void;
   copyToClipboard: (text: string, fieldName: string) => void;
+  onManualCheckStatus?: () => void;
+  checkingStatus?: boolean;
 }
 
 export const CheckoutVietQrView: React.FC<CheckoutVietQrViewProps> = React.memo(({
@@ -31,6 +33,8 @@ export const CheckoutVietQrView: React.FC<CheckoutVietQrViewProps> = React.memo(
   onRetryPayment,
   onProceedPayOS,
   copyToClipboard,
+  onManualCheckStatus,
+  checkingStatus = false,
 }) => {
   const [redirecting, setRedirecting] = useState(false);
   const orderCode = paymentData?.orderCode;
@@ -72,6 +76,38 @@ export const CheckoutVietQrView: React.FC<CheckoutVietQrViewProps> = React.memo(
 
   return (
     <div className="space-y-3">
+      {/* Live Radar & Auto-Sync Status Badge */}
+      <div className="p-3 rounded-2xl bg-surface-2/60 border border-border-subtle/80 flex items-center justify-between gap-3 text-xs shadow-sm">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="relative flex h-2.5 w-2.5 shrink-0" aria-hidden="true">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+          </span>
+          <div className="min-w-0">
+            <p className="font-bold text-white truncate flex items-center gap-1.5">
+              <span>Đang chờ chuyển khoản ngân hàng</span>
+            </p>
+            <p className="text-[11px] text-text-secondary truncate">
+              Hệ thống tự động phát vé ngay khi bạn chuyển tiền xong
+            </p>
+          </div>
+        </div>
+
+        {onManualCheckStatus && (
+          <button
+            type="button"
+            onClick={onManualCheckStatus}
+            disabled={checkingStatus}
+            aria-busy={checkingStatus}
+            className="min-h-8 px-2.5 py-1 rounded-lg bg-surface-3 hover:bg-surface-3/80 text-text-secondary hover:text-white border border-border-subtle transition-all active:scale-95 text-[11px] font-semibold shrink-0 flex items-center gap-1 cursor-pointer disabled:opacity-50"
+            title="Kiểm tra trạng thái thanh toán ngay"
+          >
+            <RefreshCw className={`w-3 h-3 ${checkingStatus ? 'animate-spin text-brand-primary' : ''}`} aria-hidden="true" />
+            <span>{checkingStatus ? 'Đang kiểm tra...' : 'Kiểm tra ngay'}</span>
+          </button>
+        )}
+      </div>
+
       {/* QR Code and Bank Details Box */}
       <div className="p-5 rounded-2xl bg-surface-2/40 border border-border-subtle flex flex-col md:flex-row items-center gap-5">
         <div className="w-36 h-36 bg-white p-2 rounded-2xl shadow-xl shrink-0 flex items-center justify-center border-4 border-surface-3">
