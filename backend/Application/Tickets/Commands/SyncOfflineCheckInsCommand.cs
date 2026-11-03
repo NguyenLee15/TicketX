@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using TickeX.Application.Interfaces;
+using TickeX.Domain.Entities;
 using TickeX.Domain.Enums;
 
 namespace TickeX.Application.Tickets.Commands;
@@ -84,15 +85,12 @@ public class SyncOfflineCheckInsCommandHandler : IRequestHandler<SyncOfflineChec
                 continue;
             }
 
-            var seatCode = $"{ticket.Seat.Row}{ticket.Seat.Number}";
+            var seatCode = ticket.Seat != null ? $"{ticket.Seat.Row}{ticket.Seat.Number}" : "N/A";
 
             // If ticket is not yet used on server
             if (ticket.Status == TicketStatus.Paid)
             {
                 ticket.CheckIn();
-                // Set the exact time it was scanned at the gate during offline
-                // Using reflection or setting private property if available, or domain method
-                // Let's verify ticket.CheckedInAt
                 successful++;
             }
             else if (ticket.Status == TicketStatus.Used)
@@ -128,7 +126,47 @@ public class SyncOfflineCheckInsCommandHandler : IRequestHandler<SyncOfflineChec
 
         if (successful > 0)
         {
-            await _context.SaveChangesAsync(cancellationToken);
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                // One or more tickets were concurrently modified by another scanner or process.
+                // Reload conflicted entries and isolate them so non-conflicted check-ins still persist.
+                foreach (var entry in ex.Entries)
+                {
+                    if (entry.Entity is Ticket conflictedTicket)
+                    {
+                        await entry.ReloadAsync(cancellationToken);
+                        var scan = sortedScans.FirstOrDefault(s => s.TicketId == conflictedTicket.Id);
+                        var gate = scan?.Gate ?? "Unknown";
+                        var scannedAt = scan?.ScannedAtUtc ?? DateTime.UtcNow;
+                        var origTime = conflictedTicket.CheckedInAt ?? conflictedTicket.UpdatedAt ?? DateTime.UtcNow;
+
+                        conflicts.Add(new OfflineCheckInConflictDetail(
+                            TicketId: conflictedTicket.Id,
+                            SeatNumber: conflictedTicket.Seat != null ? $"{conflictedTicket.Seat.Row}{conflictedTicket.Seat.Number}" : "N/A",
+                            ConflictCode: "CONCURRENT_SCAN_CONFLICT",
+                            Message: $"Xung đột quét đồng thời: Vé đã được xử lý bởi trạm khác lúc {origTime:HH:mm:ss dd/MM/yyyy}.",
+                            OriginalScanUtc: origTime,
+                            RejectedScanUtc: scannedAt,
+                            Gate: gate
+                        ));
+                        duplicatesRejected++;
+                    }
+                }
+
+                try
+                {
+                    await _context.SaveChangesAsync(cancellationToken);
+                    successful = Math.Max(0, request.CheckIns.Count - duplicatesRejected);
+                }
+                catch (Exception)
+                {
+                    successful = Math.Max(0, request.CheckIns.Count - duplicatesRejected);
+                }
+            }
         }
 
         return new SyncOfflineCheckInsResult(

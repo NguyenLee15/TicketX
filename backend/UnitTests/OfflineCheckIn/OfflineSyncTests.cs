@@ -123,6 +123,34 @@ public sealed class OfflineSyncTests : IDisposable
         conflict.Gate.Should().Be("Gate C");
     }
 
+    [Fact]
+    public async Task SyncOfflineCheckIns_WithValidScannedTicket_SyncsSuccessfully()
+    {
+        var (ev, _, _) = await SeedEventAndTicketsAsync();
+        var customer = await _context.Users.FirstAsync(u => u.Role == "Customer");
+        var thirdSeat = ev.Seats.ElementAt(2);
+
+        var ticket3 = new Ticket(ev.Id, thirdSeat.Id, customer.Id, 300000);
+        ticket3.MarkAsPaid("SIG_TICKET_003");
+        _context.Tickets.Add(ticket3);
+        await _context.SaveChangesAsync();
+
+        var handler = new SyncOfflineCheckInsCommandHandler(_context);
+        var scans = new List<OfflineCheckInRecord>
+        {
+            new(ticket3.Id, DateTime.UtcNow, "Gate Stand", "staff-stand", "device-stand")
+        };
+
+        var result = await handler.Handle(new SyncOfflineCheckInsCommand(ev.Id, scans), CancellationToken.None);
+
+        result.Should().NotBeNull();
+        result.Successful.Should().Be(1);
+        result.DuplicatesRejected.Should().Be(0);
+
+        var reloaded = await _context.Tickets.FindAsync(ticket3.Id);
+        reloaded!.Status.Should().Be(TicketStatus.Used);
+    }
+
     public void Dispose()
     {
         _connection.Dispose();

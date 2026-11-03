@@ -20,6 +20,7 @@ public sealed record CustomerCheckoutResult(
 public interface ICustomerCheckoutOperations
 {
     Task<CustomerCheckoutResult> CreatePaymentLinkAsync(Guid ticketId, Guid userId, CancellationToken cancellationToken);
+    Task<CustomerCheckoutResult> CreatePaymentLinkAsync(Guid ticketId, Guid userId, string? couponCode, CancellationToken cancellationToken);
     Task<CustomerCheckoutResult> GetStatusAsync(long orderCode, Guid userId, CancellationToken cancellationToken);
     Task<CustomerCheckoutResult> ProcessWebhookAsync(string payload, string signature, CancellationToken cancellationToken);
     Task<CustomerCheckoutResult> SimulateSuccessAsync(long orderCode, Guid userId, CancellationToken cancellationToken);

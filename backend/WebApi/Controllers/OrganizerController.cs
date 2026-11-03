@@ -90,18 +90,7 @@ public class OrganizerController : ControllerBase
         var result = await _mediator.Send(command, cancellationToken);
         if (!result.Success)
         {
-            return BadRequest(new
-            {
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Create Event Failed",
-                status = StatusCodes.Status400BadRequest,
-                success = false,
-                code = result.Code ?? "CREATE_EVENT_FAILED",
-                message = result.Message,
-                detail = result.Message,
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier
-            });
+            return this.BadRequestProblem(result.Code ?? "CREATE_EVENT_FAILED", result.Message);
         }
 
         return Ok(new { success = true, message = result.Message, data = new { eventId = result.EventId } });

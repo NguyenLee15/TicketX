@@ -139,13 +139,18 @@ public partial class ProcessPaymentCommandHandler
                 if (data.Success)
                 {
                     bool seatReleased = false;
+                    var releasedSeats = new List<Seat>();
                     if (isHoldExpired)
                     {
-                        ticket.Cancel();
-                        if (ticket.Seat != null && ticket.Seat.Status == SeatStatus.Locked && (ticket.Seat.LockedByUserId == null || ticket.Seat.LockedByUserId == ticket.UserId))
+                        foreach (var t in allTickets)
                         {
-                            ticket.Seat.Release();
-                            seatReleased = true;
+                            t.Cancel();
+                            if (t.Seat != null && t.Seat.Status == SeatStatus.Locked && (t.Seat.LockedByUserId == null || t.Seat.LockedByUserId == t.UserId))
+                            {
+                                t.Seat.Release();
+                                releasedSeats.Add(t.Seat);
+                                seatReleased = true;
+                            }
                         }
                     }
 
@@ -208,16 +213,19 @@ public partial class ProcessPaymentCommandHandler
                     await _context.SaveChangesAsync(cancellationToken);
                     if (_catalogCache is not null) await _catalogCache.InvalidateAsync(CancellationToken.None);
 
-                    if (seatReleased && ticket.Seat != null)
+                    if (seatReleased && releasedSeats.Count > 0)
                     {
-                        string? versionToken = ticket.Seat.Version != null && ticket.Seat.Version.Length > 0 ? Convert.ToBase64String(ticket.Seat.Version) : null;
-                        try
+                        foreach (var s in releasedSeats)
                         {
-                            await _notificationService.NotifySeatStatusChanged(ticket.EventId, ticket.SeatId, ticket.Seat.Status.ToString(), versionToken);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogWarning(ex, "Failed to broadcast seat status change via SignalR for event {EventId}, seat {SeatId}", ticket.EventId, ticket.SeatId);
+                            string? versionToken = s.Version != null && s.Version.Length > 0 ? Convert.ToBase64String(s.Version) : null;
+                            try
+                            {
+                                await _notificationService.NotifySeatStatusChanged(ticket.EventId, s.Id, s.Status.ToString(), versionToken);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogWarning(ex, "Failed to broadcast seat status change via SignalR for event {EventId}, seat {SeatId}", ticket.EventId, s.Id);
+                            }
                         }
                     }
 
@@ -226,26 +234,29 @@ public partial class ProcessPaymentCommandHandler
 
                 if (isHoldExpired)
                 {
-                    ticket.Cancel();
-                    bool seatReleased = false;
-                    if (ticket.Seat != null && ticket.Seat.Status == SeatStatus.Locked && (ticket.Seat.LockedByUserId == null || ticket.Seat.LockedByUserId == ticket.UserId))
+                    var releasedSeats = new List<Seat>();
+                    foreach (var t in allTickets)
                     {
-                        ticket.Seat.Release();
-                        seatReleased = true;
+                        t.Cancel();
+                        if (t.Seat != null && t.Seat.Status == SeatStatus.Locked && (t.Seat.LockedByUserId == null || t.Seat.LockedByUserId == t.UserId))
+                        {
+                            t.Seat.Release();
+                            releasedSeats.Add(t.Seat);
+                        }
                     }
                     if (lease.IsValid && eventLease.IsValid && seatLease.IsValid)
                     {
                         await _context.SaveChangesAsync(cancellationToken);
-                        if (seatReleased && ticket.Seat != null)
+                        foreach (var s in releasedSeats)
                         {
-                            string? versionToken = ticket.Seat.Version != null && ticket.Seat.Version.Length > 0 ? Convert.ToBase64String(ticket.Seat.Version) : null;
+                            string? versionToken = s.Version != null && s.Version.Length > 0 ? Convert.ToBase64String(s.Version) : null;
                             try
                             {
-                                await _notificationService.NotifySeatStatusChanged(ticket.EventId, ticket.SeatId, ticket.Seat.Status.ToString(), versionToken);
+                                await _notificationService.NotifySeatStatusChanged(ticket.EventId, s.Id, s.Status.ToString(), versionToken);
                             }
                             catch (Exception ex)
                             {
-                                _logger.LogWarning(ex, "Failed to broadcast seat status change via SignalR for event {EventId}, seat {SeatId}", ticket.EventId, ticket.SeatId);
+                                _logger.LogWarning(ex, "Failed to broadcast seat status change via SignalR for event {EventId}, seat {SeatId}", ticket.EventId, s.Id);
                             }
                         }
                     }
@@ -260,13 +271,35 @@ public partial class ProcessPaymentCommandHandler
 
             if (data.Success)
             {
-                var totalExpectedPrice = allTickets.Sum(t => t.Price);
+                var baseTotalExpectedPrice = allTickets.Sum(t => t.Price);
+                var expectedPrice = existingTx != null ? existingTx.Amount : baseTotalExpectedPrice;
+
                 // Invariant 3: Amount and currency validation
-                if (!PaymentWebhookPolicy.IsAmountValid(totalExpectedPrice, data))
+                if (!PaymentWebhookPolicy.IsAmountValid(expectedPrice, data))
                 {
                     _logger.LogCritical("Payment amount tampering detected for order {OrderCode}! Expected {Expected}, got {Actual}.", 
-                        data.OrderCode, totalExpectedPrice, data.Amount);
+                        data.OrderCode, expectedPrice, data.Amount);
                     return false;
+                }
+
+                // Redeem coupon if one was recorded on the payment transaction
+                if (existingTx != null && !string.IsNullOrWhiteSpace(existingTx.AppliedCouponCode))
+                {
+                    var coupon = await _context.Coupons
+                        .FirstOrDefaultAsync(c => c.Code == existingTx.AppliedCouponCode, cancellationToken);
+                    if (coupon != null && coupon.IsActive)
+                    {
+                        try
+                        {
+                            coupon.Use();
+                            _logger.LogInformation("Coupon {Code} redeemed for order {OrderCode}. UsedCount: {UsedCount}/{UsageLimit}",
+                                coupon.Code, data.OrderCode, coupon.UsedCount, coupon.UsageLimit);
+                        }
+                        catch (InvalidOperationException ex)
+                        {
+                            _logger.LogWarning(ex, "Coupon {Code} usage limit reached for order {OrderCode}", coupon.Code, data.OrderCode);
+                        }
+                    }
                 }
 
                 // 2. Generate cryptographically signed QR code token for all tickets in order
@@ -299,7 +332,7 @@ public partial class ProcessPaymentCommandHandler
                     var transaction = new PaymentTransaction(
                         ticket.OrderCode,
                         ticket.Id,
-                        totalExpectedPrice,
+                        expectedPrice,
                         "VietQR_PayOS"
                     );
                     transaction.MarkSuccess(providerTxId, auditSummary);

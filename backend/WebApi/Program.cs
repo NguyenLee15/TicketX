@@ -278,7 +278,7 @@ builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer
                 context.Response.ContentType = "application/problem+json";
                 var problem = new
                 {
-                    type = "https://tools.ietf.org/html/rfc9457",
+                    type = "https://datatracker.ietf.org/doc/html/rfc9457#section-3.1",
                     title = "Unauthorized",
                     status = StatusCodes.Status401Unauthorized,
                     detail = "Yêu cầu cần xác thực để truy cập tài nguyên này.",
@@ -293,7 +293,7 @@ builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.JwtBearer
                 context.Response.ContentType = "application/problem+json";
                 var problem = new
                 {
-                    type = "https://tools.ietf.org/html/rfc9457",
+                    type = "https://datatracker.ietf.org/doc/html/rfc9457#section-3.1",
                     title = "Forbidden",
                     status = StatusCodes.Status403Forbidden,
                     detail = "Bạn không có quyền thực hiện thao tác này.",
@@ -404,7 +404,7 @@ app.Use(async (context, next) =>
         context.Response.StatusCode = StatusCodes.Status403Forbidden;
         await context.Response.WriteAsJsonAsync(new
         {
-            type = "https://tools.ietf.org/html/rfc9110#section-15.5.4",
+            type = "https://datatracker.ietf.org/doc/html/rfc9457#section-3.1",
             title = "Forbidden",
             status = StatusCodes.Status403Forbidden,
             detail = "Yêu cầu không có CSRF token hợp lệ.",

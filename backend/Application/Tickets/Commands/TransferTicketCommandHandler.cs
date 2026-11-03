@@ -1,10 +1,11 @@
-namespace TickeX.Application.Tickets.Commands;
-
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TickeX.Application.Interfaces;
 using TickeX.Domain.Entities;
 using TickeX.Domain.Enums;
+
+namespace TickeX.Application.Tickets.Commands;
 
 public class TransferTicketCommandHandler : IRequestHandler<TransferTicketCommand, TransferTicketResult>
 {
@@ -13,19 +14,22 @@ public class TransferTicketCommandHandler : IRequestHandler<TransferTicketComman
     private readonly IEmailService? _emailService;
     private readonly ITimePolicy _time;
     private readonly IDistributedLockService? _lockService;
+    private readonly ILogger<TransferTicketCommandHandler>? _logger;
 
     public TransferTicketCommandHandler(
         IApplicationDbContext context,
         ITicketSecurityService ticketSecurityService,
         ITimePolicy? time = null,
         IDistributedLockService? lockService = null,
-        IEmailService? emailService = null)
+        IEmailService? emailService = null,
+        ILogger<TransferTicketCommandHandler>? logger = null)
     {
         _context = context;
         _ticketSecurityService = ticketSecurityService;
         _time = time ?? new UtcTimePolicy();
         _lockService = lockService;
         _emailService = emailService;
+        _logger = logger;
     }
 
     public async Task<TransferTicketResult> Handle(TransferTicketCommand request, CancellationToken cancellationToken)
@@ -127,35 +131,37 @@ public class TransferTicketCommandHandler : IRequestHandler<TransferTicketComman
 
                 await _context.SaveChangesAsync(cancellationToken);
 
-                // Fire-and-forget notification email
+                // Dispatch notification email with safely captured variables
                 if (_emailService != null)
                 {
-                    _ = Task.Run(async () =>
+                    try
                     {
-                        try
-                        {
-                            var senderName = ticket.User?.Name ?? "Người dùng TickeX";
-                            var subject = $"[TickeX] Bạn vừa nhận được vé sự kiện {ticket.Event.Title}!";
-                            var body = $@"
-                                <div style=""font-family: sans-serif; line-height: 1.6;"">
-                                    <h2>Chúc mừng bạn đã nhận được vé từ {senderName}!</h2>
-                                    <p>Thông tin vé:</p>
-                                    <ul>
-                                        <li><strong>Sự kiện:</strong> {ticket.Event.Title}</li>
-                                        <li><strong>Vị trí ghế:</strong> {ticket.Seat?.Row}{ticket.Seat?.Number}</li>
-                                        <li><strong>Thời gian:</strong> {ticket.Event.Date:dd/MM/yyyy HH:mm}</li>
-                                        <li><strong>Địa điểm:</strong> {ticket.Event.Location}</li>
-                                    </ul>
-                                    <p>Vé đã được thêm vào mục <strong>Vé Của Tôi</strong> trong tài khoản TickeX của bạn ({normalizedEmail}).</p>
-                                </div>";
+                        var senderName = ticket.User?.Name ?? "Người dùng TickeX";
+                        var eventTitle = ticket.Event.Title;
+                        var seatInfo = ticket.Seat != null ? $"{ticket.Seat.Row}{ticket.Seat.Number}" : "Tiêu chuẩn";
+                        var eventDate = ticket.Event.Date;
+                        var eventLocation = ticket.Event.Location;
 
-                            await _emailService.SendEmailAsync(normalizedEmail, subject, body);
-                        }
-                        catch
-                        {
-                            // Ignore transient email failure to prevent impacting transfer result
-                        }
-                    }, CancellationToken.None);
+                        var subject = $"[TickeX] Bạn vừa nhận được vé sự kiện {eventTitle}!";
+                        var body = $@"
+                            <div style=""font-family: sans-serif; line-height: 1.6;"">
+                                <h2>Chúc mừng bạn đã nhận được vé từ {senderName}!</h2>
+                                <p>Thông tin vé:</p>
+                                <ul>
+                                    <li><strong>Sự kiện:</strong> {eventTitle}</li>
+                                    <li><strong>Vị trí ghế:</strong> {seatInfo}</li>
+                                    <li><strong>Thời gian:</strong> {eventDate:dd/MM/yyyy HH:mm}</li>
+                                    <li><strong>Địa điểm:</strong> {eventLocation}</li>
+                                </ul>
+                                <p>Vé đã được thêm vào mục <strong>Vé Của Tôi</strong> trong tài khoản TickeX của bạn ({normalizedEmail}).</p>
+                            </div>";
+
+                        await _emailService.SendEmailAsync(normalizedEmail, subject, body);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogWarning(ex, "Failed to send transfer notification email to {Email} for ticket {TicketId}", normalizedEmail, ticket.Id);
+                    }
                 }
 
                 return new TransferTicketResult(

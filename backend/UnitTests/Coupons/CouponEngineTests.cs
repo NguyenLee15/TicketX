@@ -205,4 +205,45 @@ public class CouponEngineTests : IDisposable
         Assert.False(result.Success);
         Assert.Equal("COUPON_EVENT_MISMATCH", result.ErrorCode);
     }
+
+    [Fact]
+    public void Coupon_Use_Increments_UsedCount_And_Enforces_Limit()
+    {
+        var coupon = new Coupon(
+            code: "LIMITEDUSE",
+            description: "Chỉ dùng 2 lần",
+            discountType: DiscountType.FixedAmount,
+            discountValue: 20000,
+            maxDiscountAmount: null,
+            minOrderAmount: 0,
+            usageLimit: 2,
+            validFrom: DateTime.UtcNow.AddDays(-1),
+            validTo: DateTime.UtcNow.AddDays(1)
+        );
+
+        Assert.Equal(0, coupon.UsedCount);
+
+        coupon.Use();
+        Assert.Equal(1, coupon.UsedCount);
+
+        coupon.Use();
+        Assert.Equal(2, coupon.UsedCount);
+
+        // Third use must throw InvalidOperationException
+        Assert.Throws<InvalidOperationException>(() => coupon.Use());
+    }
+
+    [Fact]
+    public void PaymentTransaction_ApplyCoupon_Updates_Amount_And_Discount()
+    {
+        var tx = new PaymentTransaction(123456, Guid.NewGuid(), 250000, "VietQR_PayOS");
+        Assert.Equal(250000, tx.Amount);
+        Assert.Null(tx.AppliedCouponCode);
+        Assert.Equal(0, tx.DiscountAmount);
+
+        tx.ApplyCoupon("DISCOUNT50", 50000);
+        Assert.Equal(200000, tx.Amount);
+        Assert.Equal("DISCOUNT50", tx.AppliedCouponCode);
+        Assert.Equal(50000, tx.DiscountAmount);
+    }
 }

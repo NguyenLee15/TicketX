@@ -16,7 +16,7 @@ public class PaymentsController : ControllerBase
     private readonly ICustomerCheckoutOperations _checkout;
     public PaymentsController(ICustomerCheckoutOperations checkout) => _checkout = checkout;
 
-    public record CreatePaymentLinkRequest(Guid TicketId);
+    public record CreatePaymentLinkRequest(Guid TicketId, string? CouponCode = null);
 
     [Authorize]
     [HttpGet("status/{orderCode:long}")]
@@ -34,7 +34,7 @@ public class PaymentsController : ControllerBase
     {
         var userId = this.GetAuthenticatedUserId();
         if (userId is null) return this.UnauthorizedProblem();
-        return Respond(await _checkout.CreatePaymentLinkAsync(request.TicketId, userId.Value, cancellationToken));
+        return Respond(await _checkout.CreatePaymentLinkAsync(request.TicketId, userId.Value, request.CouponCode, cancellationToken));
     }
 
     [AllowAnonymous]
@@ -43,38 +43,14 @@ public class PaymentsController : ControllerBase
     public async Task<IActionResult> Webhook(CancellationToken cancellationToken)
     {
         if (Request.ContentLength is > 65_536)
-            return StatusCode(StatusCodes.Status413PayloadTooLarge, new
-            {
-                type = "https://tools.ietf.org/html/rfc9110#section-15.5.14",
-                title = "Payload Too Large",
-                status = StatusCodes.Status413PayloadTooLarge,
-                detail = "Dữ liệu thanh toán vượt quá kích thước cho phép.",
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                success = false,
-                code = "PAYMENT_WEBHOOK_TOO_LARGE",
-                message = "Dữ liệu thanh toán vượt quá kích thước cho phép.",
-                error = new { code = "PAYMENT_WEBHOOK_TOO_LARGE", message = "Dữ liệu thanh toán vượt quá kích thước cho phép.", details = (object?)null }
-            });
+            return this.ProblemDetails(StatusCodes.Status413PayloadTooLarge, "PAYMENT_WEBHOOK_TOO_LARGE", "Dữ liệu thanh toán vượt quá kích thước cho phép.");
 
         using var reader = new StreamReader(Request.Body, System.Text.Encoding.UTF8);
         var buffer = new char[65_537];
         var read = await reader.ReadBlockAsync(buffer, 0, buffer.Length);
         if (read > 65_536 || !reader.EndOfStream)
         {
-            return StatusCode(StatusCodes.Status413PayloadTooLarge, new
-            {
-                type = "https://tools.ietf.org/html/rfc9110#section-15.5.14",
-                title = "Payload Too Large",
-                status = StatusCodes.Status413PayloadTooLarge,
-                detail = "Dữ liệu thanh toán vượt quá kích thước cho phép.",
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                success = false,
-                code = "PAYMENT_WEBHOOK_TOO_LARGE",
-                message = "Dữ liệu thanh toán vượt quá kích thước cho phép.",
-                error = new { code = "PAYMENT_WEBHOOK_TOO_LARGE", message = "Dữ liệu thanh toán vượt quá kích thước cho phép.", details = (object?)null }
-            });
+            return this.ProblemDetails(StatusCodes.Status413PayloadTooLarge, "PAYMENT_WEBHOOK_TOO_LARGE", "Dữ liệu thanh toán vượt quá kích thước cho phép.");
         }
         var body = new string(buffer, 0, read);
         var signature = Request.Headers["x-payos-signature"].FirstOrDefault()
@@ -90,19 +66,7 @@ public class PaymentsController : ControllerBase
         if (userId is null) return this.UnauthorizedProblem();
         var result = await _checkout.SimulateSuccessAsync(orderCode, userId.Value, cancellationToken);
         return result.Code == "PAYMENT_SIMULATION_DISABLED" 
-            ? NotFound(new 
-            { 
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Payment Simulation Disabled",
-                status = StatusCodes.Status404NotFound,
-                success = false, 
-                code = "PAYMENT_SIMULATION_DISABLED", 
-                message = "Môi trường mô phỏng thanh toán đã bị vô hiệu hóa.", 
-                detail = "Môi trường mô phỏng thanh toán đã bị vô hiệu hóa.",
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = "PAYMENT_SIMULATION_DISABLED", message = "Môi trường mô phỏng thanh toán đã bị vô hiệu hóa." } 
-            }) 
+            ? this.NotFoundProblem("PAYMENT_SIMULATION_DISABLED", "Môi trường mô phỏng thanh toán đã bị vô hiệu hóa.")
             : Respond(result, notFound: true);
     }
 
@@ -124,59 +88,11 @@ public class PaymentsController : ControllerBase
                 description = result.Description
             }});
         if (result.Code == "PAYMENT_NOT_FOUND")
-            return NotFound(new 
-            { 
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Payment Not Found",
-                status = StatusCodes.Status404NotFound,
-                success = false, 
-                code = result.Code, 
-                message = result.Message, 
-                detail = result.Message,
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = result.Code, message = result.Message } 
-            });
+            return this.NotFoundProblem(result.Code, result.Message);
         if (result.Code == "PAYMENT_FORBIDDEN")
-            return StatusCode(StatusCodes.Status403Forbidden, new 
-            { 
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Forbidden",
-                status = StatusCodes.Status403Forbidden,
-                success = false, 
-                code = result.Code, 
-                message = result.Message, 
-                detail = result.Message,
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = result.Code, message = result.Message } 
-            });
+            return this.ForbiddenProblem(result.Code, result.Message);
         if (result.Code == "PAYMENT_PROVIDER_UNAVAILABLE")
-            return StatusCode(StatusCodes.Status503ServiceUnavailable, new 
-            { 
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Payment Provider Unavailable",
-                status = StatusCodes.Status503ServiceUnavailable,
-                success = false, 
-                code = result.Code, 
-                message = result.Message, 
-                detail = result.Message,
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = result.Code, message = result.Message } 
-            });
-        return BadRequest(new 
-        { 
-            type = "https://tools.ietf.org/html/rfc9457",
-            title = "Payment Request Failed",
-            status = StatusCodes.Status400BadRequest,
-            success = false, 
-            code = result.Code, 
-            message = result.Message, 
-            detail = result.Message,
-            instance = HttpContext.Request.Path.Value,
-            traceId = HttpContext.TraceIdentifier,
-            error = new { code = result.Code, message = result.Message } 
-        });
+            return this.ServiceUnavailableProblem(result.Code, result.Message);
+        return this.BadRequestProblem(result.Code, result.Message);
     }
 }

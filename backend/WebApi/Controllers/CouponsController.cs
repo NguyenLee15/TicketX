@@ -1,9 +1,10 @@
-namespace TickeX.WebApi.Controllers;
-
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using TickeX.Application.Coupons.Commands;
 using TickeX.Application.Coupons.Queries;
+using TickeX.WebApi.Configuration;
+
+namespace TickeX.WebApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -23,19 +24,7 @@ public class CouponsController : ControllerBase
     {
         if (request == null || string.IsNullOrWhiteSpace(request.Code))
         {
-            return BadRequest(new
-            {
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Invalid Coupon Request",
-                status = StatusCodes.Status400BadRequest,
-                success = false,
-                code = "INVALID_COUPON_CODE",
-                message = "Mã giảm giá không được để trống.",
-                detail = "Mã giảm giá không được để trống.",
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = "INVALID_COUPON_CODE", message = "Mã giảm giá không được để trống." }
-            });
+            return this.BadRequestProblem("INVALID_COUPON_CODE", "Mã giảm giá không được để trống.");
         }
 
         var command = new ApplyCouponCommand(request.Code, request.OrderAmount, request.EventId);
@@ -49,19 +38,7 @@ public class CouponsController : ControllerBase
                 _ => StatusCodes.Status400BadRequest
             };
 
-            return StatusCode(statusCode, new
-            {
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Coupon Application Failed",
-                status = statusCode,
-                success = false,
-                code = result.ErrorCode ?? "COUPON_ERROR",
-                message = result.Message,
-                detail = result.Message,
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = result.ErrorCode ?? "COUPON_ERROR", message = result.Message }
-            });
+            return this.ProblemDetails(statusCode, result.ErrorCode ?? "COUPON_ERROR", result.Message, "Coupon Application Failed");
         }
 
         return Ok(new

@@ -201,4 +201,84 @@ public class ConcurrencyAndPaymentTests : IDisposable
         eventLeaseMock.Verify(x => x.DisposeAsync(), Times.Once);
         seatLeaseMock.Verify(x => x.DisposeAsync(), Times.Once);
     }
+
+    [Fact]
+    public async Task ProcessPayment_WithAppliedCoupon_ValidatesDiscountedPriceAndRedeemsCoupon()
+    {
+        // Arrange
+        var user = new User("UserCoupon", "usercoupon@test.local", "hash");
+        var ev = new Event("Concert Coupon", "Desc", DateTime.UtcNow.AddDays(5), DateTime.UtcNow.AddDays(5).AddHours(3), "Loc", "Venue", 1, "Music", basePrice: 200000);
+        ev.GenerateSeatsMatrix(1, 1);
+        _context.AddRange(user, ev);
+        await _context.SaveChangesAsync();
+
+        var seat = ev.Seats.First();
+        seat.Lock(user.Id, DateTime.UtcNow);
+
+        var coupon = new Coupon(
+            code: "PROMO50",
+            description: "Giảm 50k",
+            discountType: DiscountType.FixedAmount,
+            discountValue: 50000,
+            maxDiscountAmount: null,
+            minOrderAmount: 0,
+            usageLimit: 5,
+            validFrom: DateTime.UtcNow.AddDays(-1),
+            validTo: DateTime.UtcNow.AddDays(1)
+        );
+        _context.Coupons.Add(coupon);
+
+        var ticket = new Ticket(ev.Id, seat.Id, user.Id, seat.Price, 776655L);
+        _context.Tickets.Add(ticket);
+
+        // Payment transaction recorded with coupon discount: 200k - 50k = 150k
+        var tx = new PaymentTransaction(ticket.OrderCode, ticket.Id, 150000, "VietQR_PayOS", "PROMO50", 50000);
+        _context.PaymentTransactions.Add(tx);
+        await _context.SaveChangesAsync();
+
+        var eventLeaseMock = new Mock<IDistributedLockLease>();
+        eventLeaseMock.SetupGet(x => x.IsValid).Returns(true);
+        var seatLeaseMock = new Mock<IDistributedLockLease>();
+        seatLeaseMock.SetupGet(x => x.IsValid).Returns(true);
+        var paymentLeaseMock = new Mock<IDistributedLockLease>();
+        paymentLeaseMock.SetupGet(x => x.IsValid).Returns(true);
+
+        var lockService = new Mock<IDistributedLockService>();
+        lockService.Setup(x => x.AcquireLockAsync(It.IsAny<string>(), It.IsAny<TimeSpan>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(eventLeaseMock.Object);
+
+        var notifications = new Mock<ISeatNotificationService>();
+        var outbox = new Mock<INotificationOutboxPort>();
+        var ticketSecurity = new Mock<ITicketSecurityService>();
+        ticketSecurity.Setup(x => x.GenerateSignedQrToken(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<long>(), It.IsAny<DateTime>(), It.IsAny<string>()))
+            .Returns("SIGNED_QR_TOKEN");
+
+        var handler = new ProcessPaymentCommandHandler(
+            _context, outbox.Object, notifications.Object, lockService.Object,
+            ticketSecurity.Object, NullLogger<ProcessPaymentCommandHandler>.Instance);
+
+        var webhookData = new PayOSWebhookData
+        {
+            OrderCode = ticket.OrderCode,
+            Amount = 150000, // Discounted price paid!
+            Success = true,
+            Reference = "payos-coupon-ref",
+            Code = "00"
+        };
+
+        // Act
+        var result = await handler.Handle(new ProcessPaymentCommand(webhookData), CancellationToken.None);
+
+        // Assert
+        result.Should().BeTrue();
+
+        var reloadedCoupon = await _context.Coupons.FirstAsync(c => c.Code == "PROMO50");
+        reloadedCoupon.UsedCount.Should().Be(1); // Atomically redeemed!
+
+        var reloadedTicket = await _context.Tickets.FindAsync(ticket.Id);
+        reloadedTicket!.Status.Should().Be(TicketStatus.Paid);
+
+        var reloadedTx = await _context.PaymentTransactions.FirstAsync(p => p.OrderCode == ticket.OrderCode);
+        reloadedTx.Status.Should().Be("Success");
+    }
 }

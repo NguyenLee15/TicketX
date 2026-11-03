@@ -37,17 +37,7 @@ public class SettlementsController : ControllerBase
 
         if (request == null || request.EventId == Guid.Empty)
         {
-            return BadRequest(new
-            {
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Invalid Settlement Request",
-                status = StatusCodes.Status400BadRequest,
-                success = false,
-                code = "INVALID_REQUEST",
-                message = "Thông tin yêu cầu quyết toán không hợp lệ.",
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier
-            });
+            return this.BadRequestProblem("INVALID_REQUEST", "Thông tin yêu cầu quyết toán không hợp lệ.");
         }
 
         var holder = request.BankAccountHolder ?? request.AccountHolder ?? string.Empty;
@@ -71,18 +61,7 @@ public class SettlementsController : ControllerBase
                 _ => StatusCodes.Status400BadRequest
             };
 
-            return StatusCode(status, new
-            {
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Settlement Request Failed",
-                status,
-                success = false,
-                code = result.Code ?? "SETTLEMENT_ERROR",
-                message = result.Message,
-                detail = result.Message,
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier
-            });
+            return this.ProblemDetails(status, result.Code ?? "SETTLEMENT_ERROR", result.Message, "Settlement Request Failed");
         }
 
         return Ok(new
@@ -125,17 +104,7 @@ public class SettlementsController : ControllerBase
         var result = await _mediator.Send(new ApproveSettlementCommand(id, adminId.Value, note), cancellationToken);
         if (!result.Success)
         {
-            return BadRequest(new
-            {
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Approve Settlement Failed",
-                status = StatusCodes.Status400BadRequest,
-                success = false,
-                code = result.Code ?? "APPROVE_FAILED",
-                message = result.Message,
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier
-            });
+            return this.BadRequestProblem(result.Code ?? "APPROVE_FAILED", result.Message);
         }
 
         return Ok(new { success = true, message = result.Message });
@@ -154,17 +123,7 @@ public class SettlementsController : ControllerBase
         var result = await _mediator.Send(new CompleteSettlementCommand(id, adminId.Value, txRef, note), cancellationToken);
         if (!result.Success)
         {
-            return BadRequest(new
-            {
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Complete Settlement Failed",
-                status = StatusCodes.Status400BadRequest,
-                success = false,
-                code = result.Code ?? "COMPLETE_FAILED",
-                message = result.Message,
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier
-            });
+            return this.BadRequestProblem(result.Code ?? "COMPLETE_FAILED", result.Message);
         }
 
         return Ok(new { success = true, message = result.Message });
@@ -181,33 +140,13 @@ public class SettlementsController : ControllerBase
         var reason = request?.Reason ?? request?.AdminNote ?? request?.Note;
         if (string.IsNullOrWhiteSpace(reason))
         {
-            return BadRequest(new
-            {
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Invalid Reject Request",
-                status = StatusCodes.Status400BadRequest,
-                success = false,
-                code = "REASON_REQUIRED",
-                message = "Lý do từ chối quyết toán không được để trống.",
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier
-            });
+            return this.BadRequestProblem("REASON_REQUIRED", "Lý do từ chối quyết toán không được để trống.");
         }
 
         var result = await _mediator.Send(new RejectSettlementCommand(id, adminId.Value, reason), cancellationToken);
         if (!result.Success)
         {
-            return BadRequest(new
-            {
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Reject Settlement Failed",
-                status = StatusCodes.Status400BadRequest,
-                success = false,
-                code = result.Code ?? "REJECT_FAILED",
-                message = result.Message,
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier
-            });
+            return this.BadRequestProblem(result.Code ?? "REJECT_FAILED", result.Message);
         }
 
         return Ok(new { success = true, message = result.Message });

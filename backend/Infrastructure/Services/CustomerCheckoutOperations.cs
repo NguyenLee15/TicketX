@@ -72,7 +72,10 @@ public sealed class CustomerCheckoutOperations : ICustomerCheckoutOperations
             Status: ToPublicStatus(combinedStatus), TicketId: firstTicket.Id, RefundStatus: refundStatus);
     }
 
-    public async Task<CustomerCheckoutResult> CreatePaymentLinkAsync(Guid ticketId, Guid userId, CancellationToken cancellationToken)
+    public Task<CustomerCheckoutResult> CreatePaymentLinkAsync(Guid ticketId, Guid userId, CancellationToken cancellationToken)
+        => CreatePaymentLinkAsync(ticketId, userId, null, cancellationToken);
+
+    public async Task<CustomerCheckoutResult> CreatePaymentLinkAsync(Guid ticketId, Guid userId, string? couponCode, CancellationToken cancellationToken)
     {
         var ticket = await _context.Tickets.Include(t => t.Event).SingleOrDefaultAsync(t => t.Id == ticketId, cancellationToken);
         if (ticket is null) return Fail("PAYMENT_NOT_FOUND", "Không tìm thấy vé.");
@@ -89,9 +92,32 @@ public sealed class CustomerCheckoutOperations : ICustomerCheckoutOperations
         var allBatchTickets = await _context.Tickets
             .Where(t => t.OrderCode == ticket.OrderCode && t.UserId == userId)
             .ToListAsync(cancellationToken);
-        var totalAmount = allBatchTickets.Count > 0 ? allBatchTickets.Sum(t => t.Price) : ticket.Price;
+        var baseTotalAmount = allBatchTickets.Count > 0 ? allBatchTickets.Sum(t => t.Price) : ticket.Price;
 
-        if (totalAmount <= 0 || totalAmount != decimal.Truncate(totalAmount) || totalAmount > int.MaxValue)
+        decimal discountAmount = 0m;
+        string? validCouponCode = null;
+        if (!string.IsNullOrWhiteSpace(couponCode))
+        {
+            var normalizedCode = couponCode.Trim().ToUpperInvariant();
+            var coupon = await _context.Coupons
+                .FirstOrDefaultAsync(c => c.Code == normalizedCode, cancellationToken);
+            if (coupon == null)
+                return Fail("COUPON_NOT_FOUND", "Mã giảm giá không tồn tại trên hệ thống.");
+
+            if (coupon.EventId.HasValue && coupon.EventId.Value != ticket.EventId)
+                return Fail("COUPON_EVENT_MISMATCH", "Mã giảm giá này không áp dụng cho sự kiện hiện tại.");
+
+            var (isValid, calculatedDiscount, errorCode, errorMsg) = coupon.CalculateDiscount(baseTotalAmount, _time.UtcNow);
+            if (!isValid)
+                return Fail(errorCode ?? "COUPON_INVALID", errorMsg ?? "Mã giảm giá không hợp lệ.");
+
+            discountAmount = calculatedDiscount;
+            validCouponCode = coupon.Code;
+        }
+
+        var totalAmount = Math.Max(0, baseTotalAmount - discountAmount);
+
+        if (totalAmount < 0 || totalAmount != decimal.Truncate(totalAmount) || totalAmount > int.MaxValue)
             return Fail("INVALID_PAYMENT_AMOUNT", "Số tiền thanh toán không hợp lệ.");
 
         IDistributedLockLease? paymentLinkLease = null;
@@ -172,7 +198,7 @@ public sealed class CustomerCheckoutOperations : ICustomerCheckoutOperations
         if (existing is null)
         {
             // Pre-persist local intent to claim atomic ownership at the DB level before external provider I/O
-            transaction = new PaymentTransaction(ticket.OrderCode, ticket.Id, totalAmount, "VietQR_PayOS");
+            transaction = new PaymentTransaction(ticket.OrderCode, ticket.Id, totalAmount, "VietQR_PayOS", validCouponCode, discountAmount);
             _context.PaymentTransactions.Add(transaction);
             isNew = true;
             try
@@ -192,6 +218,11 @@ public sealed class CustomerCheckoutOperations : ICustomerCheckoutOperations
         else
         {
             transaction = existing;
+            if (validCouponCode != null && existing.AppliedCouponCode != validCouponCode && existing.Status == "Pending")
+            {
+                existing.ApplyCoupon(validCouponCode, discountAmount);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
         }
 
         var clientId = _configuration["PayOS:ClientId"];

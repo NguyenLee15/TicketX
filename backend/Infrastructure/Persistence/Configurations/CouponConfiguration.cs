@@ -19,6 +19,9 @@ public class CouponConfiguration : IEntityTypeConfiguration<Coupon>
         builder.HasIndex(c => c.Code)
             .IsUnique();
 
+        builder.HasIndex(c => new { c.Code, c.IsActive });
+        builder.HasIndex(c => new { c.IsActive, c.ValidFrom, c.ValidTo });
+
         builder.Property(c => c.Description)
             .HasMaxLength(255);
 

@@ -68,19 +68,7 @@ public class TicketsController : ControllerBase
         }
         catch (ArgumentException ex) when (cursor is not null)
         {
-            return BadRequest(new 
-            { 
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Invalid Cursor",
-                status = StatusCodes.Status400BadRequest,
-                success = false, 
-                code = "INVALID_CURSOR", 
-                message = ex.Message,
-                detail = ex.Message,
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = "INVALID_CURSOR", message = ex.Message }
-            });
+            return this.BadRequestProblem("INVALID_CURSOR", ex.Message);
         }
     }
 
@@ -90,27 +78,15 @@ public class TicketsController : ControllerBase
     [Idempotent]
     public async Task<IActionResult> RefundTicket(Guid id, [FromBody] RefundRequest? request, CancellationToken cancellationToken = default)
     {
-        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId) || userId == Guid.Empty)
+        var userId = this.GetAuthenticatedUserId();
+        if (userId is null)
         {
-            return Unauthorized(new 
-            { 
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Unauthorized",
-                status = StatusCodes.Status401Unauthorized,
-                success = false, 
-                code = "UNAUTHORIZED", 
-                message = "User is not authenticated.", 
-                detail = "User is not authenticated.",
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = "UNAUTHORIZED", message = "User is not authenticated." } 
-            });
+            return this.UnauthorizedProblem();
         }
 
         var command = new RefundTicketCommand(
             id,
-            userId,
+            userId.Value,
             request?.Reason ?? "Customer Request",
             User.FindFirstValue(ClaimTypes.Email) ?? "",
             HttpContext.Connection.RemoteIpAddress?.ToString());
@@ -128,19 +104,7 @@ public class TicketsController : ControllerBase
                 _ => StatusCodes.Status400BadRequest
             };
 
-            return StatusCode(statusCode, new
-            {
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = MapErrorCodeToTitle(result.Code),
-                status = statusCode,
-                success = false,
-                code = result.Code,
-                message = result.Message,
-                detail = result.Message,
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = result.Code, message = result.Message }
-            });
+            return this.ProblemDetails(statusCode, result.Code, result.Message, MapErrorCodeToTitle(result.Code));
         }
 
         return Ok(new { success = true, code = result.Code, message = result.Message, data = new { refundAmount = result.RefundAmount } });
@@ -167,19 +131,7 @@ public class TicketsController : ControllerBase
                 _ => StatusCodes.Status400BadRequest
             };
 
-            return StatusCode(status, new
-            {
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Get Dynamic QR Failed",
-                status,
-                success = false,
-                code = result.ErrorCode,
-                message = result.Message,
-                detail = result.Message,
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = result.ErrorCode, message = result.Message }
-            });
+            return this.ProblemDetails(status, result.ErrorCode, result.Message, "Get Dynamic QR Failed");
         }
 
         return Ok(new { success = true, data = result.Data });
@@ -200,17 +152,7 @@ public class TicketsController : ControllerBase
 
         if (request == null || string.IsNullOrWhiteSpace(request.RecipientEmail))
         {
-            return BadRequest(new
-            {
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Invalid Transfer Request",
-                status = StatusCodes.Status400BadRequest,
-                success = false,
-                code = "RECIPIENT_EMAIL_EMPTY",
-                message = "Vui lòng nhập email người nhận.",
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier
-            });
+            return this.BadRequestProblem("RECIPIENT_EMAIL_EMPTY", "Vui lòng nhập email người nhận.");
         }
 
         var command = new TransferTicketCommand(id, userId.Value, request.RecipientEmail, request.Note);
@@ -228,19 +170,7 @@ public class TicketsController : ControllerBase
                 _ => StatusCodes.Status400BadRequest
             };
 
-            return StatusCode(status, new
-            {
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Transfer Ticket Failed",
-                status,
-                success = false,
-                code = result.Code,
-                message = result.Message,
-                detail = result.Message,
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = result.Code, message = result.Message }
-            });
+            return this.ProblemDetails(status, result.Code, result.Message, "Transfer Ticket Failed");
         }
 
         return Ok(new { success = true, code = "TRANSFER_SUCCESS", message = result.Message, data = new { transferId = result.TransferId } });
@@ -254,46 +184,22 @@ public class TicketsController : ControllerBase
     [EnableRateLimiting("BookingPolicy")]
     public async Task<IActionResult> CheckIn([FromBody] CheckInRequest request, CancellationToken cancellationToken = default)
     {
-        var staffUserIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(staffUserIdString) || !Guid.TryParse(staffUserIdString, out var staffUserId) || staffUserId == Guid.Empty)
+        var staffUserId = this.GetAuthenticatedUserId();
+        if (staffUserId is null)
         {
-            return Unauthorized(new 
-            { 
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = "Unauthorized",
-                status = StatusCodes.Status401Unauthorized,
-                success = false, 
-                code = "UNAUTHORIZED", 
-                message = "Không xác định được danh tính nhân viên từ token.",
-                detail = "Không xác định được danh tính nhân viên từ token.",
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = "UNAUTHORIZED", message = "Không xác định được danh tính nhân viên từ token." }
-            });
+            return this.UnauthorizedProblem("Không xác định được danh tính nhân viên từ token.");
         }
 
         var callerRole = User.FindFirstValue(ClaimTypes.Role) ?? "Staff";
         var staffEmail = User.FindFirstValue(ClaimTypes.Email) ?? "staff@tickex.com";
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
-        var command = new CheckInTicketCommand(request.QrToken, staffUserId, callerRole, staffEmail, ipAddress);
+        var command = new CheckInTicketCommand(request.QrToken, staffUserId.Value, callerRole, staffEmail, ipAddress);
         var result = await _checkInOperations.CheckInAsync(command, cancellationToken);
 
         if (!result.Success)
         {
-            return StatusCode(result.StatusCode, new 
-            { 
-                type = "https://tools.ietf.org/html/rfc9457",
-                title = MapErrorCodeToTitle(result.Code),
-                status = result.StatusCode,
-                success = false, 
-                code = result.Code, 
-                message = result.Message,
-                detail = result.Message,
-                instance = HttpContext.Request.Path.Value,
-                traceId = HttpContext.TraceIdentifier,
-                error = new { code = result.Code, message = result.Message }
-            });
+            return this.ProblemDetails(result.StatusCode, result.Code, result.Message, MapErrorCodeToTitle(result.Code));
         }
 
         return Ok(new { success = true, message = result.Message, data = result.Ticket });
