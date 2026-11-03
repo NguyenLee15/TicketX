@@ -18,6 +18,7 @@ interface CheckoutModalProps {
   onClose: () => void;
   event: EventDetail;
   seat: Seat;
+  seats?: Seat[];
   ticketId: string | null;
   expiresAt: string | null | undefined;
   serverTime?: string | null;
@@ -28,6 +29,7 @@ export default function CheckoutModal({
   onClose,
   event,
   seat,
+  seats,
   ticketId,
   expiresAt,
   serverTime,
@@ -246,6 +248,7 @@ export default function CheckoutModal({
             <CheckoutInvoice
               event={event}
               seat={seat}
+              seats={seats}
               timeLeft={timeLeft}
               formatTime={formatTime}
               status={status}

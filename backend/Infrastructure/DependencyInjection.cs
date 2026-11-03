@@ -67,6 +67,7 @@ public static class DependencyInjection
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
         services.AddScoped<ITicketSecurityService, TicketSecurityService>();
         services.AddTransient<IEmailService, EmailService>();
+        services.AddSingleton<IPdfTicketGenerator, PdfTicketGenerator>();
         services.AddScoped<ISeatNotificationService, SeatNotificationService>();
 
         // Redis is a required infrastructure dependency. Do not silently create an

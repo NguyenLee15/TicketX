@@ -20,6 +20,7 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
         builder.Property(e => e.ImageUrl).HasMaxLength(1000);
         builder.Property(e => e.BannerUrl).HasMaxLength(1000);
         builder.Property(e => e.BasePrice).HasPrecision(18, 2);
+        builder.Property(e => e.MaxTicketsPerUser).HasDefaultValue(4);
         builder.Property(e => e.Version).IsRequired().IsConcurrencyToken();
 
         builder.HasMany(e => e.Seats)

@@ -7,6 +7,7 @@ import { ResilientImage } from '../ResilientImage';
 interface CheckoutInvoiceProps {
   event: EventDetail;
   seat: Seat;
+  seats?: Seat[];
   timeLeft: number;
   formatTime: (seconds: number) => string;
   status: 'idle' | 'verifying' | 'success' | 'error';
@@ -15,10 +16,14 @@ interface CheckoutInvoiceProps {
 export const CheckoutInvoice: React.FC<CheckoutInvoiceProps> = React.memo(({
   event,
   seat,
+  seats,
   timeLeft,
   formatTime,
   status,
 }) => {
+  const effectiveSeats = seats && seats.length > 0 ? seats : [seat];
+  const totalPrice = effectiveSeats.reduce((sum, s) => sum + s.price, 0);
+
   const getTierName = (tier: number) => {
     if (tier === 1) return 'Hạng VIP';
     if (tier === 2) return 'Tiết Kiệm';
@@ -78,16 +83,24 @@ export const CheckoutInvoice: React.FC<CheckoutInvoiceProps> = React.memo(({
 
       {/* Seat & Price Breakdown Card */}
       <div className="p-4 rounded-2xl bg-surface-2/40 border border-border-subtle space-y-2.5 text-xs">
-        <div className="flex justify-between items-center text-text-secondary">
-          <span>Vị trí ghế:</span>
-          <span className="font-bold text-white bg-surface-3 px-2 py-0.5 rounded-md border border-border-subtle">
-            Hàng {seat.row} - Ghế <span className="tabular-nums">{seat.number}</span> ({getTierName(seat.tier)})
-          </span>
+        <div className="flex justify-between items-start text-text-secondary">
+          <span>Vị trí ghế ({effectiveSeats.length}):</span>
+          <div className="flex flex-wrap gap-1.5 justify-end max-w-[65%]">
+            {effectiveSeats.map((s) => (
+              <span key={s.id} className="font-bold text-white bg-surface-3 px-2 py-0.5 rounded-md border border-border-subtle">
+                {s.row}{s.number} ({getTierName(s.tier)})
+              </span>
+            ))}
+          </div>
         </div>
 
         <div className="flex justify-between items-center text-text-secondary">
           <span>Đơn giá vé:</span>
-          <span className="text-white font-medium tabular-nums">{formatCurrency(seat.price)}</span>
+          <span className="text-white font-medium tabular-nums">
+            {effectiveSeats.length === 1 
+              ? formatCurrency(effectiveSeats[0].price)
+              : `${formatCurrency(totalPrice)} (${effectiveSeats.length} vé)`}
+          </span>
         </div>
 
         <div className="flex justify-between items-center text-text-secondary">
@@ -98,7 +111,7 @@ export const CheckoutInvoice: React.FC<CheckoutInvoiceProps> = React.memo(({
         <div className="pt-2 border-t border-border-subtle/60 flex justify-between items-center">
           <span className="text-white font-bold text-sm">Tổng thanh toán:</span>
           <span className="text-brand-primary font-black text-base font-display tabular-nums">
-            {formatCurrency(seat.price)}
+            {formatCurrency(totalPrice)}
           </span>
         </div>
       </div>

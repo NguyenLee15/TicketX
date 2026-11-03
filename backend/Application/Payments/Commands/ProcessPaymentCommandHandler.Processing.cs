@@ -90,11 +90,14 @@ public partial class ProcessPaymentCommandHandler
 
                 await using (lease)
                 {
-                    // Re-fetch the ticket inside the lock with Event and Seat included
-                    var ticket = await _context.Tickets
+                    // Re-fetch all tickets in this order inside the lock with Event and Seat included
+                    var allTickets = await _context.Tickets
                         .Include(t => t.Seat)
                         .Include(t => t.Event)
-                        .FirstOrDefaultAsync(t => t.Id == initialTicket.Id, cancellationToken);
+                        .Where(t => t.OrderCode == data.OrderCode)
+                        .ToListAsync(cancellationToken);
+
+                    var ticket = allTickets.FirstOrDefault();
 
                     if (ticket == null)
                     {
@@ -257,27 +260,37 @@ public partial class ProcessPaymentCommandHandler
 
             if (data.Success)
             {
+                var totalExpectedPrice = allTickets.Sum(t => t.Price);
                 // Invariant 3: Amount and currency validation
-                if (!PaymentWebhookPolicy.IsAmountValid(ticket.Price, data))
+                if (!PaymentWebhookPolicy.IsAmountValid(totalExpectedPrice, data))
                 {
-                    _logger.LogCritical("Payment amount tampering detected for ticket {TicketId}, order {OrderCode}! Expected {Expected}, got {Actual}.", 
-                        ticket.Id, data.OrderCode, ticket.Price, data.Amount);
+                    _logger.LogCritical("Payment amount tampering detected for order {OrderCode}! Expected {Expected}, got {Actual}.", 
+                        data.OrderCode, totalExpectedPrice, data.Amount);
                     return false;
                 }
 
-                // 2. Generate cryptographically signed QR code token
-                var expiresAt = ticket.Event?.EndDate.AddHours(6) ?? _time.UtcNow.AddDays(30);
-                string qrToken = _ticketSecurityService.GenerateSignedQrToken(
-                    ticket.Id, 
-                    ticket.EventId, 
-                    ticket.OrderCode, 
-                    expiresAt);
-
-                ticket.MarkAsPaid(qrToken);
-
-                if (ticket.Seat != null)
+                // 2. Generate cryptographically signed QR code token for all tickets in order
+                foreach (var t in allTickets)
                 {
-                    ticket.Seat.MarkAsSold();
+                    var expiresAt = t.Event?.EndDate.AddHours(6) ?? _time.UtcNow.AddDays(30);
+                    string qrToken = _ticketSecurityService.GenerateSignedQrToken(
+                        t.Id, 
+                        t.EventId, 
+                        t.OrderCode, 
+                        expiresAt);
+
+                    t.MarkAsPaid(qrToken);
+
+                    if (t.Seat != null)
+                    {
+                        t.Seat.MarkAsSold();
+                    }
+
+                    // Stage notification outbox item into the same unit of work
+                    if (!await _context.NotificationOutbox.AnyAsync(x => x.TicketId == t.Id, cancellationToken))
+                    {
+                        _context.NotificationOutbox.Add(new NotificationOutboxItem(t.Id, t.UserId, t.EventId));
+                    }
                 }
 
                 // 3. Record or update PaymentTransaction
@@ -286,7 +299,7 @@ public partial class ProcessPaymentCommandHandler
                     var transaction = new PaymentTransaction(
                         ticket.OrderCode,
                         ticket.Id,
-                        ticket.Price,
+                        totalExpectedPrice,
                         "VietQR_PayOS"
                     );
                     transaction.MarkSuccess(providerTxId, auditSummary);
@@ -298,30 +311,27 @@ public partial class ProcessPaymentCommandHandler
                     existingTx.MarkSuccess(providerTxId, auditSummary);
                     existingTx.SetWebhookPayloadHash(data.PayloadHash);
                 }
-                // Stage notification outbox item into the same unit of work
-                if (!await _context.NotificationOutbox.AnyAsync(x => x.TicketId == ticket.Id, cancellationToken))
-                {
-                    _context.NotificationOutbox.Add(new NotificationOutboxItem(ticket.Id, ticket.UserId, ticket.EventId));
-                }
 
                 // Explicitly commit financial, seat state, and outbox atomically into database
                 if (!lease.IsValid || !eventLease.IsValid || !seatLease.IsValid) return false;
                 await _context.SaveChangesAsync(cancellationToken);
                 if (_catalogCache is not null) await _catalogCache.InvalidateAsync(CancellationToken.None);
 
-                if (ticket.Seat != null)
+                foreach (var t in allTickets)
                 {
-                    string? versionToken = ticket.Seat.Version != null && ticket.Seat.Version.Length > 0 ? Convert.ToBase64String(ticket.Seat.Version) : null;
-                    try
+                    if (t.Seat != null)
                     {
-                        await _notificationService.NotifySeatStatusChanged(ticket.EventId, ticket.SeatId, ticket.Seat.Status.ToString(), versionToken);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, "Failed to broadcast seat status change via SignalR for event {EventId}, seat {SeatId}", ticket.EventId, ticket.SeatId);
+                        string? versionToken = t.Seat.Version != null && t.Seat.Version.Length > 0 ? Convert.ToBase64String(t.Seat.Version) : null;
+                        try
+                        {
+                            await _notificationService.NotifySeatStatusChanged(t.EventId, t.SeatId, t.Seat.Status.ToString(), versionToken);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Failed to broadcast seat status change via SignalR for event {EventId}, seat {SeatId}", t.EventId, t.SeatId);
+                        }
                     }
                 }
-
             }
             else
             {

@@ -49,20 +49,27 @@ public sealed class CustomerCheckoutOperations : ICustomerCheckoutOperations
 
     public async Task<CustomerCheckoutResult> GetStatusAsync(long orderCode, Guid userId, CancellationToken cancellationToken)
     {
-        var ticket = await _context.Tickets.AsNoTracking()
+        var tickets = await _context.Tickets.AsNoTracking()
             .Where(t => t.OrderCode == orderCode && t.UserId == userId)
             .Select(t => new { t.Id, t.OrderCode, t.Status, t.Price })
-            .SingleOrDefaultAsync(cancellationToken);
-        if (ticket is null) return Fail("PAYMENT_NOT_FOUND", "Không tìm thấy đơn hàng.");
+            .ToListAsync(cancellationToken);
+        if (tickets.Count == 0) return Fail("PAYMENT_NOT_FOUND", "Không tìm thấy đơn hàng.");
 
+        var firstTicket = tickets[0];
+        var totalAmount = tickets.Sum(t => t.Price);
+        var allPaid = tickets.All(t => t.Status == TicketStatus.Paid);
+        var anyPending = tickets.Any(t => t.Status == TicketStatus.Pending);
+        var combinedStatus = allPaid ? TicketStatus.Paid : (anyPending ? TicketStatus.Pending : firstTicket.Status);
+
+        var ticketIds = tickets.Select(t => t.Id).ToList();
         var refundStatus = await _context.RefundRequests.AsNoTracking()
-            .Where(r => r.TicketId == ticket.Id)
+            .Where(r => ticketIds.Contains(r.TicketId))
             .OrderByDescending(r => r.CreatedAt)
             .Select(r => r.Status)
             .FirstOrDefaultAsync(cancellationToken);
 
-        return new(true, "PAYMENT_STATUS", "Đã lấy trạng thái thanh toán.", ticket.OrderCode, ticket.Price,
-            Status: ToPublicStatus(ticket.Status), TicketId: ticket.Id, RefundStatus: refundStatus);
+        return new(true, "PAYMENT_STATUS", "Đã lấy trạng thái thanh toán.", firstTicket.OrderCode, totalAmount,
+            Status: ToPublicStatus(combinedStatus), TicketId: firstTicket.Id, RefundStatus: refundStatus);
     }
 
     public async Task<CustomerCheckoutResult> CreatePaymentLinkAsync(Guid ticketId, Guid userId, CancellationToken cancellationToken)
@@ -78,7 +85,13 @@ public sealed class CustomerCheckoutOperations : ICustomerCheckoutOperations
             return Fail("RESERVATION_EXPIRED", "Thời gian giữ vé đã hết hạn. Vui lòng chọn lại ghế.");
         if (ticket.Event is null || ticket.Event.IsDeleted || ticket.Event.Status != EventStatus.Published || ticket.Event.Date <= _time.UtcNow)
             return Fail("EVENT_NOT_ON_SALE", "Sự kiện không còn mở bán.");
-        if (ticket.Price <= 0 || ticket.Price != decimal.Truncate(ticket.Price) || ticket.Price > int.MaxValue)
+
+        var allBatchTickets = await _context.Tickets
+            .Where(t => t.OrderCode == ticket.OrderCode && t.UserId == userId)
+            .ToListAsync(cancellationToken);
+        var totalAmount = allBatchTickets.Count > 0 ? allBatchTickets.Sum(t => t.Price) : ticket.Price;
+
+        if (totalAmount <= 0 || totalAmount != decimal.Truncate(totalAmount) || totalAmount > int.MaxValue)
             return Fail("INVALID_PAYMENT_AMOUNT", "Số tiền thanh toán không hợp lệ.");
 
         IDistributedLockLease? paymentLinkLease = null;
@@ -159,7 +172,7 @@ public sealed class CustomerCheckoutOperations : ICustomerCheckoutOperations
         if (existing is null)
         {
             // Pre-persist local intent to claim atomic ownership at the DB level before external provider I/O
-            transaction = new PaymentTransaction(ticket.OrderCode, ticket.Id, ticket.Price, "VietQR_PayOS");
+            transaction = new PaymentTransaction(ticket.OrderCode, ticket.Id, totalAmount, "VietQR_PayOS");
             _context.PaymentTransactions.Add(transaction);
             isNew = true;
             try
@@ -172,7 +185,7 @@ public sealed class CustomerCheckoutOperations : ICustomerCheckoutOperations
                 var concurrent = await _context.PaymentTransactions.AsNoTracking()
                     .SingleOrDefaultAsync(x => x.OrderCode == ticket.OrderCode, cancellationToken);
                 if (concurrent is not null && concurrent.Status == "Pending" && !string.IsNullOrWhiteSpace(concurrent.CheckoutUrl))
-                    return Link(ticket, concurrent.CheckoutUrl);
+                    return Link(ticket, concurrent.CheckoutUrl, totalAmount);
                 return Fail("PAYMENT_LINK_CONFLICT", "Yêu cầu thanh toán đang được xử lý. Vui lòng thử lại.");
             }
         }
@@ -197,7 +210,7 @@ public sealed class CustomerCheckoutOperations : ICustomerCheckoutOperations
         {
             try
             {
-                payOsResult = await _payOS.CreatePaymentLink(ticket.OrderCode, checked((int)ticket.Price),
+                payOsResult = await _payOS.CreatePaymentLink(ticket.OrderCode, checked((int)totalAmount),
                     $"TickeX {ticket.OrderCode}", ReturnUrl(ticket.OrderCode), CancelUrl(ticket.OrderCode), cancellationToken);
                 if (payOsResult is null || string.IsNullOrWhiteSpace(payOsResult.CheckoutUrl))
                 {
@@ -241,7 +254,7 @@ public sealed class CustomerCheckoutOperations : ICustomerCheckoutOperations
                 "PAYMENT_LINK_CREATED",
                 "Đã tạo liên kết thanh toán.",
                 ticket.OrderCode,
-                ticket.Price,
+                totalAmount,
                 checkoutUrl,
                 "Pending",
                 ticket.Id,
@@ -253,7 +266,7 @@ public sealed class CustomerCheckoutOperations : ICustomerCheckoutOperations
                 payOsResult.Description ?? $"TickeX {ticket.OrderCode}");
         }
 
-        return MockDevLink(ticket, checkoutUrl);
+        return MockDevLink(ticket, checkoutUrl, totalAmount);
     }
 
     public async Task<CustomerCheckoutResult> ProcessWebhookAsync(string payload, string signature, CancellationToken cancellationToken)
@@ -269,19 +282,20 @@ public sealed class CustomerCheckoutOperations : ICustomerCheckoutOperations
     public async Task<CustomerCheckoutResult> SimulateSuccessAsync(long orderCode, Guid userId, CancellationToken cancellationToken)
     {
         if (!_environment.IsDevelopment()) return Fail("PAYMENT_SIMULATION_DISABLED", "Mô phỏng thanh toán chỉ có ở môi trường phát triển.");
-        var ticket = await _context.Tickets.AsNoTracking().SingleOrDefaultAsync(t => t.OrderCode == orderCode && t.UserId == userId, cancellationToken);
-        if (ticket is null) return Fail("PAYMENT_NOT_FOUND", "Không tìm thấy đơn hàng.");
-        var data = new PayOSWebhookData { OrderCode = ticket.OrderCode, Amount = ticket.Price, Code = "00", Success = true };
+        var tickets = await _context.Tickets.AsNoTracking().Where(t => t.OrderCode == orderCode && t.UserId == userId).ToListAsync(cancellationToken);
+        if (tickets.Count == 0) return Fail("PAYMENT_NOT_FOUND", "Không tìm thấy đơn hàng.");
+        var totalAmount = tickets.Sum(t => t.Price);
+        var data = new PayOSWebhookData { OrderCode = orderCode, Amount = totalAmount, Code = "00", Success = true };
         return await _mediator.Send(new ProcessPaymentCommand(data), cancellationToken)
-            ? new(true, "PAYMENT_PROCESSED", "Đã xác nhận thanh toán.", ticket.OrderCode)
+            ? new(true, "PAYMENT_PROCESSED", "Đã xác nhận thanh toán.", orderCode)
             : Fail("PAYMENT_PROCESSING_FAILED", "Không thể xác nhận thanh toán.");
     }
 
-    private CustomerCheckoutResult Link(Ticket ticket, string checkoutUrl) =>
-        new(true, "PAYMENT_LINK_CREATED", "Đã tạo liên kết thanh toán.", ticket.OrderCode, ticket.Price, checkoutUrl, "Pending", ticket.Id);
+    private CustomerCheckoutResult Link(Ticket ticket, string checkoutUrl, decimal? totalAmount = null) =>
+        new(true, "PAYMENT_LINK_CREATED", "Đã tạo liên kết thanh toán.", ticket.OrderCode, totalAmount ?? ticket.Price, checkoutUrl, "Pending", ticket.Id);
 
-    private static CustomerCheckoutResult MockDevLink(Ticket ticket, string checkoutUrl) =>
-        new(true, "PAYMENT_LINK_CREATED", "Đã tạo liên kết thanh toán.", ticket.OrderCode, ticket.Price, checkoutUrl, "Pending", ticket.Id, null,
+    private static CustomerCheckoutResult MockDevLink(Ticket ticket, string checkoutUrl, decimal? totalAmount = null) =>
+        new(true, "PAYMENT_LINK_CREATED", "Đã tạo liên kết thanh toán.", ticket.OrderCode, totalAmount ?? ticket.Price, checkoutUrl, "Pending", ticket.Id, null,
             $"https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=TICKEX_DEV_ORDER_{ticket.OrderCode}",
             "000012345678",
             "TICKEX PLATFORM DEV",

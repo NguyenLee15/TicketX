@@ -43,6 +43,7 @@ export interface Event {
   maxPrice?: number;
   status: EventStatus;
   refundCutoffHours?: number;
+  maxTicketsPerUser?: number;
   isDeleted?: boolean;
   hasTicketHistory?: boolean;
   ticketTypes?: TicketType[];

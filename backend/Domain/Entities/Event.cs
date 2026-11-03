@@ -18,6 +18,7 @@ public class Event : BaseEntity
     public decimal BasePrice { get; private set; }
     public EventStatus Status { get; private set; } = EventStatus.Published;
     public int RefundCutoffHours { get; private set; } = 24;
+    public int MaxTicketsPerUser { get; private set; } = 4;
     public bool IsDeleted { get; private set; } = false;
 
     // Optimistic concurrency token for admin event mutations
@@ -42,7 +43,8 @@ public class Event : BaseEntity
         string organizerName = "TickeX Live",
         decimal basePrice = 200000m,
         int refundCutoffHours = 24,
-        EventStatus status = EventStatus.Published)
+        EventStatus status = EventStatus.Published,
+        int maxTicketsPerUser = 4)
     {
         Title = title;
         Description = description;
@@ -58,6 +60,7 @@ public class Event : BaseEntity
         BasePrice = basePrice;
         Status = status;
         RefundCutoffHours = refundCutoffHours;
+        MaxTicketsPerUser = maxTicketsPerUser > 0 ? maxTicketsPerUser : 4;
     }
 
     public void Update(
@@ -74,7 +77,8 @@ public class Event : BaseEntity
         string organizerName,
         decimal basePrice,
         EventStatus status,
-        int refundCutoffHours)
+        int refundCutoffHours,
+        int maxTicketsPerUser = 4)
     {
         Title = title;
         Description = description;
@@ -90,6 +94,7 @@ public class Event : BaseEntity
         BasePrice = basePrice;
         Status = status;
         RefundCutoffHours = refundCutoffHours;
+        MaxTicketsPerUser = maxTicketsPerUser > 0 ? maxTicketsPerUser : 4;
         Version = Guid.NewGuid().ToByteArray();
         UpdatedAt = DateTime.UtcNow;
     }

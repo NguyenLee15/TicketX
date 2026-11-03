@@ -139,6 +139,166 @@ public sealed class ReservationOperations : IReservationOperations
         }
     }
 
+    public async Task<ReservationResult> ReserveBatchAsync(
+        Guid eventId, 
+        IReadOnlyList<Guid> seatIds, 
+        Guid userId, 
+        IReadOnlyDictionary<Guid, byte[]> seatVersions, 
+        CancellationToken cancellationToken)
+    {
+        if (seatIds == null || seatIds.Count == 0)
+            return Fail("INVALID_REQUEST", "Danh sách ghế không được để trống.");
+
+        var orderedSeatIds = seatIds.Distinct().OrderBy(id => id).ToList();
+        if (orderedSeatIds.Count is < 1 or > 4)
+            return Fail("RESERVATION_LIMIT_REACHED", "Mỗi lần đặt vé chỉ được chọn từ 1 đến 4 ghế.");
+
+        var limitKey = $"seat-limit:{userId}:{eventId}";
+        var limitLease = await TryAcquireAsync(limitKey, TimeSpan.FromSeconds(30), cancellationToken);
+        if (limitLease is null)
+            return Fail("RESERVATION_LOCK_UNAVAILABLE", "Không thể khóa thao tác đặt vé lúc này. Vui lòng thử lại.");
+
+        await using (limitLease)
+        {
+            var holdThreshold = _time.UtcNow.AddMinutes(-_options.HoldMinutes);
+            var ev = await _context.Events.AsNoTracking().FirstOrDefaultAsync(e => e.Id == eventId, cancellationToken);
+            var maxCap = ev?.MaxTicketsPerUser ?? _options.MaximumPendingSeatsPerEvent;
+
+            var currentTicketsCount = await _context.Tickets.AsNoTracking().CountAsync(
+                t => t.UserId == userId && t.EventId == eventId && 
+                     (t.Status == TicketStatus.Paid || (t.Status == TicketStatus.Pending && t.CreatedAt > holdThreshold)),
+                cancellationToken);
+
+            if (currentTicketsCount + orderedSeatIds.Count > maxCap)
+                return Fail("RESERVATION_LIMIT_REACHED", 
+                    $"Mỗi khách chỉ được mua hoặc giữ tối đa {maxCap} vé cho sự kiện này (hiện bạn đã có {currentTicketsCount} vé/chỗ giữ).");
+
+            var acquiredLeases = new List<IDistributedLockLease>();
+            try
+            {
+                foreach (var sId in orderedSeatIds)
+                {
+                    var seatKey = $"seat:lock:{sId:N}";
+                    var seatLease = await TryAcquireAsync(seatKey, TimeSpan.FromSeconds(30), cancellationToken);
+                    if (seatLease is null)
+                    {
+                        return Fail("RESERVATION_LOCK_UNAVAILABLE", "Một trong các ghế bạn chọn đang được xử lý hoặc dịch vụ khóa tạm thời chưa sẵn sàng.");
+                    }
+                    acquiredLeases.Add(seatLease);
+                }
+
+                var seats = await _context.Seats.Include(s => s.Event)
+                    .Where(s => orderedSeatIds.Contains(s.Id) && s.EventId == eventId)
+                    .ToListAsync(cancellationToken);
+
+                if (seats.Count != orderedSeatIds.Count)
+                    return Fail("SEAT_NOT_FOUND", "Một số ghế được chọn không tồn tại.");
+
+                var firstSeat = seats[0];
+                if (firstSeat.Event == null || firstSeat.Event.IsDeleted || firstSeat.Event.Status != EventStatus.Published || firstSeat.Event.Date <= _time.UtcNow)
+                    return Fail("EVENT_NOT_ON_SALE", "Sự kiện không còn mở bán.");
+
+                var holdDuration = TimeSpan.FromMinutes(_options.HoldMinutes);
+
+                // Verify all seats before mutating state
+                foreach (var seat in seats)
+                {
+                    if (!seatVersions.TryGetValue(seat.Id, out var version) || version.Length == 0 || !seat.Version.SequenceEqual(version))
+                        return Fail("SEAT_VERSION_CONFLICT", $"Trạng thái ghế {seat.Row}{seat.Number} đã thay đổi. Vui lòng chọn lại.");
+
+                    var expired = seat.IsLockExpired(holdDuration, _time.UtcNow);
+                    if (seat.Status != SeatStatus.Available && !expired)
+                        return Fail("SEAT_UNAVAILABLE", $"Ghế {seat.Row}{seat.Number} đã được giữ hoặc bán.");
+                }
+
+                // Mutate seat locks and prepare tickets with one shared OrderCode
+                var batchOrderCode = Ticket.GenerateOrderCode();
+                var tickets = new List<Ticket>();
+
+                foreach (var seat in seats)
+                {
+                    var expired = seat.IsLockExpired(holdDuration, _time.UtcNow);
+                    if (expired)
+                    {
+                        var oldTickets = await _context.Tickets
+                            .Where(t => t.SeatId == seat.Id && t.Status == TicketStatus.Pending)
+                            .ToListAsync(cancellationToken);
+                        foreach (var oldTicket in oldTickets) oldTicket.Cancel();
+                        seat.ReclaimLock(userId, _time.UtcNow);
+                    }
+                    else
+                    {
+                        seat.Lock(userId, _time.UtcNow);
+                    }
+
+                    var ticket = new Ticket(eventId, seat.Id, userId, seat.Price, batchOrderCode);
+                    _context.Tickets.Add(ticket);
+                    tickets.Add(ticket);
+                }
+
+                if (!limitLease.IsValid || acquiredLeases.Any(l => !l.IsValid))
+                    return Fail("RESERVATION_LOCK_LOST", "Khóa đặt ghế đã hết hạn. Vui lòng thử lại.");
+
+                await _context.SaveChangesAsync(cancellationToken);
+                if (_catalogCache is not null) await _catalogCache.InvalidateAsync(CancellationToken.None);
+
+                var serverTime = _time.UtcNow;
+                var expiresAt = serverTime.Add(holdDuration);
+
+                foreach (var ticket in tickets)
+                {
+                    try { _scheduler.Schedule(ticket.Id, holdDuration); }
+                    catch (Exception ex) { _logger.LogError(ex, "Reservation {TicketId} committed but expiry scheduling failed", ticket.Id); }
+                }
+
+                foreach (var seat in seats)
+                {
+                    try
+                    {
+                        var versionToken = Convert.ToBase64String(seat.Version);
+                        await _notifications.NotifySeatStatusChanged(eventId, seat.Id, seat.Status.ToString(), versionToken, expiresAt, userId);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Public realtime notification failed for seat {SeatId}", seat.Id);
+                    }
+
+                    try
+                    {
+                        await _notifications.NotifyOwnSeatLockChanged(
+                            userId, eventId, seat.Id, seat.Status.ToString(), Convert.ToBase64String(seat.Version), expiresAt);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Private realtime notification failed for seat {SeatId}", seat.Id);
+                    }
+                }
+
+                return new ReservationResult(
+                    true, 
+                    "RESERVATION_CREATED", 
+                    "Giữ các ghế thành công.", 
+                    tickets[0].Id, 
+                    expiresAt, 
+                    serverTime, 
+                    batchOrderCode, 
+                    tickets.Select(t => t.Id).ToList());
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Fail("SEAT_VERSION_CONFLICT", "Trạng thái một số ghế đã thay đổi. Vui lòng chọn lại.");
+            }
+            finally
+            {
+                foreach (var lease in acquiredLeases)
+                {
+                    try { await lease.DisposeAsync(); }
+                    catch (Exception ex) { _logger.LogWarning(ex, "Error disposing seat lease"); }
+                }
+            }
+        }
+    }
+
     public async Task<ReservationResult> ReleaseAsync(Guid ticketId, Guid userId, string reason, CancellationToken cancellationToken)
         => await ReleaseCoreAsync(ticketId, userId, requireOwner: true, reason, cancellationToken);
 
@@ -168,12 +328,14 @@ public sealed class ReservationOperations : IReservationOperations
                 .FirstOrDefaultAsync(t => t.Id == ticketId, cancellationToken);
             if (current == null || (requireOwner && current.UserId != userId) || current.Status != TicketStatus.Pending)
                 return Fail("RESERVATION_NOT_PENDING", "Lượt giữ ghế đã thay đổi.");
-            var beforeSeatStatus = current.Seat?.Status;
-            var seatReleased = false;
-            if (current.Seat?.Status == SeatStatus.Locked && (current.Seat.LockedByUserId == null || current.Seat.LockedByUserId == current.UserId))
+
+            var allPendingTickets = new List<Ticket> { current };
+            if (current.OrderCode > 0)
             {
-                current.Seat.Release();
-                seatReleased = true;
+                var others = await _context.Tickets.Include(t => t.Seat)
+                    .Where(t => t.OrderCode == current.OrderCode && t.Id != current.Id && t.Status == TicketStatus.Pending)
+                    .ToListAsync(cancellationToken);
+                allPendingTickets.AddRange(others);
             }
 
             var userEmail = string.Empty;
@@ -185,15 +347,27 @@ public sealed class ReservationOperations : IReservationOperations
                     .FirstOrDefaultAsync(cancellationToken) ?? string.Empty;
             }
 
-            _context.AuditLogs.Add(new AuditLog(
-                userId: requireOwner ? userId : null,
-                userEmail: userEmail,
-                action: "RESERVATION_RELEASED",
-                entityName: "Ticket",
-                entityId: current.Id.ToString(),
-                beforeState: $"Status={TicketStatus.Pending},SeatStatus={beforeSeatStatus}",
-                afterState: $"Status={TicketStatus.Cancelled},Reason={reason}"));
-            current.Cancel();
+            var releasedSeats = new List<Seat>();
+            foreach (var t in allPendingTickets)
+            {
+                var beforeSeatStatus = t.Seat?.Status;
+                if (t.Seat?.Status == SeatStatus.Locked && (t.Seat.LockedByUserId == null || t.Seat.LockedByUserId == t.UserId))
+                {
+                    t.Seat.Release();
+                    if (t.Seat != null) releasedSeats.Add(t.Seat);
+                }
+
+                _context.AuditLogs.Add(new AuditLog(
+                    userId: requireOwner ? userId : null,
+                    userEmail: userEmail,
+                    action: "RESERVATION_RELEASED",
+                    entityName: "Ticket",
+                    entityId: t.Id.ToString(),
+                    beforeState: $"Status={TicketStatus.Pending},SeatStatus={beforeSeatStatus}",
+                    afterState: $"Status={TicketStatus.Cancelled},Reason={reason}"));
+                t.Cancel();
+            }
+
             if (!lease.IsValid) return Fail("RESERVATION_LOCK_LOST", "Khóa hủy giữ ghế đã hết hạn. Vui lòng thử lại.");
             try
             {
@@ -204,19 +378,21 @@ public sealed class ReservationOperations : IReservationOperations
                 return Fail("RESERVATION_NOT_PENDING", "Lượt giữ ghế đã thay đổi.");
             }
             if (_catalogCache is not null) await _catalogCache.InvalidateAsync(CancellationToken.None);
-            if (seatReleased && current.Seat != null)
+
+            foreach (var seat in releasedSeats)
             {
-                var versionToken = Convert.ToBase64String(current.Seat.Version);
+                var versionToken = Convert.ToBase64String(seat.Version);
                 try
                 {
                     await _notifications.NotifySeatStatusChanged(
-                        current.EventId, current.SeatId, current.Seat.Status.ToString(), versionToken);
+                        current.EventId, seat.Id, seat.Status.ToString(), versionToken);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Reservation {TicketId} was released but realtime notification failed", current.Id);
+                    _logger.LogWarning(ex, "Seat {SeatId} was released but realtime notification failed", seat.Id);
                 }
             }
+
             return new ReservationResult(true, "RESERVATION_RELEASED", "Đã hủy lượt giữ ghế.");
         }
     }

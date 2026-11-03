@@ -29,14 +29,14 @@ public class Ticket : BaseEntity
 
     private Ticket() { } // For EF Core
 
-    public Ticket(Guid eventId, Guid seatId, Guid userId, decimal price)
+    public Ticket(Guid eventId, Guid seatId, Guid userId, decimal price, long? orderCode = null)
     {
         EventId = eventId;
         SeatId = seatId;
         UserId = userId;
         Price = price;
         Status = TicketStatus.Pending;
-        OrderCode = GenerateOrderCode();
+        OrderCode = orderCode ?? GenerateOrderCode();
         Version = Guid.NewGuid().ToByteArray();
     }
 
@@ -130,7 +130,7 @@ public class Ticket : BaseEntity
         Version = Guid.NewGuid().ToByteArray();
     }
 
-    private static long GenerateOrderCode()
+    public static long GenerateOrderCode()
     {
         var high = RandomNumberGenerator.GetInt32(100_000, 1_000_000);
         var low = RandomNumberGenerator.GetInt32(0, 1_000_000_000);

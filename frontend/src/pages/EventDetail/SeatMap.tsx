@@ -6,11 +6,12 @@ import { formatCurrency } from '../../utils/formatters';
 
 interface SeatMapProps {
   seats: Seat[];
-  selectedSeat: Seat | null;
+  selectedSeat?: Seat | null;
+  selectedSeats?: Seat[];
   onSeatClick: (seat: Seat) => void;
 }
 
-export const SeatMap: React.FC<SeatMapProps> = React.memo(({ seats, selectedSeat, onSeatClick }) => {
+export const SeatMap: React.FC<SeatMapProps> = React.memo(({ seats, selectedSeat, selectedSeats, onSeatClick }) => {
   const formatVND = (price: number) => {
     return formatCurrency(price);
   };
@@ -103,7 +104,9 @@ export const SeatMap: React.FC<SeatMapProps> = React.memo(({ seats, selectedSeat
               
               <div className="flex gap-1.5 sm:gap-2 md:gap-2.5">
                 {[...rowSeats].sort((a, b) => a.number - b.number).map((seat) => {
-                  const isSelected = selectedSeat?.id === seat.id;
+                  const isSelected = selectedSeats && selectedSeats.length > 0 
+                    ? selectedSeats.some(s => s.id === seat.id) 
+                    : selectedSeat?.id === seat.id;
                   const isLockedByMe = Boolean(seat.isLockedByCurrentUser || seat.isLockedByMe);
                   const isClickable = seat.status === 0 || isLockedByMe;
                   const tierInfo = getSeatTierInfo(seat);

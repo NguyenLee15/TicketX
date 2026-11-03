@@ -29,7 +29,13 @@ export default function EventDetailPage() {
     refetch: refetchEvent,
   } = useEventDetailQuery(id);
 
-  const [selectedSeat, setSelectedSeat] = useState<Seat | null>(null);
+  const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
+  const selectedSeat = selectedSeats[0] ?? null;
+
+  const handleRemoveSeat = useCallback((seatId: string) => {
+    setSelectedSeats(prev => prev.filter(s => s.id !== seatId));
+  }, []);
+
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [locking, setLocking] = useState(false);
   const [ticketId, setTicketId] = useState<string | null>(null);
@@ -45,7 +51,7 @@ export default function EventDetailPage() {
 
   // Reset seat selection & checkout states when switching between event routes
   useEffect(() => {
-    setSelectedSeat(null);
+    setSelectedSeats([]);
     setIsCheckoutOpen(false);
     bookingIdempotencyKeyRef.current = null;
     lockingSeatRef.current = null;
@@ -65,7 +71,7 @@ export default function EventDetailPage() {
     setLockExpiresAt(cleared.lockExpiresAt);
     setLockServerTime(null);
     if (!isCheckoutOpenRef.current) {
-      setSelectedSeat(null);
+      setSelectedSeats([]);
       void refetchEvent();
     }
   }, [refetchEvent]);
@@ -103,43 +109,43 @@ export default function EventDetailPage() {
       return { ...prev, seats: newSeats };
     });
 
-    // If our currently selected seat was locked or bought by someone else
-    setSelectedSeat(prev => {
-      const activeSeat = prev ?? (lockingSeatRef.current?.id === payload.seatId ? lockingSeatRef.current : null);
-      if (activeSeat?.id === payload.seatId) {
-        if (payload.status === 0) {
-          setLockExpiresAt(null);
-          setLockServerTime(null);
-          setLockTimeLeft(null);
-          return null;
-        }
+    // If our currently selected seats were locked or bought by someone else
+    setSelectedSeats(prev => {
+      const match = prev.find(s => s.id === payload.seatId);
+      if (!match) return prev;
 
-        const isMySeat = Boolean(
-          lockingSeatRef.current?.id === payload.seatId ||
-          activeSeat.isLockedByMe ||
-          activeSeat.isLockedByCurrentUser ||
-          shouldPreserveSeatSelection(activeSeat.id, payload, user?.id)
-        );
-
-        if (!isMySeat) {
-          setLockExpiresAt(null);
-          setLockServerTime(null);
-          setLockTimeLeft(null);
-          return null;
-        }
-
-        return {
-          ...activeSeat,
-          status: payload.status,
-          version: payload.version ?? activeSeat.version,
-          isLockedByMe: true,
-          isLockedByCurrentUser: true,
-          lockExpiresAt: payload.expiresAt ?? activeSeat.lockExpiresAt,
-        };
+      if (payload.status === 0) {
+        return prev.map(s => s.id === payload.seatId ? { ...s, status: 0, isLockedByMe: false, isLockedByCurrentUser: false } : s);
       }
-      return prev;
+
+      const isMySeat = Boolean(
+        lockingSeatRef.current?.id === payload.seatId ||
+        match.isLockedByMe ||
+        match.isLockedByCurrentUser ||
+        shouldPreserveSeatSelection(match.id, payload, user?.id)
+      );
+
+      if (!isMySeat) {
+        toast.error(`Ghế ${match.row}${match.number} vừa có người khác giữ chỗ.`);
+        const remaining = prev.filter(s => s.id !== payload.seatId);
+        if (remaining.length === 0) {
+          setLockExpiresAt(null);
+          setLockServerTime(null);
+          setLockTimeLeft(null);
+        }
+        return remaining;
+      }
+
+      return prev.map(s => s.id === payload.seatId ? {
+        ...s,
+        status: payload.status,
+        version: payload.version ?? s.version,
+        isLockedByMe: true,
+        isLockedByCurrentUser: true,
+        lockExpiresAt: payload.expiresAt ?? s.lockExpiresAt,
+      } : s);
     });
-  }, [id, queryClient, user?.id]);
+  }, [id, queryClient, user?.id, setLockTimeLeft]);
 
   const handleSeatReconnect = useCallback(() => {
     void refetchEvent();
@@ -163,55 +169,76 @@ export default function EventDetailPage() {
     }
     
     bookingIdempotencyKeyRef.current = null;
-    if (selectedSeat?.id === seat.id) {
-      setSelectedSeat(null);
-      setLockExpiresAt(null);
-      setLockServerTime(null);
-      setLockTimeLeft(null);
-    } else {
-      setSelectedSeat(seat);
-      if (isLockedByMe && seat.lockExpiresAt) {
-        setLockExpiresAt(seat.lockExpiresAt);
-        setLockServerTime(event?.serverTime ?? null);
-      } else {
+    const maxCap = event?.maxTicketsPerUser ?? 4;
+    const isAlreadySelected = selectedSeats.some(s => s.id === seat.id);
+
+    if (isAlreadySelected) {
+      const nextSeats = selectedSeats.filter(s => s.id !== seat.id);
+      setSelectedSeats(nextSeats);
+      if (nextSeats.length === 0) {
         setLockExpiresAt(null);
         setLockServerTime(null);
         setLockTimeLeft(null);
+      }
+    } else {
+      if (selectedSeats.length >= maxCap) {
+        toast.error(`Bạn chỉ được chọn tối đa ${maxCap} ghế cho mỗi lần đặt.`);
+        return;
+      }
+      const nextSeats = [...selectedSeats, seat];
+      setSelectedSeats(nextSeats);
+      if (isLockedByMe && seat.lockExpiresAt) {
+        setLockExpiresAt(seat.lockExpiresAt);
+        setLockServerTime(event?.serverTime ?? null);
       }
     }
   };
 
   const handleBookTicket = async () => {
-    if (!selectedSeat || !event) return;
+    if (selectedSeats.length === 0 || !event) return;
     setLocking(true);
-    lockingSeatRef.current = selectedSeat;
+    lockingSeatRef.current = selectedSeats[0];
 
     if (!bookingIdempotencyKeyRef.current) {
       bookingIdempotencyKeyRef.current = createIdempotencyKey();
     }
 
     try {
-      const res = await api.post(`/api/seats/${selectedSeat.id}/lock`, {
-        eventId: event.id,
-        version: selectedSeat.version
-      }, {
-        headers: {
-          'Idempotency-Key': bookingIdempotencyKeyRef.current
-        }
-      });
+      let res;
+      if (selectedSeats.length === 1) {
+        const singleSeat = selectedSeats[0];
+        res = await api.post(`/api/seats/${singleSeat.id}/lock`, {
+          eventId: event.id,
+          version: singleSeat.version
+        }, {
+          headers: {
+            'Idempotency-Key': bookingIdempotencyKeyRef.current
+          }
+        });
+      } else {
+        res = await api.post(`/api/seats/batch-lock`, {
+          eventId: event.id,
+          seats: selectedSeats.map(s => ({
+            seatId: s.id,
+            version: s.version
+          }))
+        }, {
+          headers: {
+            'Idempotency-Key': bookingIdempotencyKeyRef.current
+          }
+        });
+      }
 
       if (res.data.success) {
         bookingIdempotencyKeyRef.current = null;
         setTicketId(res.data.data.ticketId);
-        const lockedSeat = selectedSeat ?? lockingSeatRef.current;
-        if (lockedSeat) {
-          setSelectedSeat({
-            ...lockedSeat,
-            status: 1,
-            isLockedByMe: true,
-            isLockedByCurrentUser: true,
-          });
-        }
+        
+        setSelectedSeats(prev => prev.map(seat => ({
+          ...seat,
+          status: 1,
+          isLockedByMe: true,
+          isLockedByCurrentUser: true,
+        })));
         
         // Sync timer with server expiresAt & serverTime (clock skew safe)
         if (res.data.data.expiresAt) {
@@ -240,7 +267,8 @@ export default function EventDetailPage() {
         }
 
         setIsCheckoutOpen(true);
-        toast.success(`Đã giữ ghế ${selectedSeat.row}${selectedSeat.number} thành công!`);
+        const seatNames = selectedSeats.map(s => `${s.row}${s.number}`).join(', ');
+        toast.success(`Đã giữ ghế ${seatNames} thành công!`);
       } else {
         toast.error(res.data.message || 'Không thể giữ ghế này. Vui lòng chọn ghế khác.');
         void refetchEvent();
@@ -317,25 +345,29 @@ export default function EventDetailPage() {
         <div className="w-full lg:col-span-8 order-2 lg:row-span-2">
           <SeatMap 
             seats={event.seats} 
-            selectedSeat={selectedSeat} 
+            selectedSeat={selectedSeat}
+            selectedSeats={selectedSeats}
             onSeatClick={handleSeatClick} 
           />
         </div>
 
         {/* Left Col: Selected Seat Panel (Row 2 on desktop under EventInfoCard, order-3 on mobile) */}
-        <div className={`w-full lg:col-span-4 order-3 ${selectedSeat ? 'sticky bottom-3 z-30 lg:static' : ''}`}>
+        <div className={`w-full lg:col-span-4 order-3 ${selectedSeats.length > 0 ? 'sticky bottom-3 z-30 lg:static' : ''}`}>
           <SelectedSeatPanel
             selectedSeat={selectedSeat}
+            selectedSeats={selectedSeats}
             lockTimeLeft={lockTimeLeft}
             locking={locking}
             onBookTicket={handleBookTicket}
+            onRemoveSeat={handleRemoveSeat}
           />
         </div>
       </div>
 
-      {isCheckoutOpen && selectedSeat && ticketId && (
+      {isCheckoutOpen && selectedSeats.length > 0 && ticketId && (
         <CheckoutModal 
-          seat={selectedSeat}
+          seat={selectedSeats[0]}
+          seats={selectedSeats}
           event={event}
           ticketId={ticketId}
           expiresAt={lockExpiresAt || undefined}
@@ -348,7 +380,7 @@ export default function EventDetailPage() {
             setLockExpiresAt(cleared.lockExpiresAt);
             setLockServerTime(null);
             setLockTimeLeft(cleared.lockTimeLeft);
-            setSelectedSeat(null);
+            setSelectedSeats([]);
             void refetchEvent();
           }} 
         />

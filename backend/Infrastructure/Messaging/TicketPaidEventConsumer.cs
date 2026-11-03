@@ -283,6 +283,7 @@ public class TicketPaidEventConsumer : BackgroundService
         {
             var dbContext = serviceProvider.GetRequiredService<IApplicationDbContext>();
             var emailService = serviceProvider.GetRequiredService<IEmailService>();
+            var pdfGenerator = serviceProvider.GetService<IPdfTicketGenerator>();
 
             var user = await dbContext.Users.FindAsync(new object[] { ticketEvent.UserId }, cancellationToken);
             if (user != null)
@@ -316,10 +317,48 @@ public class TicketPaidEventConsumer : BackgroundService
                             </ul>
                             <p><strong>Mã định danh QR (dùng để đối chiếu tại cổng soát vé hoặc xem trực tiếp trong mục Vé của tôi):</strong></p>
                             <pre style=""background:#f3f4f6;padding:12px;border-radius:6px;word-break:break-all;"">{safeQrToken}</pre>
+                            <p><em>File vé điện tử PDF chính thức đính kèm thư này đã sẵn sàng để bạn lưu vào điện thoại hoặc in ra giấy.</em></p>
                         </div>
                     ";
 
-                await emailService.SendEmailAsync(user.Email, subject, emailBody);
+                byte[]? pdfBytes = null;
+                if (ticket != null && pdfGenerator != null)
+                {
+                    try
+                    {
+                        pdfBytes = pdfGenerator.GenerateTicketPdf(
+                            ticket.Event?.Title ?? "Sự kiện TickeX",
+                            ticket.Event?.Date ?? DateTime.UtcNow,
+                            ticket.Event?.VenueName ?? "N/A",
+                            ticket.Event?.Location ?? "N/A",
+                            ticket.Seat?.Row ?? "A",
+                            ticket.Seat?.Number ?? 1,
+                            ticket.Seat?.Tier.ToString() ?? "Standard",
+                            ticket.Price,
+                            ticket.OrderCode,
+                            ticket.QrCodeSignature,
+                            user.Name);
+                    }
+                    catch (Exception pdfEx)
+                    {
+                        logger.LogWarning(pdfEx, "PDF generation failed for ticket {TicketId}; falling back to standard email.", ticket.Id);
+                    }
+                }
+
+                if (pdfBytes != null && pdfBytes.Length > 0 && ticket != null)
+                {
+                    await emailService.SendEmailWithAttachmentAsync(
+                        user.Email,
+                        subject,
+                        emailBody,
+                        pdfBytes,
+                        $"TickeX_Ticket_{ticket.OrderCode}_{ticket.Id.ToString()[..8]}.pdf");
+                }
+                else
+                {
+                    await emailService.SendEmailAsync(user.Email, subject, emailBody);
+                }
+
                 logger.LogInformation("Ticket notification sent for User {UserId} and Ticket {TicketId}.", ticketEvent.UserId, ticketEvent.TicketId);
             }
 

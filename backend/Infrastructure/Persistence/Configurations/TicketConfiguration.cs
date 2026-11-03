@@ -33,7 +33,7 @@ public class TicketConfiguration : IEntityTypeConfiguration<Ticket>
             .HasForeignKey(t => t.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(t => t.OrderCode).IsUnique();
+        builder.HasIndex(t => t.OrderCode);
         builder.HasIndex(t => t.UserId);
         builder.HasIndex(t => t.EventId);
         builder.HasIndex(t => t.Status);
