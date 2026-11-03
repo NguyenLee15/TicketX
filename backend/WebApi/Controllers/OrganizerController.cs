@@ -48,13 +48,14 @@ public class OrganizerController : ControllerBase
         DateTime EndDate,
         string Location,
         string VenueName,
-        string Category,
-        string ImageUrl,
-        string BannerUrl,
-        decimal BasePrice,
+        string? Category = "Other",
+        string? ImageUrl = null,
+        string? BannerUrl = null,
+        decimal BasePrice = 0,
         int RefundCutoffHours = 24,
         int Rows = 10,
-        int Cols = 10
+        int? Cols = null,
+        int? SeatsPerRow = null
     );
 
     [HttpPost("events")]
@@ -64,6 +65,11 @@ public class OrganizerController : ControllerBase
         if (userId == null)
             return this.UnauthorizedProblem();
 
+        var cols = request.SeatsPerRow ?? request.Cols ?? 10;
+        var imageUrl = !string.IsNullOrWhiteSpace(request.ImageUrl) ? request.ImageUrl : "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800";
+        var bannerUrl = !string.IsNullOrWhiteSpace(request.BannerUrl) ? request.BannerUrl : imageUrl;
+        var category = !string.IsNullOrWhiteSpace(request.Category) ? request.Category : "Concert";
+
         var command = new CreateOrganizerEventCommand(
             userId.Value,
             request.Title,
@@ -72,13 +78,13 @@ public class OrganizerController : ControllerBase
             request.EndDate,
             request.Location,
             request.VenueName,
-            request.Category,
-            request.ImageUrl,
-            request.BannerUrl,
+            category,
+            imageUrl,
+            bannerUrl,
             request.BasePrice,
             request.RefundCutoffHours,
             request.Rows,
-            request.Cols
+            cols
         );
 
         var result = await _mediator.Send(command, cancellationToken);

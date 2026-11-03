@@ -23,7 +23,8 @@ public class SettlementsController : ControllerBase
         Guid EventId,
         string BankName,
         string BankAccountNumber,
-        string AccountHolder
+        string? AccountHolder = null,
+        string? BankAccountHolder = null
     );
 
     [HttpPost("request")]
@@ -49,12 +50,14 @@ public class SettlementsController : ControllerBase
             });
         }
 
+        var holder = request.BankAccountHolder ?? request.AccountHolder ?? string.Empty;
+
         var command = new RequestSettlementCommand(
             request.EventId,
             userId.Value,
             request.BankName,
             request.BankAccountNumber,
-            request.AccountHolder
+            holder
         );
 
         var result = await _mediator.Send(command, cancellationToken);
@@ -106,9 +109,9 @@ public class SettlementsController : ControllerBase
         return Ok(new { success = true, data = list });
     }
 
-    public record AdminNoteRequest(string? Note = null);
-    public record CompleteSettlementApiRequest(string? BankTransactionRef = null, string? Note = null);
-    public record RejectSettlementApiRequest(string Reason);
+    public record AdminNoteRequest(string? Note = null, string? AdminNote = null);
+    public record CompleteSettlementApiRequest(string? BankTransactionRef = null, string? BankTransactionReference = null, string? Note = null, string? AdminNote = null);
+    public record RejectSettlementApiRequest(string? Reason = null, string? Note = null, string? AdminNote = null);
 
     [HttpPost("{id:guid}/approve")]
     [Authorize(Roles = "Admin")]
@@ -118,7 +121,8 @@ public class SettlementsController : ControllerBase
         if (adminId == null)
             return this.UnauthorizedProblem();
 
-        var result = await _mediator.Send(new ApproveSettlementCommand(id, adminId.Value, request?.Note), cancellationToken);
+        var note = request?.AdminNote ?? request?.Note;
+        var result = await _mediator.Send(new ApproveSettlementCommand(id, adminId.Value, note), cancellationToken);
         if (!result.Success)
         {
             return BadRequest(new
@@ -145,7 +149,9 @@ public class SettlementsController : ControllerBase
         if (adminId == null)
             return this.UnauthorizedProblem();
 
-        var result = await _mediator.Send(new CompleteSettlementCommand(id, adminId.Value, request?.BankTransactionRef, request?.Note), cancellationToken);
+        var txRef = request?.BankTransactionReference ?? request?.BankTransactionRef;
+        var note = request?.AdminNote ?? request?.Note;
+        var result = await _mediator.Send(new CompleteSettlementCommand(id, adminId.Value, txRef, note), cancellationToken);
         if (!result.Success)
         {
             return BadRequest(new
@@ -172,7 +178,8 @@ public class SettlementsController : ControllerBase
         if (adminId == null)
             return this.UnauthorizedProblem();
 
-        if (request == null || string.IsNullOrWhiteSpace(request.Reason))
+        var reason = request?.Reason ?? request?.AdminNote ?? request?.Note;
+        if (string.IsNullOrWhiteSpace(reason))
         {
             return BadRequest(new
             {
@@ -187,7 +194,7 @@ public class SettlementsController : ControllerBase
             });
         }
 
-        var result = await _mediator.Send(new RejectSettlementCommand(id, adminId.Value, request.Reason), cancellationToken);
+        var result = await _mediator.Send(new RejectSettlementCommand(id, adminId.Value, reason), cancellationToken);
         if (!result.Success)
         {
             return BadRequest(new
