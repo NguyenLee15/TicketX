@@ -1,17 +1,28 @@
 import React, { useMemo } from 'react';
-import { Lock, X, Crown, Check } from 'lucide-react';
+import { Lock, X, Crown, Check, Users, UserCheck, RotateCcw } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { Seat } from '../../types';
 import { SeatLegend } from './SeatLegend';
 import { formatCurrency } from '../../utils/formatters';
+import { findAdjacentSeats } from '../../utils/seatSelectionUtils';
 
 interface SeatMapProps {
   seats: Seat[];
   selectedSeat?: Seat | null;
   selectedSeats?: Seat[];
   onSeatClick: (seat: Seat) => void;
+  onQuickSelectSeats?: (seats: Seat[]) => void;
+  onClearSeats?: () => void;
 }
 
-export const SeatMap: React.FC<SeatMapProps> = React.memo(({ seats, selectedSeat, selectedSeats, onSeatClick }) => {
+export const SeatMap: React.FC<SeatMapProps> = React.memo(({
+  seats,
+  selectedSeat,
+  selectedSeats,
+  onSeatClick,
+  onQuickSelectSeats,
+  onClearSeats,
+}) => {
   const formatVND = (price: number) => {
     return formatCurrency(price);
   };
@@ -64,12 +75,21 @@ export const SeatMap: React.FC<SeatMapProps> = React.memo(({ seats, selectedSeat
 
   const sortedRowKeys = useMemo(() => Object.keys(rows).sort(), [rows]);
 
+  const handleQuickSelect = (count: number) => {
+    const found = findAdjacentSeats(seats, count);
+    if (found && found.length === count) {
+      onQuickSelectSeats?.(found);
+    } else {
+      toast.error(`Không tìm thấy ${count} ghế liền kề còn trống trong cùng hàng.`);
+    }
+  };
+
   return (
     <div className="surface-panel p-5 sm:p-7 md:p-8 shadow-2xl relative overflow-hidden min-h-[480px] lg:min-h-[540px] flex flex-col justify-between border border-border-subtle/80">
       <h2 className="sr-only">Sơ đồ chọn ghế</h2>
       
       {/* Curved Stage Header with Spotlight Ambient Arc */}
-      <div className="mb-8 text-center relative z-10 pt-2">
+      <div className="mb-6 text-center relative z-10 pt-2">
         <div className="w-3/4 max-w-lg mx-auto relative flex flex-col items-center">
           {/* Spotlight Cone Glow */}
           <div className="absolute -top-6 inset-x-0 h-24 stage-spotlight-arch pointer-events-none rounded-t-full opacity-80" aria-hidden="true" />
@@ -83,6 +103,43 @@ export const SeatMap: React.FC<SeatMapProps> = React.memo(({ seats, selectedSeat
           </div>
         </div>
       </div>
+
+      {/* Quick Selection Toolbar */}
+      {onQuickSelectSeats && (
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-6 relative z-10 px-2">
+          <button
+            type="button"
+            onClick={() => handleQuickSelect(2)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 border border-border-subtle hover:border-brand-primary/40 text-text-secondary hover:text-white text-xs font-semibold transition-all cursor-pointer active:scale-95 shadow-sm"
+            aria-label="Chọn nhanh 2 ghế liền kề"
+          >
+            <Users className="w-3.5 h-3.5 text-brand-primary" aria-hidden="true" />
+            <span>Cặp 2 ghế</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleQuickSelect(4)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-surface-2 hover:bg-surface-3 border border-border-subtle hover:border-brand-primary/40 text-text-secondary hover:text-white text-xs font-semibold transition-all cursor-pointer active:scale-95 shadow-sm"
+            aria-label="Chọn nhanh 4 ghế liền kề"
+          >
+            <UserCheck className="w-3.5 h-3.5 text-brand-primary" aria-hidden="true" />
+            <span>Nhóm 4 ghế</span>
+          </button>
+
+          {selectedSeats && selectedSeats.length > 0 && onClearSeats && (
+            <button
+              type="button"
+              onClick={onClearSeats}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-danger/10 hover:bg-danger/20 border border-danger/25 text-danger hover:text-danger-light text-xs font-semibold transition-all cursor-pointer active:scale-95 shadow-sm"
+              aria-label="Bỏ chọn tất cả ghế"
+            >
+              <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Bỏ chọn ({selectedSeats.length})</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Mobile Scroll Hint */}
       <div className="block md:hidden text-center pb-2 text-xs text-text-tertiary font-medium">

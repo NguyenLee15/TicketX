@@ -129,6 +129,51 @@ public static class DatabaseSeeder
                 foreach (var ticket in oversized) ticket.RegenerateOrderCode();
                 await context.SaveChangesAsync();
             }
+
+            // 3. Seed sample active coupons
+            if (!await context.Coupons.AnyAsync())
+            {
+                var now = DateTime.UtcNow;
+                var coupon1 = new Coupon(
+                    code: "TICKEX10",
+                    description: "Giảm 10% (tối đa 100.000₫) cho đơn từ 200.000₫",
+                    discountType: DiscountType.Percentage,
+                    discountValue: 10m,
+                    maxDiscountAmount: 100000m,
+                    minOrderAmount: 200000m,
+                    usageLimit: 1000,
+                    validFrom: now.AddDays(-1),
+                    validTo: now.AddYears(1)
+                );
+
+                var coupon2 = new Coupon(
+                    code: "CHAOBANMOI",
+                    description: "Giảm trực tiếp 50.000₫ cho khách hàng mới (đơn từ 250.000₫)",
+                    discountType: DiscountType.FixedAmount,
+                    discountValue: 50000m,
+                    maxDiscountAmount: null,
+                    minOrderAmount: 250000m,
+                    usageLimit: 500,
+                    validFrom: now.AddDays(-1),
+                    validTo: now.AddYears(1)
+                );
+
+                var coupon3 = new Coupon(
+                    code: "VIPCONCERT",
+                    description: "Ưu đãi concert VIP giảm 15% (tối đa 300.000₫) cho đơn từ 500.000₫",
+                    discountType: DiscountType.Percentage,
+                    discountValue: 15m,
+                    maxDiscountAmount: 300000m,
+                    minOrderAmount: 500000m,
+                    usageLimit: 200,
+                    validFrom: now.AddDays(-1),
+                    validTo: now.AddYears(1)
+                );
+
+                context.Coupons.AddRange(coupon1, coupon2, coupon3);
+                await context.SaveChangesAsync();
+                logger.LogInformation("3 active coupons seeded successfully.");
+            }
         }
         catch (Exception ex)
         {

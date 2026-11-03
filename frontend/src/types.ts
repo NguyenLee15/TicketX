@@ -139,6 +139,22 @@ export interface AppliedCoupon {
   finalAmount: number;
 }
 
+export interface AvailableCoupon {
+  id: string;
+  code: string;
+  description: string;
+  discountType: number | 'Percentage' | 'FixedAmount';
+  discountValue: number;
+  maxDiscountAmount?: number | null;
+  minOrderAmount: number;
+  usageLimit: number;
+  usedCount: number;
+  validFrom: string;
+  validTo: string;
+  eventId?: string | null;
+  isActive: boolean;
+}
+
 export interface OrganizerMetrics {
   totalEvents: number;
   totalSeats: number;

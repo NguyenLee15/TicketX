@@ -194,6 +194,38 @@ export default function EventDetailPage() {
     }
   };
 
+  const handleQuickSelectSeats = useCallback((seatsToSelect: Seat[]) => {
+    if (locking || isHydrating) return;
+    if (!isAuthenticated()) {
+      toast.error('Vui lòng đăng nhập để chọn ghế và đặt vé.');
+      navigate('/login', { state: { from: location } });
+      return;
+    }
+
+    const maxCap = event?.maxTicketsPerUser ?? 4;
+    if (seatsToSelect.length > maxCap) {
+      toast.error(`Bạn chỉ được chọn tối đa ${maxCap} ghế cho mỗi lần đặt.`);
+      return;
+    }
+
+    bookingIdempotencyKeyRef.current = null;
+    setSelectedSeats(seatsToSelect);
+
+    const first = seatsToSelect[0];
+    const seatNums = seatsToSelect.map(s => s.number).join(', ');
+    toast.success(`Đã tự động chọn ${seatsToSelect.length} ghế liền kề: Hàng ${first.row} (ghế ${seatNums})`);
+  }, [locking, isHydrating, isAuthenticated, navigate, location, event?.maxTicketsPerUser]);
+
+  const handleClearSeats = useCallback(() => {
+    if (locking) return;
+    bookingIdempotencyKeyRef.current = null;
+    setSelectedSeats([]);
+    setLockExpiresAt(null);
+    setLockServerTime(null);
+    setLockTimeLeft(null);
+    toast('Đã bỏ chọn tất cả ghế.', { icon: '🔄' });
+  }, [locking, setLockTimeLeft]);
+
   const handleBookTicket = async () => {
     if (selectedSeats.length === 0 || !event) return;
     setLocking(true);
@@ -348,6 +380,8 @@ export default function EventDetailPage() {
             selectedSeat={selectedSeat}
             selectedSeats={selectedSeats}
             onSeatClick={handleSeatClick} 
+            onQuickSelectSeats={handleQuickSelectSeats}
+            onClearSeats={handleClearSeats}
           />
         </div>
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, Tag } from 'lucide-react';
+import { Clock, Tag, Ticket } from 'lucide-react';
 import { EventDetail, Seat, AppliedCoupon } from '../../types';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { ResilientImage } from '../ResilientImage';
@@ -16,6 +16,7 @@ interface CheckoutInvoiceProps {
   onCouponCodeChange?: (code: string) => void;
   onApplyCoupon?: () => void;
   applyingCoupon?: boolean;
+  onOpenVoucherDrawer?: () => void;
 }
 
 export const CheckoutInvoice: React.FC<CheckoutInvoiceProps> = React.memo(({
@@ -30,6 +31,7 @@ export const CheckoutInvoice: React.FC<CheckoutInvoiceProps> = React.memo(({
   onCouponCodeChange,
   onApplyCoupon,
   applyingCoupon,
+  onOpenVoucherDrawer,
 }) => {
   const effectiveSeats = seats && seats.length > 0 ? seats : [seat];
   const totalPrice = effectiveSeats.reduce((sum, s) => sum + s.price, 0);
@@ -95,10 +97,22 @@ export const CheckoutInvoice: React.FC<CheckoutInvoiceProps> = React.memo(({
       {/* Promo Code Input */}
       {onApplyCoupon && (
         <div className="p-3.5 rounded-2xl bg-surface-2/40 border border-border-subtle text-xs space-y-2">
-          <label htmlFor="coupon-input" className="block text-text-secondary font-semibold flex items-center gap-1.5">
-            <Tag className="w-3.5 h-3.5 text-brand-primary" aria-hidden="true" />
-            <span>Mã Giảm Giá / Khuyến Mãi</span>
-          </label>
+          <div className="flex items-center justify-between">
+            <label htmlFor="coupon-input" className="text-text-secondary font-semibold flex items-center gap-1.5">
+              <Tag className="w-3.5 h-3.5 text-brand-primary" aria-hidden="true" />
+              <span>Mã Giảm Giá / Khuyến Mãi</span>
+            </label>
+            {onOpenVoucherDrawer && (
+              <button
+                type="button"
+                onClick={onOpenVoucherDrawer}
+                className="text-brand-primary hover:text-brand-primary/80 font-bold inline-flex items-center gap-1 text-[11px] transition-colors cursor-pointer"
+              >
+                <Ticket className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>Kho voucher</span>
+              </button>
+            )}
+          </div>
           <div className="flex gap-2">
             <input
               id="coupon-input"

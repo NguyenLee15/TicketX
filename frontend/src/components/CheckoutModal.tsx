@@ -7,6 +7,7 @@ import api from '../services/api';
 import { CheckoutInvoice } from './Checkout/CheckoutInvoice';
 import { CheckoutVietQrView, PaymentInfo } from './Checkout/CheckoutVietQrView';
 import { CheckoutReleaseDialog } from './Checkout/CheckoutReleaseDialog';
+import { VoucherDrawer } from './Checkout/VoucherDrawer';
 import { CheckoutModalHeader } from './Checkout/CheckoutModalHeader';
 import { CheckoutStatusView } from './Checkout/CheckoutStatusView';
 import { useModalAccessibility } from './Admin/useModalAccessibility';
@@ -43,6 +44,7 @@ export default function CheckoutModal({
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [showVoucherDrawer, setShowVoucherDrawer] = useState(false);
   const [vatData, setVatData] = useState<VatInvoiceFormData>({
     isRequested: false,
     taxCode: '',
@@ -305,17 +307,19 @@ export default function CheckoutModal({
   const effectiveSeats = seats && seats.length > 0 ? seats : [seat];
   const totalPrice = effectiveSeats.reduce((sum, s) => sum + s.price, 0);
 
-  const handleApplyCoupon = async () => {
-    if (!couponCode.trim() || applyingCoupon) return;
+  const handleApplyCoupon = async (overrideCode?: string) => {
+    const codeToApply = (overrideCode || couponCode).trim();
+    if (!codeToApply || applyingCoupon) return;
     setApplyingCoupon(true);
     try {
       const res = await api.post('/api/coupons/apply', {
-        code: couponCode.trim(),
+        code: codeToApply,
         orderAmount: totalPrice,
         eventId: event.id,
       });
       if (res.data?.success) {
         setAppliedCoupon(res.data.data);
+        setCouponCode(codeToApply);
         toast.success(res.data.message || 'Áp dụng mã giảm giá thành công!');
         try {
           const confetti = (await import('canvas-confetti')).default;
@@ -369,8 +373,9 @@ export default function CheckoutModal({
               appliedCoupon={appliedCoupon}
               couponCodeInput={couponCode}
               onCouponCodeChange={setCouponCode}
-              onApplyCoupon={handleApplyCoupon}
+              onApplyCoupon={() => void handleApplyCoupon()}
               applyingCoupon={applyingCoupon}
+              onOpenVoucherDrawer={() => setShowVoucherDrawer(true)}
             />
 
             <VatInvoiceForm value={vatData} onChange={setVatData} />
@@ -438,6 +443,17 @@ export default function CheckoutModal({
           releaseError={releaseError}
           onCancel={() => setShowCloseConfirm(false)}
           onConfirm={handleReleaseAndClose}
+        />
+
+        {/* Voucher Drawer */}
+        <VoucherDrawer
+          isOpen={showVoucherDrawer && status === 'idle'}
+          onClose={() => setShowVoucherDrawer(false)}
+          eventId={event.id}
+          orderAmount={totalPrice}
+          appliedCouponCode={appliedCoupon?.code}
+          onSelectCoupon={(code) => void handleApplyCoupon(code)}
+          applying={applyingCoupon}
         />
       </div>
     </div>
