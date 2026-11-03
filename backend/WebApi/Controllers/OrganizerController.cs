@@ -41,6 +41,30 @@ public class OrganizerController : ControllerBase
         return Ok(new { success = true, data = metrics });
     }
 
+    [HttpGet("events/{id:guid}/tickets")]
+    public async Task<IActionResult> GetEventTickets(Guid id, CancellationToken cancellationToken)
+    {
+        var userId = this.GetAuthenticatedUserId();
+        if (userId == null)
+            return this.UnauthorizedProblem();
+
+        var isAdmin = User.IsInRole("Admin");
+        var result = await _mediator.Send(new GetOrganizerEventTicketsQuery(id, userId.Value, isAdmin), cancellationToken);
+
+        if (!result.Success)
+        {
+            if (result.ErrorCode == "EVENT_NOT_FOUND")
+                return this.ProblemDetails(StatusCodes.Status404NotFound, result.ErrorCode, result.Message ?? "Không tìm thấy sự kiện");
+
+            if (result.ErrorCode == "ORGANIZER_FORBIDDEN")
+                return this.ProblemDetails(StatusCodes.Status403Forbidden, result.ErrorCode, result.Message ?? "Không có quyền truy cập");
+
+            return this.BadRequestProblem(result.ErrorCode ?? "GET_TICKETS_FAILED", result.Message ?? "Không thể lấy danh sách vé");
+        }
+
+        return Ok(new { success = true, data = result.Tickets });
+    }
+
     public record CreateOrganizerEventRequest(
         string Title,
         string Description,

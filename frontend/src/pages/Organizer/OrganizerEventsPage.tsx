@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import {
   Calendar,
   PlusCircle,
@@ -11,12 +12,15 @@ import {
   ExternalLink,
   Landmark,
   MapPin,
-  Clock
+  Clock,
+  Download,
+  QrCode
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import api from '../../services/api';
 import { useModalAccessibility } from '../../components/Admin/useModalAccessibility';
-import type { OrganizerEvent, ApiResponse } from '../../types';
+import { exportOrganizerEventTicketsCsv } from '../../utils/csvExportUtils';
+import type { OrganizerEvent, OrganizerTicketReportItem, ApiResponse } from '../../types';
 
 export default function OrganizerEventsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -24,6 +28,7 @@ export default function OrganizerEventsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [exportingEventId, setExportingEventId] = useState<string | null>(null);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -59,6 +64,28 @@ export default function OrganizerEventsPage() {
       setError(msg);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleExportTickets = async (eventId: string, eventTitle: string) => {
+    if (exportingEventId) return;
+    try {
+      setExportingEventId(eventId);
+      const res = await api.get<ApiResponse<OrganizerTicketReportItem[]>>(`/api/organizer/events/${eventId}/tickets`);
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        if (res.data.data.length === 0) {
+          toast('Chưa có vé nào được bán cho sự kiện này.', { icon: 'ℹ️' });
+          return;
+        }
+        exportOrganizerEventTicketsCsv(eventTitle, res.data.data);
+        toast.success(`Đã xuất danh sách ${res.data.data.length} vé thành công!`);
+      } else {
+        toast.error('Không thể lấy danh sách vé của sự kiện.');
+      }
+    } catch {
+      toast.error('Không thể xuất danh sách vé lúc này.');
+    } finally {
+      setExportingEventId(null);
     }
   };
 
@@ -263,6 +290,25 @@ export default function OrganizerEventsPage() {
                       />
                     </div>
                   </div>
+
+                  {/* Live Check-in Progress */}
+                  <div className="space-y-1 pt-1">
+                    <div className="flex justify-between text-xs text-text-tertiary">
+                      <span className="flex items-center gap-1 text-emerald-400 font-medium">
+                        <QrCode className="w-3.5 h-3.5" aria-hidden="true" />
+                        <span>Live Check-in</span>
+                      </span>
+                      <span className="font-semibold text-emerald-400 tabular-nums">
+                        {evt.checkedInTickets ?? 0} / {evt.soldTickets} vé ({evt.soldTickets > 0 ? (((evt.checkedInTickets ?? 0) / evt.soldTickets) * 100).toFixed(0) : 0}%)
+                      </span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full bg-surface-3 overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-500 rounded-full transition-all"
+                        style={{ width: `${evt.soldTickets > 0 ? Math.min(((evt.checkedInTickets ?? 0) / evt.soldTickets) * 100, 100) : 0}%` }}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="mt-5 pt-4 border-t border-border-subtle flex items-center justify-between">
@@ -274,11 +320,25 @@ export default function OrganizerEventsPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleExportTickets(evt.id, evt.title)}
+                      disabled={exportingEventId === evt.id}
+                      className="min-h-9 min-w-9 p-2 rounded-lg bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-white transition-colors border border-border-subtle cursor-pointer disabled:opacity-50"
+                      title="Xuất danh sách vé (CSV)"
+                      aria-label={`Xuất danh sách vé cho sự kiện ${evt.title}`}
+                    >
+                      {exportingEventId === evt.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-brand-primary" aria-hidden="true" />
+                      ) : (
+                        <Download className="w-4 h-4 text-emerald-400" aria-hidden="true" />
+                      )}
+                    </button>
                     <Link
                       to={`/events/${evt.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="min-h-9 min-w-9 p-2 rounded-lg bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-white transition-colors"
+                      className="min-h-9 min-w-9 p-2 rounded-lg bg-surface-2 hover:bg-surface-3 text-text-secondary hover:text-white transition-colors border border-border-subtle"
                       title="Xem trên sàn TickeX"
                       aria-label={`Xem sự kiện ${evt.title} trên sàn`}
                     >

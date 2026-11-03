@@ -99,6 +99,97 @@ public sealed class OrganizerIsolationTests : IDisposable
         metrics.TotalCommissionEstimated.Should().Be(50_000m); // 5%
         metrics.TotalNetRevenueEstimated.Should().Be(950_000m); // 95%
         metrics.AverageOccupancyRate.Should().Be(20.0); // 2/10 = 20%
+        metrics.TotalCheckedInTickets.Should().Be(0);
+        metrics.LiveCheckInRate.Should().Be(0.0);
+    }
+
+    [Fact]
+    public async Task GetOrganizerEventTickets_StrictlyIsolatesTicketsPerOrganizer()
+    {
+        var organizerA = new User("Organizer A", "orgA_tickets@test.com", "hash", "Organizer");
+        var organizerB = new User("Organizer B", "orgB_tickets@test.com", "hash", "Organizer");
+        var customer = new User("Customer", "cust_tickets@test.com", "hash", "Customer");
+        _context.Users.AddRange(organizerA, organizerB, customer);
+        await _context.SaveChangesAsync();
+
+        var evA = new Event("Concert A", "Desc", DateTime.UtcNow.AddDays(5), DateTime.UtcNow.AddDays(5).AddHours(3),
+            "Hanoi", "National Stadium", 10, "Music", organizerId: organizerA.Id);
+        evA.GenerateSeatsMatrix(2, 5);
+        _context.Events.Add(evA);
+        await _context.SaveChangesAsync();
+
+        var seat = evA.Seats.First();
+        var ticket = new Ticket(evA.Id, seat.Id, customer.Id, 250_000m);
+        ticket.MarkAsPaid("SIG_A");
+        _context.Tickets.Add(ticket);
+        await _context.SaveChangesAsync();
+
+        var handler = new GetOrganizerEventTicketsQueryHandler(_context);
+
+        // Organizer A queries own event -> Success
+        var queryA = new GetOrganizerEventTicketsQuery(evA.Id, organizerA.Id);
+        var resultA = await handler.Handle(queryA, CancellationToken.None);
+        resultA.Success.Should().BeTrue();
+        resultA.Tickets.Should().HaveCount(1);
+        resultA.Tickets.First().CustomerName.Should().Be("Customer");
+        resultA.Tickets.First().Price.Should().Be(250_000m);
+
+        // Organizer B queries Organizer A's event -> Forbidden
+        var queryB = new GetOrganizerEventTicketsQuery(evA.Id, organizerB.Id);
+        var resultB = await handler.Handle(queryB, CancellationToken.None);
+        resultB.Success.Should().BeFalse();
+        resultB.ErrorCode.Should().Be("ORGANIZER_FORBIDDEN");
+        resultB.Tickets.Should().BeEmpty();
+
+        // Admin queries Organizer A's event with IsAdmin=true -> Allowed
+        var queryAdmin = new GetOrganizerEventTicketsQuery(evA.Id, Guid.NewGuid(), IsAdmin: true);
+        var resultAdmin = await handler.Handle(queryAdmin, CancellationToken.None);
+        resultAdmin.Success.Should().BeTrue();
+        resultAdmin.Tickets.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetOrganizerEvents_AccuratelyCalculatesCheckedInTickets()
+    {
+        var organizer = new User("Organizer Live", "live@test.com", "hash", "Organizer");
+        var customer1 = new User("Cust 1", "cust1@test.com", "hash", "Customer");
+        var customer2 = new User("Cust 2", "cust2@test.com", "hash", "Customer");
+        _context.Users.AddRange(organizer, customer1, customer2);
+        await _context.SaveChangesAsync();
+
+        var ev = new Event("Live Concert", "Desc", DateTime.UtcNow.AddDays(1), DateTime.UtcNow.AddDays(1).AddHours(3),
+            "HCMC", "Gymnasium", 10, "Music", organizerId: organizer.Id);
+        ev.GenerateSeatsMatrix(2, 5);
+        _context.Events.Add(ev);
+        await _context.SaveChangesAsync();
+
+        var seat1 = ev.Seats.First();
+        var seat2 = ev.Seats.Skip(1).First();
+
+        var ticket1 = new Ticket(ev.Id, seat1.Id, customer1.Id, 300_000m);
+        ticket1.MarkAsPaid("SIG1");
+        ticket1.CheckIn(); // Checked in!
+
+        var ticket2 = new Ticket(ev.Id, seat2.Id, customer2.Id, 300_000m);
+        ticket2.MarkAsPaid("SIG2"); // Paid only
+
+        _context.Tickets.AddRange(ticket1, ticket2);
+        await _context.SaveChangesAsync();
+
+        // Check events query
+        var eventsHandler = new GetOrganizerEventsQueryHandler(_context);
+        var eventsResult = await eventsHandler.Handle(new GetOrganizerEventsQuery(organizer.Id), CancellationToken.None);
+        eventsResult.Should().HaveCount(1);
+        var evtDto = eventsResult.Single();
+        evtDto.SoldTickets.Should().Be(2);
+        evtDto.CheckedInTickets.Should().Be(1);
+
+        // Check dashboard metrics query
+        var metricsHandler = new GetOrganizerDashboardMetricsQueryHandler(_context);
+        var metrics = await metricsHandler.Handle(new GetOrganizerDashboardMetricsQuery(organizer.Id), CancellationToken.None);
+        metrics.TotalTicketsSold.Should().Be(2);
+        metrics.TotalCheckedInTickets.Should().Be(1);
+        metrics.LiveCheckInRate.Should().Be(50.0); // 1/2 = 50%
     }
 
     [Fact]

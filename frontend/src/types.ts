@@ -159,10 +159,12 @@ export interface OrganizerMetrics {
   totalEvents: number;
   totalSeats: number;
   totalTicketsSold: number;
+  totalCheckedInTickets?: number;
   totalGrossRevenue: number;
   totalCommissionEstimated: number;
   totalNetRevenueEstimated: number;
   averageOccupancyRate: number;
+  liveCheckInRate?: number;
 }
 
 export interface OrganizerEvent {
@@ -175,8 +177,23 @@ export interface OrganizerEvent {
   category: string;
   totalSeats: number;
   soldTickets: number;
+  checkedInTickets?: number;
   grossRevenue: number;
   status: number | string;
+}
+
+export interface OrganizerTicketReportItem {
+  id: string;
+  orderCode: number;
+  customerName: string;
+  customerEmail: string;
+  seatRow: string;
+  seatNumber: number;
+  seatTier: number;
+  price: number;
+  status: number;
+  paidAt: string | null;
+  checkedInAt: string | null;
 }
 
 export interface SettlementItem {

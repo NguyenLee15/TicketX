@@ -9,10 +9,13 @@ import {
   PlusCircle,
   AlertCircle,
   ChevronRight,
-  DollarSign
+  DollarSign,
+  Download,
+  QrCode
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import api from '../../services/api';
+import { exportOrganizerFinancialSummaryCsv } from '../../utils/csvExportUtils';
 import type { OrganizerMetrics, OrganizerEvent, ApiResponse } from '../../types';
 
 export default function OrganizerDashboardPage() {
@@ -57,6 +60,11 @@ export default function OrganizerDashboardPage() {
 
   const formatVnd = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+  };
+
+  const handleExportFinancialReport = () => {
+    if (!metrics || recentEvents.length === 0) return;
+    exportOrganizerFinancialSummaryCsv(metrics, recentEvents);
   };
 
   if (isLoading) {
@@ -160,6 +168,16 @@ export default function OrganizerDashboardPage() {
       bg: 'bg-brand-primary/10',
       border: 'border-brand-primary/20',
       badge: 'Công suất vé'
+    },
+    {
+      title: 'Live Check-in',
+      value: `${(metrics?.liveCheckInRate ?? 0).toFixed(1)}%`,
+      desc: `Đã vào cửa ${metrics?.totalCheckedInTickets ?? 0} / ${metrics?.totalTicketsSold ?? 0} vé`,
+      icon: QrCode,
+      color: 'text-emerald-400',
+      bg: 'bg-emerald-500/10',
+      border: 'border-emerald-500/20',
+      badge: 'Soát vé'
     }
   ];
 
@@ -175,7 +193,17 @@ export default function OrganizerDashboardPage() {
             Tổng quan doanh thu bán vé, số lượng vé đã xuất và tỷ lệ lấp đầy sự kiện của bạn
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            type="button"
+            onClick={handleExportFinancialReport}
+            disabled={recentEvents.length === 0}
+            className="min-h-11 inline-flex items-center gap-2 px-4 py-2.5 bg-surface-2 hover:bg-surface-3 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-sm rounded-xl border border-border-subtle transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary cursor-pointer"
+            aria-label="Xuất báo cáo tài chính định dạng CSV"
+          >
+            <Download className="w-4 h-4 text-emerald-400" aria-hidden="true" />
+            <span>Xuất Báo Cáo (CSV)</span>
+          </button>
           <Link
             to="/organizer/events?create=true"
             className="min-h-11 inline-flex items-center gap-2 px-4 py-2.5 bg-brand-primary hover:bg-brand-primary/90 text-white font-semibold text-sm rounded-xl transition-[background-color,transform] active:scale-[0.98] shadow-sm shadow-brand-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
@@ -201,7 +229,7 @@ export default function OrganizerDashboardPage() {
           hidden: { opacity: 0 },
           visible: { opacity: 1, transition: { staggerChildren: 0.08 } }
         }}
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-5"
       >
         {kpis.map((kpi) => (
           <motion.div
@@ -268,6 +296,7 @@ export default function OrganizerDashboardPage() {
                   <th scope="col" className="px-5 py-3">Thời gian & Địa điểm</th>
                   <th scope="col" className="px-5 py-3 text-center">Vé đã bán</th>
                   <th scope="col" className="px-5 py-3">Tỷ lệ lấp đầy</th>
+                  <th scope="col" className="px-5 py-3">Live Check-in</th>
                   <th scope="col" className="px-5 py-3 text-right">Doanh thu gộp</th>
                   <th scope="col" className="px-5 py-3 text-center">Thao tác</th>
                 </tr>
@@ -275,6 +304,8 @@ export default function OrganizerDashboardPage() {
               <tbody className="divide-y divide-border-subtle">
                 {recentEvents.map((evt) => {
                   const occupancy = evt.totalSeats > 0 ? (evt.soldTickets / evt.totalSeats) * 100 : 0;
+                  const checkInCount = evt.checkedInTickets ?? 0;
+                  const checkInRate = evt.soldTickets > 0 ? (checkInCount / evt.soldTickets) * 100 : 0;
                   return (
                     <tr key={evt.id} className="hover:bg-surface-2/50 transition-colors">
                       <td className="px-5 py-4 font-semibold text-white max-w-xs truncate">
@@ -304,6 +335,22 @@ export default function OrganizerDashboardPage() {
                             <div
                               className="h-full bg-brand-primary rounded-full transition-[width] duration-500 ease-out"
                               style={{ width: `${Math.min(occupancy, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 min-w-[130px]">
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-xs text-text-tertiary">
+                            <span>{checkInCount} / {evt.soldTickets}</span>
+                            <span className="font-semibold text-emerald-400 tabular-nums">
+                              {checkInRate.toFixed(0)}%
+                            </span>
+                          </div>
+                          <div className="w-full h-2 rounded-full bg-surface-3 overflow-hidden">
+                            <div
+                              className="h-full bg-emerald-500 rounded-full transition-[width] duration-500 ease-out"
+                              style={{ width: `${Math.min(checkInRate, 100)}%` }}
                             />
                           </div>
                         </div>

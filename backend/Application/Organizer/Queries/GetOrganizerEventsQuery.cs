@@ -15,6 +15,7 @@ public record OrganizerEventDto(
     string Category,
     int TotalSeats,
     int SoldTickets,
+    int CheckedInTickets,
     decimal GrossRevenue,
     EventStatus Status
 );
@@ -40,17 +41,22 @@ public class GetOrganizerEventsQueryHandler : IRequestHandler<GetOrganizerEvents
 
         var eventIds = events.Select(e => e.Id).ToList();
 
-        // Calculate sold tickets and revenue per event
+        // Calculate sold tickets, checked-in tickets and revenue per event
         var tickets = await _context.Tickets.AsNoTracking()
             .Where(t => eventIds.Contains(t.EventId) && (t.Status == TicketStatus.Paid || t.Status == TicketStatus.Used))
-            .Select(t => new { t.EventId, t.Price })
+            .Select(t => new { t.EventId, t.Price, t.Status })
             .ToListAsync(cancellationToken);
 
         var ticketStats = tickets
             .GroupBy(t => t.EventId)
             .ToDictionary(
                 g => g.Key,
-                g => new { SoldCount = g.Count(), Revenue = g.Sum(t => t.Price) }
+                g => new
+                {
+                    SoldCount = g.Count(),
+                    CheckedInCount = g.Count(t => t.Status == TicketStatus.Used),
+                    Revenue = g.Sum(t => t.Price)
+                }
             );
 
         return events.Select(e =>
@@ -66,6 +72,7 @@ public class GetOrganizerEventsQueryHandler : IRequestHandler<GetOrganizerEvents
                 e.Category,
                 e.TotalSeats,
                 hasStats && stat != null ? stat.SoldCount : 0,
+                hasStats && stat != null ? stat.CheckedInCount : 0,
                 hasStats && stat != null ? stat.Revenue : 0m,
                 e.Status
             );
