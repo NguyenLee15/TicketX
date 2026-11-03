@@ -7,3 +7,4 @@ public enum SettlementStatus
     Completed = 3,
     Rejected = 4
 }
+

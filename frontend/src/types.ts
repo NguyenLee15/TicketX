@@ -183,5 +183,87 @@ export interface SettlementItem {
   processedAt?: string;
 }
 
+export interface OfflineTicketItem {
+  ticketId: string;
+  ticketCode: string;
+  seatNumber: string;
+  attendeeName: string;
+  qrSignatureHash: string;
+  isAlreadyUsed: boolean;
+  checkedInAt?: string;
+}
+
+export interface EventOfflineManifest {
+  eventId: string;
+  eventTitle: string;
+  generatedAtUtc: string;
+  totalTickets: number;
+  tickets: OfflineTicketItem[];
+}
+
+export interface OfflineCheckInRecord {
+  id?: number;
+  ticketId: string;
+  scannedAtUtc: string;
+  gate: string;
+  staffId: string;
+  deviceId: string;
+}
+
+export interface OfflineCheckInConflictDetail {
+  ticketId: string;
+  seatNumber: string;
+  conflictCode: string;
+  message: string;
+  originalScanUtc: string;
+  rejectedScanUtc: string;
+  gate: string;
+}
+
+export interface SyncOfflineCheckInsResult {
+  totalProcessed: number;
+  successful: number;
+  duplicatesRejected: number;
+  conflicts: OfflineCheckInConflictDetail[];
+}
+
+export interface HeatmapBucket {
+  timeLabel: string;
+  startTimeUtc: string;
+  endTimeUtc: string;
+  scanCount: number;
+  percentageOfCheckedIn: number;
+}
+
+export interface EventAttendanceAnalytics {
+  eventId: string;
+  eventTitle: string;
+  eventDate: string;
+  totalCapacity: number;
+  totalTicketsSold: number;
+  totalCheckedIn: number;
+  showUpRate: number;
+  peakInterval: string;
+  peakScanCount: number;
+  heatmapBuckets: HeatmapBucket[];
+}
+
+export interface VatInvoiceData {
+  id: string;
+  orderCode: number;
+  taxCode: string;
+  companyName: string;
+  companyAddress: string;
+  recipientEmail: string;
+  subTotal: number;
+  vatRate: number;
+  vatAmount: number;
+  totalAmount: number;
+  invoiceNumber: string;
+  invoiceLookupCode: string;
+  status: string;
+  issuedAt?: string;
+}
+
 
 

@@ -69,3 +69,4 @@ public class SettlementConfiguration : IEntityTypeConfiguration<Settlement>
         builder.HasIndex(s => s.Status);
     }
 }
+

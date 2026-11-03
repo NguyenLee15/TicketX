@@ -90,3 +90,4 @@ public class CreateOrganizerEventCommandHandler : IRequestHandler<CreateOrganize
         return new CreateOrganizerEventResult(true, "Tạo sự kiện thành công!", EventId: ev.Id);
     }
 }
+

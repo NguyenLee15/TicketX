@@ -124,3 +124,4 @@ public class Settlement : BaseEntity
         Version = Guid.NewGuid().ToByteArray();
     }
 }
+

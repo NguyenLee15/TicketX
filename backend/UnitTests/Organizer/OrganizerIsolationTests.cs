@@ -144,3 +144,4 @@ public sealed class OrganizerIsolationTests : IDisposable
         _connection.Dispose();
     }
 }
+

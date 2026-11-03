@@ -12,6 +12,7 @@ import { CheckoutStatusView } from './Checkout/CheckoutStatusView';
 import { useModalAccessibility } from './Admin/useModalAccessibility';
 import { checkoutLinkResponseSchema } from '../schemas/customerSchemas';
 import { createIdempotencyKey } from '../utils/idempotency';
+import { VatInvoiceForm, VatInvoiceFormData } from './Checkout/VatInvoiceForm';
 
 interface CheckoutModalProps {
   isOpen?: boolean;
@@ -42,6 +43,13 @@ export default function CheckoutModal({
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [vatData, setVatData] = useState<VatInvoiceFormData>({
+    isRequested: false,
+    taxCode: '',
+    companyName: '',
+    companyAddress: '',
+    recipientEmail: '',
+  });
 
   const clockOffsetMsRef = useRef<number>(0);
   if (serverTime) {
@@ -216,6 +224,17 @@ export default function CheckoutModal({
     setStatus('verifying');
     try {
       await api.post(`/api/payments/simulate-success/${paymentData.orderCode}`);
+      if (vatData.isRequested && vatData.taxCode) {
+        try {
+          await api.post('/api/invoices/request', {
+            orderCode: paymentData.orderCode,
+            taxCode: vatData.taxCode,
+            companyName: vatData.companyName,
+            companyAddress: vatData.companyAddress,
+            recipientEmail: vatData.recipientEmail,
+          });
+        } catch { /* invoice request logged */ }
+      }
       toast.success('Mô phỏng thanh toán thành công!');
       simulateTimerRef.current = setTimeout(() => {
         navigate(`/payment/result?orderCode=${paymentData.orderCode}&status=PAID`);
@@ -288,6 +307,8 @@ export default function CheckoutModal({
               onApplyCoupon={handleApplyCoupon}
               applyingCoupon={applyingCoupon}
             />
+
+            <VatInvoiceForm value={vatData} onChange={setVatData} />
 
             <CheckoutVietQrView
               loadingPayment={loadingPayment}

@@ -192,3 +192,4 @@ public sealed class SettlementEngineTests : IDisposable
         _connection.Dispose();
     }
 }
+

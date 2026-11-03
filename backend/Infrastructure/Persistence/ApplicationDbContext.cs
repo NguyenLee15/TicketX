@@ -25,6 +25,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Coupon> Coupons => Set<Coupon>();
     public DbSet<TicketTransfer> TicketTransfers => Set<TicketTransfer>();
     public DbSet<Settlement> Settlements => Set<Settlement>();
+    public DbSet<Invoice> Invoices => Set<Invoice>();
 
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken) =>
         Database.BeginTransactionAsync(cancellationToken);

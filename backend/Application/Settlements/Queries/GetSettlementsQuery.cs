@@ -81,3 +81,4 @@ public class GetSettlementsQueryHandler : IRequestHandler<GetSettlementsQuery, L
         )).ToList();
     }
 }
+

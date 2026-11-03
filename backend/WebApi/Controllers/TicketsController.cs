@@ -299,6 +299,22 @@ public class TicketsController : ControllerBase
         return Ok(new { success = true, message = result.Message, data = result.Ticket });
     }
 
+    [HttpGet("events/{eventId:guid}/offline-manifest")]
+    [Authorize(Roles = "Admin,Staff,Organizer")]
+    public async Task<IActionResult> GetOfflineManifest(Guid eventId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetEventOfflineManifestQuery(eventId), cancellationToken);
+        return Ok(new { success = true, data = result });
+    }
+
+    [HttpPost("sync-offline-checkins")]
+    [Authorize(Roles = "Admin,Staff,Organizer")]
+    public async Task<IActionResult> SyncOfflineCheckIns([FromBody] SyncOfflineCheckInsCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+        return Ok(new { success = true, message = $"Đã đồng bộ {result.Successful}/{result.TotalProcessed} lượt quét ngoại tuyến thành công.", data = result });
+    }
+
     private static string MapErrorCodeToTitle(string? errorCode) => errorCode switch
     {
         "REFUND_LOCK_UNAVAILABLE" or "REFUND_LOCK_LOST" or "CHECKIN_LOCK_UNAVAILABLE" or "CHECKIN_LOCK_LOST" => "Service Unavailable",

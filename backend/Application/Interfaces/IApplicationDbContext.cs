@@ -20,6 +20,7 @@ public interface IApplicationDbContext
     DbSet<Coupon> Coupons { get; }
     DbSet<TicketTransfer> TicketTransfers { get; }
     DbSet<Settlement> Settlements { get; }
+    DbSet<Invoice> Invoices { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken);
     Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken);

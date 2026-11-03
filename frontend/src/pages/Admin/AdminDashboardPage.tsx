@@ -6,6 +6,7 @@ import { Stats } from './Dashboard/types';
 import { adminDashboardStatsSchema } from '../../schemas/adminSchemas';
 import { DashboardKpiGrid } from './Dashboard/DashboardKpiGrid';
 import { DashboardRevenueChart } from './Dashboard/DashboardRevenueChart';
+import { DashboardAttendanceHeatmap } from './Dashboard/DashboardAttendanceHeatmap';
 import { DashboardTopEvents } from './Dashboard/DashboardTopEvents';
 import { DashboardRecentTransactions } from './Dashboard/DashboardRecentTransactions';
 import { AdminDashboardEmptyState } from './Dashboard/AdminDashboardEmptyState';
@@ -152,6 +153,9 @@ export default function AdminDashboardPage() {
 
       {/* 7-Day Revenue Chart Section */}
       <DashboardRevenueChart dailyStats={stats.dailyStats || []} />
+
+      {/* Attendance & Heatmap Analytics */}
+      <DashboardAttendanceHeatmap topEvents={stats.topEvents} />
 
       {/* Analytics & Tables Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

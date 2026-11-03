@@ -22,6 +22,7 @@ const PaymentResultPage = lazy(() => import('./pages/PaymentResultPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const LegalPage = lazy(() => import('./pages/LegalPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
+const InvoiceLookupPage = lazy(() => import('./pages/InvoiceLookupPage'));
 
 // Admin Pages
 const AdminDashboardPage = lazy(() => import('./pages/Admin/AdminDashboardPage'));
@@ -194,6 +195,7 @@ function App() {
           <Route path="profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
           <Route path="privacy" element={<LegalPage />} />
           <Route path="terms" element={<LegalPage />} />
+          <Route path="lookup-invoice" element={<InvoiceLookupPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
