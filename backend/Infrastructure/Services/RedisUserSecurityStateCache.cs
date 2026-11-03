@@ -12,6 +12,11 @@ public sealed class RedisUserSecurityStateCache(IConnectionMultiplexer redis) : 
     public async Task<UserSecurityState?> GetAsync(Guid userId, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        if (!redis.IsConnected)
+        {
+            return null;
+        }
+
         try
         {
             var value = await _database.StringGetAsync(Key(userId));
@@ -35,6 +40,11 @@ public sealed class RedisUserSecurityStateCache(IConnectionMultiplexer redis) : 
     public async Task SetAsync(Guid userId, UserSecurityState state, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        if (!redis.IsConnected)
+        {
+            return;
+        }
+
         try
         {
             var payload = JsonSerializer.Serialize(state);
