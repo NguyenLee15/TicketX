@@ -30,7 +30,7 @@
     "@hookform/resolvers": "^5.4.0",
     "@microsoft/signalr": "^10.0.0",
     "@tanstack/react-query": "^5.102.8",
-    "axios": "^1.18.1",
+    "axios": "^1.21.0",
     "canvas-confetti": "^1.9.4",
     "html2canvas": "^1.4.1",
     "html5-qrcode": "^2.3.8",
@@ -44,7 +44,11 @@
     "react-hook-form": "^7.82.0",
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.18.1",
-    "zod": "^4.4.3",
+    "zod": "^4.6.7",
     "zustand": "^5.0.14"
+  },
+  "overrides": {
+    "dompurify": "^3.4.17",
+    "follow-redirects": "^1.16.2"
   }
 }

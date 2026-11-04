@@ -92,3 +92,4 @@ public class GetOrganizerEventTicketsQueryHandler : IRequestHandler<GetOrganizer
         return new GetOrganizerEventTicketsQueryResult(true, null, null, dtoList);
     }
 }
+
